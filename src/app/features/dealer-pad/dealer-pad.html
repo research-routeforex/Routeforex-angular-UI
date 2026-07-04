@@ -1,0 +1,399 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Dealer Pad"
+    subtitle="Live rates, deal capture and your pending & saved deal queues."
+    [breadcrumbs]="[{ label: 'Trading' }, { label: 'Dealer Pad' }]"
+  >
+    <span class="hero-live" [class.hero-live--paused]="paused()">
+      <span class="hero-live__dot"></span>
+      {{ paused() ? 'Feed paused' : 'Markets live' }}
+    </span>
+  </app-page-header>
+</div>
+
+<div class="dp">
+  <div class="dp__main">
+    <!-- ===== Live rate board ===== -->
+    <section class="rf-card board">
+      <header class="board__head">
+        <h3><mat-icon>candlestick_chart</mat-icon> Live Rates</h3>
+        <span class="rf-spacer"></span>
+        <span class="live" [class.live--paused]="paused()">
+          <span class="live__dot"></span>{{ paused() ? 'Paused' : usingApi() ? 'Live · DB' : 'Live' }}
+        </span>
+        @if (paused()) {
+          <span class="board__lastfetch rf-muted">
+            Last fetch: {{ svc.lastUpdated() ? (svc.lastUpdated() | date: 'dd MMM, HH:mm:ss') : '—' }}
+          </span>
+        }
+        <button
+          mat-icon-button
+          type="button"
+          class="board__pause"
+          (click)="togglePause()"
+          [matTooltip]="paused() ? 'Resume fetching live rates' : 'Stop fetching live rates'"
+        >
+          <mat-icon>{{ paused() ? 'play_arrow' : 'pause' }}</mat-icon>
+        </button>
+        <mat-slide-toggle
+          class="board__toggle"
+          color="primary"
+          [checked]="showRates()"
+          (change)="showRates.set($event.checked)"
+          matTooltip="Show / hide live rates"
+        ></mat-slide-toggle>
+      </header>
+      @if (showRates()) {
+      <div class="board__scroll">
+        <table class="rates">
+          <thead>
+            <tr>
+              <th>Currency</th>
+              <th class="ta-c">Spot</th>
+              <th class="ta-c">Cash Spot</th>
+              <th class="ta-c">Tom Spot</th>
+              <th class="ta-c live-col">Cash Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of svc.rates(); track r.pair) {
+              <tr>
+                <td class="rates__pair">{{ r.pair }}</td>
+                <td class="ta-c mono">
+                  <span class="rate" [class.rate--up]="r.spotBidDir === 1" [class.rate--down]="r.spotBidDir === -1">
+                    {{ r.spotBid | number: '1.4-4' }}
+                  </span>
+                  <span class="rate" [class.rate--up]="r.spotAskDir === 1" [class.rate--down]="r.spotAskDir === -1">
+                    {{ r.spotAsk | number: '1.4-4' }}
+                  </span>
+                </td>
+                <td class="ta-c mono rf-muted">
+                  {{ r.cashSpotBid | number: '1.4-4' }} / {{ r.cashSpotAsk | number: '1.4-4' }}
+                </td>
+                <td class="ta-c mono rf-muted">
+                  {{ r.tomSpotBid | number: '1.4-4' }} / {{ r.tomSpotAsk | number: '1.4-4' }}
+                </td>
+                <td class="ta-c mono">
+                  <span class="px" [class.px--up]="r.cashRateBidDir === 1" [class.px--down]="r.cashRateBidDir === -1">
+                    {{ r.cashRateBid | number: '1.4-4' }}
+                    @if (r.cashRateBidDir !== 0) {
+                      <mat-icon class="px__arr">{{ r.cashRateBidDir === 1 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+                    }
+                  </span>
+                  <span class="px" [class.px--up]="r.cashRateAskDir === 1" [class.px--down]="r.cashRateAskDir === -1">
+                    {{ r.cashRateAsk | number: '1.4-4' }}
+                    @if (r.cashRateAskDir !== 0) {
+                      <mat-icon class="px__arr">{{ r.cashRateAskDir === 1 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+                    }
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </section>
+
+    <!-- ===== Deal capture form ===== -->
+    <form [formGroup]="form" class="rf-card dealform" (ngSubmit)="submit()">
+      @if (detailsLoading()) {
+        <div class="dealform__overlay">
+          <div class="dealform__spinner"></div>
+          <span>Loading deal…</span>
+        </div>
+      }
+      <!-- Client Information (shown first, full-width row) -->
+      <section class="dform-section">
+        <h3
+          class="dealform__title dealform__title--toggle"
+          (click)="showClientInfo.set(!showClientInfo())"
+        >
+          <mat-icon>person</mat-icon> Client Information
+          <span class="rf-spacer"></span>
+          <mat-icon class="dealform__chev" [class.dealform__chev--open]="showClientInfo()">
+            expand_more
+          </mat-icon>
+        </h3>
+        <div class="collapsible" [class.collapsible--closed]="!showClientInfo()">
+          <div class="collapsible__inner">
+            <div class="fieldgrid client-info">
+          <app-field label="Client Name">
+            <input class="rf-input" formControlName="clientName" />
+          </app-field>
+          <app-field label="Branch">
+            <input class="rf-input" formControlName="branch" />
+          </app-field>
+          <app-field label="Contact No.">
+            <input class="rf-input" formControlName="contactNo" />
+          </app-field>
+
+          <app-field label="Contact Person 1">
+            <input class="rf-input" formControlName="contactPerson" />
+          </app-field>
+          <app-field label="Branch Code">
+            <input class="rf-input" formControlName="branchCode" />
+          </app-field>
+
+          <app-field label="Contact Number">
+            <input class="rf-input" formControlName="contactNumber" />
+          </app-field>
+          <app-field label="RM Name">
+            <input class="rf-input" formControlName="rmName" />
+          </app-field>
+
+          <app-field label="Email ID">
+            <input class="rf-input" formControlName="email" />
+          </app-field>
+          <app-field label="RM No.">
+            <input class="rf-input" formControlName="rmNo" />
+          </app-field>
+          <app-field label="Documents complete?">
+            <div class="docs">
+              <label class="docs__opt">
+                <input type="checkbox" disabled [checked]="form.controls.documentsComplete.value === true" />
+                YES
+              </label>
+              <label class="docs__opt">
+                <input type="checkbox" disabled [checked]="form.controls.documentsComplete.value === false" />
+                NO
+              </label>
+            </div>
+          </app-field>
+
+          <app-field label="Bank Margin">
+            <input class="rf-input" type="number" step="0.01" formControlName="bankMargin" />
+          </app-field>
+          <app-field label="Contact Person 2">
+            <input class="rf-input" formControlName="contactPerson2" />
+          </app-field>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Deal Details -->
+      <section class="dform-section">
+        <h3 class="dealform__title"><mat-icon>insights</mat-icon> Deal Details</h3>
+        <div class="fieldgrid">
+          <!-- Row 1 -->
+          <app-field label="Order No">
+            <input class="rf-input" formControlName="orderNo" placeholder="New" />
+          </app-field>
+          <app-field label="Transaction Type" required [control]="form.controls.transactionType" error="Required.">
+            <app-select formControlName="transactionType" [options]="txnOptions()" searchPlaceholder="Search type…" />
+          </app-field>
+          <app-field label="Import / Export" required [control]="form.controls.direction">
+            <app-select formControlName="direction" [options]="directions" [searchable]="false" />
+          </app-field>
+          <app-field label="Currency" required [control]="form.controls.currencyPair">
+            <app-select formControlName="currencyPair" [options]="currencyOptions()" searchPlaceholder="Search currency…" />
+          </app-field>
+
+          <!-- Row 2 -->
+          <app-field label="Bank">
+            <app-select formControlName="bank" [options]="bankOptions()" searchPlaceholder="Search bank…" />
+          </app-field>
+          <app-field label="Amount" required [control]="form.controls.amount" error="Enter an amount.">
+            <input class="rf-input" type="number" formControlName="amount" placeholder="0.00" />
+          </app-field>
+          <app-field label="Bank Dealer Name">
+            <app-select formControlName="bankDealerName" [options]="bankDealerOptions()" searchPlaceholder="Search dealer…" />
+          </app-field>
+          <app-field label="Dealer Name">
+            <input class="rf-input" formControlName="dealerName" placeholder="Dealer" />
+          </app-field>
+
+          <!-- Transaction-type-driven fields -->
+          @if (showWindowFix()) {
+            <app-field label="Window / Fix">
+              <app-select formControlName="windowFix" [options]="windowFixOptions" [searchable]="false" />
+            </app-field>
+          }
+          @if (showFromToDate()) {
+            <app-field label="From Date">
+              <input class="rf-input" type="text" formControlName="fromDate" placeholder="DD-MMM-YYYY" />
+            </app-field>
+            <app-field label="To Date">
+              <input class="rf-input" type="text" formControlName="toDate" placeholder="DD-MMM-YYYY" />
+            </app-field>
+          }
+          @if (showMaturityDate()) {
+            <app-field label="Maturity Date">
+              <input class="rf-input" type="text" formControlName="maturityDate" placeholder="DD-MMM-YYYY" />
+            </app-field>
+          }
+          @if (showForwardContact()) {
+            <app-field label="Forward Contact No.">
+              <input class="rf-input" formControlName="forwardContactNo" placeholder="Contact no." />
+            </app-field>
+          }
+
+          <!-- Always visible: Dealing Room Landline No + Remarks share a row -->
+          <app-field label="Dealing Room Landline No" class="span-2">
+            <textarea class="rf-textarea" formControlName="dealingRoomLandline" rows="2" placeholder="Landline number(s)"></textarea>
+          </app-field>
+          <app-field label="Remarks" class="span-2">
+            <textarea class="rf-textarea" formControlName="remarks" rows="2" placeholder="Notes…"></textarea>
+          </app-field>
+        </div>
+      </section>
+
+      <!-- Live Rates — snapshot, filled on deal-click or the Pull (⚡) button -->
+      <div class="band band--live">
+        <span class="band__title">Live Rates</span>
+        <div class="band__grid">
+          <div class="band__cell">
+            <label>Base Currency</label>
+            <div class="band__val band__val--num mono">{{ liveBand() ? (liveBand()!.base | number: '1.4-4') : '—' }}</div>
+          </div>
+          <div class="band__cell">
+            <label>Home Currency</label>
+            <div class="band__val band__val--num mono">{{ liveBand() ? (liveBand()!.home | number: '1.4-4') : '—' }}</div>
+          </div>
+          <div class="band__cell">
+            <label>Spot</label>
+            <div class="band__val band__val--num mono">{{ liveBand() ? (liveBand()!.spot | number: '1.4-4') : '—' }}</div>
+          </div>
+          <div class="band__cell">
+            <label>Premium(+)/Discount(−)</label>
+            <div class="band__val band__val--num mono">{{ liveBand() ? (liveBand()!.premium | number: '1.4-4') : '—' }}</div>
+          </div>
+          <div class="band__cell">
+            <label>Margin</label>
+            <div class="band__val band__val--num mono">{{ liveBand() ? (liveBand()!.margin | number: '1.4-4') : '—' }}</div>
+          </div>
+          <div class="band__cell">
+            <label>Net Rate</label>
+            <div class="band__val band__val--net mono">{{ liveBand() ? (liveBand()!.net | number: '1.4-4') : '—' }}</div>
+          </div>
+        </div>
+        <button
+          type="button"
+          mat-icon-button
+          class="band__pull"
+          matTooltip="Pull live rate for the selected pair"
+          (click)="pullLiveRate()"
+        >
+          <mat-icon>bolt</mat-icon>
+        </button>
+      </div>
+
+      <!-- Dealer Rates (entered manually by the dealer) -->
+      <div class="band band--dealer">
+        <span class="band__title">Dealer Rates</span>
+        <div class="band__grid">
+          <div class="band__cell">
+            <label>Base Currency</label>
+            <input class="rf-input mono" type="number" step="0.0001" formControlName="dealerBase" />
+          </div>
+          <div class="band__cell">
+            <label>Home Currency</label>
+            <input class="rf-input mono" type="number" step="0.0001" formControlName="dealerHome" />
+          </div>
+          <div class="band__cell">
+            <label>Spot</label>
+            <input class="rf-input mono" type="number" step="0.0001" formControlName="spot" />
+          </div>
+          <div class="band__cell">
+            <label>Premium(+)/Discount(−)</label>
+            <input class="rf-input mono" type="number" step="0.0001" formControlName="premium" />
+          </div>
+          <div class="band__cell">
+            <label>Margin</label>
+            <input class="rf-input mono" type="number" step="0.0001" formControlName="margin" />
+          </div>
+          <div class="band__cell">
+            <label>Net Rate</label>
+            <div class="band__val band__val--net mono">{{ netRate() | number: '1.4-4' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dealform__actions">
+        @if (editingId()) {
+          <span class="rf-chip rf-chip--info">Editing {{ editingId() }}</span>
+        }
+        <span class="rf-spacer"></span>
+        <button mat-button type="button" (click)="clear()">Clear</button>
+        <button mat-stroked-button type="button" (click)="save()">
+          <mat-icon>bookmark_border</mat-icon> Save
+        </button>
+        <button mat-flat-button color="primary" type="submit" class="dealform__submit">
+          <mat-icon>check</mat-icon> Submit Deal
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===== Queues ===== -->
+  <aside class="dp__aside">
+    <section class="rf-card queue queue--pending">
+      <header class="queue__head queue__head--pending">
+        <span>Pending Deals</span>
+        <span class="queue__count">{{ svc.pendingCount() }}</span>
+      </header>
+      <div class="queue__search rf-control">
+        <mat-icon class="rf-control__icon">search</mat-icon>
+        <input
+          class="rf-input rf-input--icon"
+          type="search"
+          placeholder="Search pending…"
+          (input)="pendingSearch.set($any($event.target).value)"
+        />
+      </div>
+      <ul class="queue__list">
+        @for (d of filteredPending(); track d.id) {
+          <li
+            class="deal"
+            [class.deal--active]="d.id === editingId()"
+            (click)="loadDeal(d, 'pending')"
+          >
+            <div class="deal__main">
+              <span class="deal__client">{{ d.clientName }}</span>
+              <span class="deal__meta rf-muted">{{ d.transactionType }} · {{ d.direction }}</span>
+            </div>
+            <span class="deal__amount mono">{{ d.amount | number: '1.2-2' }}</span>
+          </li>
+        } @empty {
+          <li class="queue__empty rf-muted">No pending deals.</li>
+        }
+      </ul>
+    </section>
+
+    <section class="rf-card queue queue--saved">
+      <header class="queue__head queue__head--saved">
+        <span>Saved Deals</span>
+        <span class="queue__count">{{ svc.savedCount() }}</span>
+      </header>
+      <div class="queue__search rf-control">
+        <mat-icon class="rf-control__icon">search</mat-icon>
+        <input
+          class="rf-input rf-input--icon"
+          type="search"
+          placeholder="Search saved…"
+          (input)="savedSearch.set($any($event.target).value)"
+        />
+      </div>
+      <ul class="queue__list">
+        @for (d of filteredSaved(); track d.id) {
+          <li
+            class="deal"
+            [class.deal--active]="d.id === editingId()"
+            (click)="loadDeal(d, 'saved')"
+          >
+            <div class="deal__main">
+              <span class="deal__client">{{ d.clientName }}</span>
+              <span class="deal__meta rf-muted">{{ d.transactionType }} · {{ d.direction }}</span>
+            </div>
+            <span class="deal__amount mono">{{ d.amount | number: '1.2-2' }}</span>
+          </li>
+        } @empty {
+          <li class="queue__empty rf-muted">No saved deals.</li>
+        }
+      </ul>
+    </section>
+  </aside>
+</div>

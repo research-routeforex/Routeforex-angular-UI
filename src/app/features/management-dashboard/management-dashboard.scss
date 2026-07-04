@@ -1,0 +1,645 @@
+:host {
+  display: block;
+}
+
+// ---- Hero band ------------------------------------------------------------
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, var(--rf-info) 12%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero :where(app-page-header) {
+  position: relative;
+  z-index: 1;
+}
+// Collapse the page-header's own spacing so the band stays compact.
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+// Soft floating colour blobs drifting behind the header.
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.hero__glow--a {
+  top: -120px;
+  right: 8%;
+  background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+  animation: blob-a 9s ease-in-out infinite;
+}
+.hero__glow--b {
+  bottom: -150px;
+  left: 12%;
+  background: radial-gradient(circle, var(--rf-info), transparent 70%);
+  animation: blob-b 11s ease-in-out infinite;
+}
+@keyframes blob-a {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-26px, 18px); }
+}
+@keyframes blob-b {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(22px, -16px); }
+}
+
+// ---- Live indicator (in the page header action slot) ----------------------
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--rf-muted-fg);
+}
+.live__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rf-success);
+  box-shadow: 0 0 0 0 var(--rf-success);
+  animation: live-pulse 2s ease-out infinite;
+}
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--rf-success) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+// ---- Controls row (client picker + section switch) ------------------------
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--rf-gap);
+  flex-wrap: wrap;
+  margin-bottom: var(--rf-gap);
+}
+.controls__spacer {
+  flex: 1 1 auto;
+}
+.controls .seg {
+  margin-bottom: 0;
+}
+.client {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 25%, var(--rf-border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--mat-sys-primary) 10%, var(--rf-surface-2)),
+    var(--rf-surface-2)
+  );
+  box-shadow: var(--rf-shadow);
+}
+.client__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mat-sys-primary);
+  white-space: nowrap;
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+.client__select {
+  display: block;
+  min-width: 260px;
+}
+
+// ---- Section switch (Import / Export) -------------------------------------
+.seg {
+  display: inline-flex;
+  padding: 5px;
+  gap: 4px;
+  margin-bottom: var(--rf-gap);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--mat-sys-primary) 8%, var(--rf-surface-2)),
+    var(--rf-surface-2)
+  );
+  border: 1px solid var(--rf-border);
+  border-radius: 999px;
+  box-shadow: var(--rf-shadow);
+}
+.seg__btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rf-muted-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+.seg__btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+.seg__btn:hover {
+  color: var(--mat-sys-on-surface);
+}
+.seg__btn--active {
+  color: var(--mat-sys-on-primary);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--mat-sys-primary) 92%, white) 0%,
+    color-mix(in oklab, var(--mat-sys-primary) 78%, var(--rf-info)) 100%
+  );
+  box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--mat-sys-primary) 75%, transparent);
+}
+.seg__btn--active mat-icon {
+  animation: arrow-bob 1.8s ease-in-out infinite;
+}
+
+// ---- Summary cards --------------------------------------------------------
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--rf-gap);
+  margin-bottom: var(--rf-gap);
+}
+.card {
+  --accent: var(--mat-sys-primary);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, var(--rf-border));
+  border-left: 4px solid var(--accent);
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--accent) 16%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 62%
+  );
+  box-shadow: var(--rf-shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -12px color-mix(in oklab, var(--accent) 55%, transparent);
+}
+
+// Animated diagonal sheen — staggered so the cards shimmer in sequence.
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    120deg,
+    transparent 32%,
+    color-mix(in oklab, var(--accent) 22%, transparent) 50%,
+    transparent 68%
+  );
+  transform: translateX(-130%);
+  animation: card-shine 5s ease-in-out infinite;
+}
+.card:nth-child(2)::after { animation-delay: 0.6s; }
+.card:nth-child(3)::after { animation-delay: 1.2s; }
+.card:nth-child(4)::after { animation-delay: 1.8s; }
+.card:nth-child(5)::after { animation-delay: 2.4s; }
+@keyframes card-shine {
+  0%, 55% { transform: translateX(-130%); }
+  100% { transform: translateX(130%); }
+}
+
+.card__icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 20%, transparent);
+}
+.card__icon mat-icon {
+  font-size: 26px;
+  width: 26px;
+  height: 26px;
+}
+.card__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.card__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rf-muted-fg);
+}
+.card__value {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--accent);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--accent) 62%, var(--mat-sys-on-surface)) 0%,
+    var(--accent) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+// The MTM value holds icons (arrow), so keep it solid to avoid clipping glyphs.
+.card--mtm .card__value {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--accent);
+}
+
+// Per-card accent palette
+.card--exposure { --accent: var(--mat-sys-primary); }
+.card--forward  { --accent: var(--rf-success); }
+.card--unhedged { --accent: var(--rf-warn); }
+.card--hedge    { --accent: var(--rf-info); }
+.card--mtm      { --accent: var(--rf-success); }
+.card--mtm.is-down { --accent: var(--rf-danger); }
+
+// Live MTM card — pulsing icon glow + bobbing trend arrow.
+.card--mtm .card__value { color: var(--accent); }
+.card--mtm .card__icon {
+  animation: mtm-glow 2s ease-in-out infinite;
+}
+@keyframes mtm-glow {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--accent) 22%, transparent); }
+}
+.card__arrow {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  animation: arrow-bob 1.6s ease-in-out infinite;
+}
+@keyframes arrow-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.card__live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: live-pulse 2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card::after,
+  .card--mtm .card__icon,
+  .card__arrow,
+  .card__live,
+  .live__dot,
+  .hero__glow,
+  .seg__btn--active mat-icon,
+  .tablewrap::before,
+  .rate__dot,
+  .mtm thead th.mtm-col::after {
+    animation: none;
+  }
+}
+
+// ---- Table ----------------------------------------------------------------
+.tablewrap {
+  position: relative;
+  overflow-x: auto;
+  padding: 4px;
+}
+// Gradient accent strip across the top of the table card.
+.tablewrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--rf-radius) var(--rf-radius) 0 0;
+  background: linear-gradient(
+    90deg,
+    var(--mat-sys-primary),
+    var(--rf-info),
+    var(--rf-success),
+    var(--rf-warn)
+  );
+  background-size: 300% 100%;
+  animation: strip-slide 8s linear infinite;
+}
+@keyframes strip-slide {
+  0% { background-position: 0% 0; }
+  100% { background-position: 300% 0; }
+}
+.mtm {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 1040px;
+}
+.mtm thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--mat-sys-primary) 96%, white) 0%,
+    color-mix(in oklab, var(--mat-sys-primary) 82%, black) 100%
+  );
+  color: var(--mat-sys-on-primary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 13px 14px;
+  border-bottom: 2px solid color-mix(in oklab, var(--mat-sys-primary) 60%, black);
+  box-shadow: 0 2px 8px -4px color-mix(in oklab, var(--mat-sys-primary) 70%, transparent);
+  white-space: nowrap;
+}
+// Subtle vertical separators between header cells.
+.mtm thead th + th {
+  border-left: 1px solid color-mix(in oklab, white 16%, transparent);
+}
+.mtm thead th:first-child {
+  border-top-left-radius: var(--rf-radius);
+}
+.mtm thead th:last-child {
+  border-top-right-radius: var(--rf-radius);
+}
+// Highlight the live MTM column header.
+.mtm thead th.mtm-col {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--mat-sys-primary) 80%, white) 0%,
+    color-mix(in oklab, var(--mat-sys-primary) 70%, black) 100%
+  );
+}
+.mtm thead th.mtm-col::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: #fff;
+  animation: live-pulse 2s ease-out infinite;
+}
+.mtm th.num,
+.mtm td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+// Currency sign — slightly muted and lighter so the number stays the focus.
+.sym {
+  margin-right: 1px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+.mtm-val .sym {
+  opacity: 0.85;
+}
+.mtm th.name {
+  text-align: left;
+}
+
+.row td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rf-border);
+  transition: background 0.15s ease;
+}
+.row--expandable {
+  cursor: pointer;
+}
+.row--expandable:hover td {
+  background: color-mix(in oklab, var(--ccy, var(--mat-sys-primary)) 10%, transparent);
+}
+
+// Level styling: currency (bold), month (medium), date (muted)
+.row--l0 td {
+  font-weight: 700;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--ccy, var(--mat-sys-primary)) 13%, var(--rf-surface-2)) 0%,
+    color-mix(in oklab, var(--ccy, var(--mat-sys-primary)) 4%, var(--rf-surface-2)) 40%,
+    var(--rf-surface-2) 100%
+  );
+  border-top: 1px solid color-mix(in oklab, var(--ccy, var(--mat-sys-primary)) 25%, var(--rf-border));
+}
+.row--l0 td.name {
+  border-left: 3px solid var(--ccy, var(--mat-sys-primary));
+}
+.row--l0 td.name .lbl {
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+.row--l1 td {
+  font-weight: 500;
+}
+.row--l2 td {
+  color: var(--rf-muted-fg);
+  font-weight: 400;
+}
+// Zebra striping on the date-level rows.
+.row--l2:nth-of-type(even) td {
+  background: color-mix(in oklab, var(--mat-sys-on-surface) 3%, transparent);
+}
+
+// Per-currency accent colours (decorative).
+.ccy-USD { --ccy: #10b981; }
+.ccy-EUR { --ccy: #6366f1; }
+.ccy-GBP { --ccy: #8b5cf6; }
+.ccy-JPY { --ccy: #f43f5e; }
+
+// Circular currency badge on level-0 rows.
+.ccy-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--ccy, var(--mat-sys-primary)) 95%, white),
+    color-mix(in oklab, var(--ccy, var(--mat-sys-primary)) 70%, black)
+  );
+  box-shadow: 0 2px 6px -2px color-mix(in oklab, var(--ccy, var(--mat-sys-primary)) 80%, transparent);
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.indent {
+  display: inline-block;
+  flex: 0 0 auto;
+}
+.chev {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: var(--rf-muted-fg);
+  transition: transform 0.15s ease;
+}
+.chev--open {
+  transform: rotate(90deg);
+  color: var(--mat-sys-primary);
+}
+.chev--leaf {
+  display: inline-block;
+  width: 20px;
+}
+.lbl {
+  white-space: nowrap;
+}
+.rate {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--ccy, var(--rf-info)) 92%, white),
+    color-mix(in oklab, var(--ccy, var(--rf-info)) 72%, black)
+  );
+  box-shadow: 0 2px 8px -3px color-mix(in oklab, var(--ccy, var(--rf-info)) 80%, transparent);
+}
+.rate__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  animation: live-blink 1.6s ease-in-out infinite;
+}
+@keyframes live-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+// MTM gain / loss — coloured text on a soft tinted pill.
+.mtm-val {
+  font-weight: 700;
+}
+.mtm-val.pos {
+  color: var(--rf-success);
+  background: color-mix(in oklab, var(--rf-success) 12%, transparent);
+}
+.mtm-val.neg {
+  color: var(--rf-danger);
+  background: color-mix(in oklab, var(--rf-danger) 12%, transparent);
+}
+
+.footnote {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+// Empty / loading states (no client picked, fetching, or no rows returned).
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 280px;
+  padding: 40px 20px;
+  text-align: center;
+  border: 1px dashed var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: var(--rf-surface-2);
+
+  mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    color: var(--rf-muted-fg);
+    opacity: 0.7;
+  }
+  &__title {
+    margin: 6px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--rf-text);
+  }
+  &__hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--rf-muted-fg);
+  }
+  &__spin {
+    animation: md-state-spin 0.9s linear infinite;
+  }
+}
+
+@keyframes md-state-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

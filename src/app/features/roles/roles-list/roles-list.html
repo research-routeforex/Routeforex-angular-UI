@@ -1,0 +1,22 @@
+<app-page-header
+  title="Roles"
+  subtitle="Define roles that govern access across RouteForex."
+  [breadcrumbs]="[{ label: 'Administration' }, { label: 'Roles' }]"
+>
+  <button mat-flat-button color="primary" (click)="openForm('create')">
+    <mat-icon>add</mat-icon>
+    Add Role
+  </button>
+</app-page-header>
+
+<app-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  [total]="total()"
+  [loading]="loading()"
+  [actions]="actions"
+  searchPlaceholder="Search roles…"
+  emptyMessage="No roles found."
+  (queryChange)="onQueryChange($event)"
+  (action)="onAction($event)"
+/>

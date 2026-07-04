@@ -1,0 +1,104 @@
+<div class="docs">
+  <!-- Upload panel -->
+  <div class="docs__upload">
+    <div class="docs__row">
+      <span class="docs__label">Upload Type</span>
+      <div class="seg" role="tablist">
+        @for (t of types; track t) {
+          <button
+            type="button"
+            class="seg__btn"
+            [class.seg__btn--active]="type() === t"
+            (click)="selectType(t)"
+          >
+            <mat-icon>{{ t === 'Voice' ? 'graphic_eq' : 'image' }}</mat-icon>
+            {{ t }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="docs__row">
+      <span class="docs__label">{{ type() === 'Voice' ? 'Voice File' : 'Screenshot' }}</span>
+      <div class="filepick">
+        <input type="file" [accept]="accept()" (change)="onFileSelected($event)" hidden #fileInput />
+        <button type="button" class="filepick__btn" (click)="fileInput.click()">
+          <mat-icon>upload_file</mat-icon> Choose file
+        </button>
+        <span class="filepick__name">{{ pickedName() || 'No file chosen' }}</span>
+      </div>
+    </div>
+
+    <div class="docs__actions">
+      <button
+        type="button"
+        class="docs__upbtn"
+        [disabled]="!pickedName() || uploading()"
+        (click)="upload()"
+      >
+        <mat-icon>cloud_upload</mat-icon>
+        {{ uploading() ? 'Uploading…' : 'Upload' }}
+      </button>
+    </div>
+
+    @if (type() === 'Voice') {
+      <p class="docs__hint">Upload an MP3 or any recorded voice file (.mp3, .wav, .m4a, .ogg).</p>
+    } @else {
+      <p class="docs__hint">Upload a screenshot image (PNG, JPG, …).</p>
+    }
+  </div>
+
+  <!-- Inline voice player -->
+  @if (playingUrl(); as url) {
+    <div class="player">
+      <mat-icon class="player__icon">graphic_eq</mat-icon>
+      <div class="player__body">
+        <span class="player__name">{{ playingName() }}</span>
+        <audio [src]="url" controls autoplay></audio>
+      </div>
+      <button type="button" class="player__close" (click)="closePlayer()" aria-label="Close player">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Uploaded files -->
+  <div class="docs__list">
+    <h3 class="docs__listhead">Uploaded files</h3>
+
+    @if (loading()) {
+      <p class="docs__empty">Loading…</p>
+    } @else if (recordings().length === 0) {
+      <p class="docs__empty">No files uploaded for this order yet.</p>
+    } @else {
+      @for (rec of recordings(); track rec.fileName) {
+        <div class="filerow" [class.filerow--voice]="isVoice(rec)">
+          <mat-icon class="filerow__icon">{{ iconFor(rec) }}</mat-icon>
+          <div class="filerow__body">
+            <span class="filerow__name">{{ displayName(rec.fileName) }}</span>
+            <span class="filerow__meta">
+              {{ rec.documentType }} · {{ rec.createdDate | date: 'dd-MMM-yyyy HH:mm' }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="filerow__btn filerow__btn--open"
+            (click)="open(rec)"
+            [attr.aria-label]="isVoice(rec) ? 'Play' : 'View'"
+          >
+            <mat-icon>{{ isVoice(rec) ? 'play_arrow' : 'open_in_new' }}</mat-icon>
+            {{ isVoice(rec) ? 'Play' : 'View' }}
+          </button>
+          <button
+            type="button"
+            class="filerow__btn filerow__btn--del"
+            (click)="remove(rec)"
+            aria-label="Remove"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      }
+    }
+  </div>
+</div>

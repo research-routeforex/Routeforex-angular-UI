@@ -1,0 +1,392 @@
+:host {
+  display: block;
+}
+
+// ---- Hero band ------------------------------------------------------------
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, oklch(62% 0.24 290) 14%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a { top: -120px; right: 8%; background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%); }
+  &--b { bottom: -150px; left: 12%; background: radial-gradient(circle, oklch(62% 0.24 290), transparent 70%); }
+}
+
+// ---- Filters --------------------------------------------------------------
+.filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(2, minmax(150px, 1fr)) auto;
+  align-items: end;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: var(--rf-gap);
+
+  &__btn {
+    height: 40px;
+  }
+}
+@media (max-width: 720px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rf-datewrap {
+  position: relative;
+  display: block;
+  .rf-input {
+    width: 100%;
+    padding-right: 38px;
+    cursor: pointer;
+  }
+  .rf-date-toggle {
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    transform: translateY(-50%);
+    color: var(--rf-muted-fg);
+  }
+}
+
+// ---- Summary cards --------------------------------------------------------
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: var(--rf-gap);
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: var(--rf-surface-2);
+
+  &__label {
+    font-size: 12px;
+    color: var(--rf-muted-fg);
+  }
+  &__value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--rf-text);
+    font-variant-numeric: tabular-nums;
+  }
+  &--charge {
+    border-color: color-mix(in oklab, var(--mat-sys-primary) 40%, var(--rf-border));
+    background: linear-gradient(135deg, color-mix(in oklab, var(--mat-sys-primary) 10%, var(--rf-surface-2)), var(--rf-surface-2));
+  }
+  &--charge .card__value {
+    color: var(--mat-sys-primary);
+  }
+}
+@media (max-width: 620px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---- Results grid ---------------------------------------------------------
+.tablewrap {
+  overflow: auto;
+}
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 820px;
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--mat-sys-primary) 96%, white) 0%,
+      color-mix(in oklab, var(--mat-sys-primary) 82%, black) 100%
+    );
+    color: var(--mat-sys-on-primary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  thead th:first-child { border-top-left-radius: var(--rf-radius); }
+  thead th:last-child { border-top-right-radius: var(--rf-radius); }
+
+  td {
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--rf-border);
+    white-space: nowrap;
+  }
+  tbody tr:nth-child(even) td {
+    background: color-mix(in oklab, var(--mat-sys-primary) 3%, transparent);
+  }
+  tbody tr:hover td {
+    background: color-mix(in oklab, var(--mat-sys-primary) 8%, transparent);
+  }
+  tbody tr.norate td {
+    color: var(--rf-muted-fg);
+  }
+  .name {
+    font-weight: 600;
+    color: var(--mat-sys-primary);
+  }
+  .charge {
+    font-weight: 600;
+  }
+
+  tfoot td {
+    padding: 10px 14px;
+    border-top: 2px solid var(--rf-border);
+    font-weight: 700;
+    background: var(--rf-surface-2);
+  }
+  .total-lbl {
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--rf-muted-fg);
+  }
+  .total {
+    color: var(--mat-sys-primary);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.ta-r {
+  text-align: right;
+}
+
+// ---- Empty / prompt state -------------------------------------------------
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 240px;
+  padding: 40px 20px;
+  text-align: center;
+  border: 1px dashed var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: var(--rf-surface-2);
+
+  mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    color: var(--rf-muted-fg);
+    opacity: 0.7;
+  }
+  &__title {
+    margin: 6px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--rf-text);
+  }
+  &__hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--rf-muted-fg);
+  }
+}
+
+// ---- Printable invoice ----------------------------------------------------
+.invoice {
+  margin-top: var(--rf-gap);
+}
+.invoice__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.inv {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 28px 32px;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+  box-shadow: var(--rf-shadow);
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #2b3a8c;
+  }
+  &__logo {
+    height: 54px;
+    width: auto;
+  }
+  &__co {
+    text-align: right;
+  }
+  &__title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #2b3a8c;
+  }
+  &__no {
+    margin: 4px 0 0;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  &__date {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #555;
+  }
+
+  &__parties {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    margin: 18px 0;
+    font-size: 13px;
+  }
+  &__from,
+  &__to {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  &__to {
+    text-align: right;
+    align-items: flex-end;
+  }
+  &__lbl {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+  }
+  &__tag {
+    font-size: 11px;
+    font-style: italic;
+    color: #4caf50;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin-top: 6px;
+
+    th {
+      background: #2b3a8c;
+      color: #fff;
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    tbody tr:nth-child(even) td {
+      background: #f6f7fb;
+    }
+  }
+
+  &__summary {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+  }
+  &__totals {
+    width: 320px;
+    font-size: 13px;
+  }
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 4px;
+    border-bottom: 1px dashed #e0e0e0;
+
+    &--grand {
+      margin-top: 4px;
+      padding: 10px 4px;
+      border: none;
+      border-top: 2px solid #2b3a8c;
+      font-weight: 800;
+      font-size: 15px;
+      color: #2b3a8c;
+    }
+  }
+
+  &__foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 28px;
+  }
+  &__note {
+    margin: 0;
+    font-size: 11px;
+    color: #888;
+  }
+  &__sign {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 12px;
+  }
+  &__stamp {
+    height: 88px;
+    width: auto;
+    margin-bottom: -8px;
+  }
+  &__signlbl {
+    font-weight: 700;
+    border-top: 1px solid #999;
+    padding-top: 2px;
+  }
+
+  .ta-r {
+    text-align: right;
+  }
+}

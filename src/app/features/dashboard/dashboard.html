@@ -1,0 +1,103 @@
+<app-page-header
+  title="Dashboard"
+  [subtitle]="'Welcome back, ' + (greetingName() || 'there') + ' — here is your trading overview.'"
+  [breadcrumbs]="[{ label: 'Home' }, { label: 'Dashboard' }]"
+>
+  <button mat-stroked-button>
+    <mat-icon>file_download</mat-icon>
+    Export
+  </button>
+  <button mat-flat-button color="primary">
+    <mat-icon>add</mat-icon>
+    New Deal
+  </button>
+</app-page-header>
+
+<section class="kpis">
+  @for (kpi of kpis(); track kpi.label) {
+    <app-stat-card
+      [icon]="kpi.icon"
+      [label]="kpi.label"
+      [value]="kpi.value"
+      [delta]="kpi.delta"
+      [trend]="kpi.trend"
+      [color]="kpi.color"
+    />
+  }
+</section>
+
+<section class="charts">
+  <div class="rf-card panel panel--wide">
+    <div class="panel__head">
+      <h3>Weekly Turnover (USD M)</h3>
+      <span class="rf-chip rf-chip--success">+6.1% WoW</span>
+    </div>
+    <div class="panel__chart">
+      <app-chart type="line" [data]="turnover()" />
+    </div>
+  </div>
+
+  <div class="rf-card panel">
+    <div class="panel__head">
+      <h3>Volume by Pair</h3>
+    </div>
+    <div class="panel__chart">
+      <app-chart type="bar" [data]="volumeByPair()" color="var(--rf-info)" />
+    </div>
+  </div>
+</section>
+
+<section class="lower">
+  <div class="rf-card panel panel--wide">
+    <div class="panel__head">
+      <h3>Recent Deals</h3>
+      <a mat-button color="primary">View all</a>
+    </div>
+    <div class="table-wrap">
+      <table class="deals">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Pair</th>
+            <th>Type</th>
+            <th class="ta-right">Amount</th>
+            <th class="ta-right">Rate</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (deal of recentDeals(); track deal.ref) {
+            <tr>
+              <td class="mono">{{ deal.ref }}</td>
+              <td>{{ deal.pair }}</td>
+              <td>
+                <span class="rf-chip" [class.rf-chip--success]="deal.type === 'Buy'" [class.rf-chip--danger]="deal.type === 'Sell'">
+                  {{ deal.type }}
+                </span>
+              </td>
+              <td class="ta-right">{{ deal.amount }}</td>
+              <td class="ta-right mono">{{ deal.rate }}</td>
+              <td>
+                <span class="rf-chip rf-chip--{{ statusVariant(deal.status) }}">{{ deal.status }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="rf-card panel">
+    <div class="panel__head">
+      <h3>Alerts &amp; Notifications</h3>
+    </div>
+    <ul class="alerts">
+      @for (alert of alerts(); track alert.text) {
+        <li class="alert alert--{{ alert.variant }}">
+          <mat-icon>{{ alert.icon }}</mat-icon>
+          <span>{{ alert.text }}</span>
+        </li>
+      }
+    </ul>
+  </div>
+</section>

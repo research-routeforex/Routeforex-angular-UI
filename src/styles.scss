@@ -1,0 +1,585 @@
+// ============================================================================
+//  RouteForex — Global Styles & Design System
+//  Visual language adapted from the FLUX dashboard template (Tailwind v4 /
+//  shadcn): Inter typeface, violet/indigo primary, cool near-white surfaces,
+//  subtle borders, soft 14px radii and shadcn-style form controls.
+//  Exact tokens use the template's oklch values via CSS `light-dark()`.
+// ============================================================================
+@use '@angular/material' as mat;
+
+// ---- Material M3 theme -----------------------------------------------------
+html {
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$violet-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Inter,
+      density: 0,
+    )
+  );
+
+  color-scheme: light;
+
+  @include mat.card-density(-1);
+  @include mat.form-field-density(-2);
+}
+
+html.theme-dark {
+  color-scheme: dark;
+}
+
+// ---- FLUX design tokens ----------------------------------------------------
+:root {
+  --rf-header-height: 52px;
+  --rf-sidebar-width: 264px;
+  --rf-sidebar-width-collapsed: 72px;
+  --rf-radius: 14px; // FLUX --radius: .875rem
+  --rf-radius-sm: 10px;
+  --rf-gap: 16px;
+  --rf-content-max: 1600px;
+
+  --rf-font: 'Inter', 'Helvetica Neue', sans-serif;
+  --rf-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  // Surfaces & lines (FLUX background / card / border, light↔dark)
+  --rf-page-bg: light-dark(oklch(98.5% 0.005 285), oklch(7.5% 0.02 285));
+  --rf-surface-2: light-dark(oklch(100% 0 0), oklch(19% 0.025 285));
+  --rf-surface-muted: light-dark(oklch(96.5% 0.01 285), oklch(23.5% 0.025 285));
+  --rf-border: light-dark(oklch(93% 0.01 285), oklch(28% 0.025 285));
+  --rf-text: light-dark(oklch(13% 0.02 285), oklch(92% 0.01 285));
+  --rf-muted-fg: light-dark(oklch(50% 0.02 285), oklch(55% 0.02 285));
+
+  // Brand (FLUX --primary, hue 285 violet/indigo)
+  --rf-primary: light-dark(oklch(55% 0.25 285), oklch(70% 0.25 285));
+  --rf-ring: var(--rf-primary);
+
+  // Sidebar (FLUX sidebar tokens)
+  --rf-sidebar-bg: light-dark(oklch(99% 0.005 285), oklch(11% 0.02 285));
+  --rf-sidebar-accent: light-dark(oklch(96% 0.02 285), oklch(20% 0.025 285));
+
+  // Semantic status colours
+  --rf-success: light-dark(oklch(59.6% 0.145 163), oklch(76.5% 0.177 163));
+  --rf-success-bg: light-dark(oklch(95% 0.052 163), oklch(30% 0.06 163));
+  --rf-warn: light-dark(oklch(66.6% 0.179 58), oklch(82.8% 0.189 84));
+  --rf-warn-bg: light-dark(oklch(96.2% 0.059 95), oklch(32% 0.08 70));
+  --rf-danger: light-dark(oklch(57.7% 0.245 27), oklch(70% 0.2 27));
+  --rf-danger-bg: light-dark(oklch(94% 0.03 27), oklch(30% 0.09 27));
+  --rf-info: light-dark(oklch(60% 0.2 230), oklch(65% 0.22 230));
+  --rf-info-bg: light-dark(oklch(95% 0.04 230), oklch(30% 0.07 230));
+
+  --rf-shadow:
+    light-dark(0 1px 2px oklch(20% 0.02 285 / 0.05), 0 1px 2px oklch(0% 0 0 / 0.4))
+    light-dark(0 1px 3px oklch(20% 0.02 285 / 0.06), 0 1px 3px oklch(0% 0 0 / 0.5));
+
+  // Map FLUX values onto Material system vars so every Material component follows.
+  --mat-sys-primary: var(--rf-primary);
+  --mat-sys-on-surface: var(--rf-text);
+  --mat-sys-on-surface-variant: var(--rf-muted-fg);
+  --mat-sys-outline-variant: var(--rf-border);
+}
+
+// ---- Base ------------------------------------------------------------------
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--rf-page-bg);
+  color: var(--rf-text);
+  font-family: var(--rf-font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+// ---- shadcn-style form controls (Angular Material outlined fields) ----------
+// Rounded, subtle 1px border, violet focus ring — the FLUX input look.
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-container-shape: var(--rf-radius-sm);
+  --mdc-outlined-text-field-outline-color: var(--rf-border);
+  --mdc-outlined-text-field-hover-outline-color: color-mix(
+    in oklab,
+    var(--rf-primary) 38%,
+    var(--rf-border)
+  );
+  --mdc-outlined-text-field-focus-outline-color: var(--rf-primary);
+  --mdc-outlined-text-field-outline-width: 1px;
+  --mdc-outlined-text-field-focus-outline-width: 2px;
+  --mdc-outlined-text-field-label-text-color: var(--rf-muted-fg);
+  --mdc-outlined-text-field-input-text-placeholder-color: var(--rf-muted-fg);
+  --mat-sys-on-surface-variant: var(--rf-muted-fg);
+}
+
+// Soft focus ring around the focused field (shadcn signature).
+.mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--rf-primary) 18%, transparent);
+  border-radius: var(--rf-radius-sm);
+}
+
+// Rounded buttons to match FLUX.
+.mat-mdc-unelevated-button,
+.mat-mdc-raised-button,
+.mat-mdc-outlined-button,
+.mat-mdc-button {
+  --mdc-filled-button-container-shape: var(--rf-radius-sm);
+  --mdc-outlined-button-container-shape: var(--rf-radius-sm);
+  --mdc-text-button-container-shape: var(--rf-radius-sm);
+  --mdc-protected-button-container-shape: var(--rf-radius-sm);
+  // Compact button height (FLUX) — was 40px.
+  --mat-button-filled-container-height: 36px;
+  --mat-button-outlined-container-height: 36px;
+  --mat-button-text-container-height: 36px;
+  --mat-button-protected-container-height: 36px;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+// ---- FLUX native form controls (shadcn style) ------------------------------
+// Label-above + plain bordered input. Used by <app-field> + native controls.
+.rf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+// Compact field spacing — Client Information only.
+.client-info .rf-field {
+  gap: 0;
+  margin-bottom: 2px;
+}
+
+.rf-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--rf-text);
+  line-height: 1.2;
+}
+.rf-req {
+  color: var(--rf-danger);
+  margin-left: 2px;
+}
+
+.rf-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rf-input,
+.rf-select,
+textarea.rf-textarea {
+  width: 100%;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm);
+  background: var(--rf-surface-2);
+  color: var(--rf-text);
+  font-family: var(--rf-font);
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  appearance: none;
+}
+
+textarea.rf-textarea {
+  height: auto;
+  min-height: 96px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.rf-input::placeholder,
+textarea.rf-textarea::placeholder {
+  color: var(--rf-muted-fg);
+}
+
+.rf-input:hover,
+.rf-select:hover,
+textarea.rf-textarea:hover {
+  border-color: color-mix(in oklab, var(--rf-primary) 36%, var(--rf-border));
+}
+
+.rf-input:focus,
+.rf-select:focus,
+textarea.rf-textarea:focus {
+  border-color: var(--rf-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--rf-primary) 18%, transparent);
+}
+
+// Rate / amount inputs are right-aligned.
+input.rf-input[type='number'] {
+  text-align: right;
+}
+
+.rf-input.ng-invalid.ng-touched,
+.rf-select.ng-invalid.ng-touched,
+textarea.rf-textarea.ng-invalid.ng-touched {
+  border-color: var(--rf-danger);
+}
+.rf-input.ng-invalid.ng-touched:focus,
+textarea.rf-textarea.ng-invalid.ng-touched:focus {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--rf-danger) 18%, transparent);
+}
+
+.rf-input:disabled,
+.rf-select:disabled,
+textarea.rf-textarea:disabled {
+  background: var(--rf-surface-muted);
+  color: var(--rf-muted-fg);
+  cursor: not-allowed;
+}
+
+// Native select chevron
+.rf-select {
+  cursor: pointer;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+// Leading icon + trailing affix support
+.rf-input--icon {
+  padding-left: 42px;
+}
+.rf-input--affix {
+  padding-right: 44px;
+}
+.rf-control__icon {
+  position: absolute;
+  left: 20px;
+  top: 60%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--rf-muted-fg);
+  pointer-events: none;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+.rf-control > .rf-control__affix {
+  position: absolute !important;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--rf-muted-fg);
+}
+
+// Checkbox group (e.g. role picker) styled as a bordered panel
+.role-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm);
+  background: var(--rf-surface-2);
+}
+
+.rf-error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--rf-danger);
+}
+.rf-hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--rf-muted-fg);
+}
+
+// ---- App utility classes ---------------------------------------------------
+.rf-flex {
+  display: flex;
+}
+.rf-col {
+  display: flex;
+  flex-direction: column;
+}
+.rf-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rf-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rf-items-center {
+  align-items: center;
+}
+.rf-gap {
+  gap: var(--rf-gap);
+}
+.rf-gap-sm {
+  gap: 8px;
+}
+.rf-wrap {
+  flex-wrap: wrap;
+}
+.rf-grow {
+  flex: 1 1 auto;
+}
+.rf-spacer {
+  flex: 1 1 auto;
+}
+.rf-mt {
+  margin-top: var(--rf-gap);
+}
+.rf-mb {
+  margin-bottom: var(--rf-gap);
+}
+.rf-muted {
+  color: var(--rf-muted-fg);
+}
+.rf-full {
+  width: 100%;
+}
+.rf-card {
+  background: var(--rf-surface-2);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+  box-shadow: var(--rf-shadow);
+}
+.rf-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Status chips
+.rf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.rf-chip--success {
+  color: var(--rf-success);
+  background: var(--rf-success-bg);
+}
+.rf-chip--warn {
+  color: var(--rf-warn);
+  background: var(--rf-warn-bg);
+}
+.rf-chip--danger {
+  color: var(--rf-danger);
+  background: var(--rf-danger-bg);
+}
+.rf-chip--info {
+  color: var(--rf-info);
+  background: var(--rf-info-bg);
+}
+
+// ---- Action icon buttons (edit / delete in tables) -------------------------
+.rf-iconbtn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: color-mix(in oklab, var(--rf-muted-fg) 12%, transparent);
+  color: var(--rf-muted-fg);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+}
+.rf-iconbtn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+.rf-iconbtn + .rf-iconbtn {
+  margin-left: 6px;
+}
+.rf-iconbtn:active {
+  transform: translateY(0);
+}
+.rf-iconbtn--edit {
+  color: var(--mat-sys-primary);
+  background: color-mix(in oklab, var(--mat-sys-primary) 14%, transparent);
+}
+.rf-iconbtn--edit:hover {
+  color: #fff;
+  background: linear-gradient(135deg, var(--mat-sys-primary), oklch(62% 0.24 290));
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px -5px color-mix(in oklab, var(--mat-sys-primary) 75%, transparent);
+}
+.rf-iconbtn--del {
+  color: var(--rf-danger);
+  background: color-mix(in oklab, var(--rf-danger) 14%, transparent);
+}
+.rf-iconbtn--del:hover {
+  color: #fff;
+  background: var(--rf-danger);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px -5px color-mix(in oklab, var(--rf-danger) 70%, transparent);
+}
+
+// Account menu popup — always a clean white surface with dark text
+.mat-mdc-menu-panel.usermenu {
+  --mat-menu-container-color: #ffffff;
+  --mat-sys-surface-container: #ffffff;
+  background-color: #ffffff;
+  border: 1px solid var(--rf-border);
+}
+.mat-mdc-menu-panel.usermenu .mat-mdc-menu-item .mdc-list-item__primary-text,
+.mat-mdc-menu-panel.usermenu .mat-mdc-menu-item .mat-icon,
+.mat-mdc-menu-panel.usermenu .usermenu__head strong {
+  color: oklch(20% 0.02 285);
+}
+.mat-mdc-menu-panel.usermenu .usermenu__head small {
+  color: oklch(50% 0.02 285);
+}
+.mat-mdc-menu-panel.usermenu .mat-mdc-menu-item:hover {
+  background: oklch(96% 0.02 285);
+}
+
+// Snackbar variants
+.rf-snack--success {
+  --mdc-snackbar-container-color: var(--rf-success);
+  --mdc-snackbar-supporting-text-color: #fff;
+}
+.rf-snack--error {
+  --mdc-snackbar-container-color: var(--rf-danger);
+  --mdc-snackbar-supporting-text-color: #fff;
+}
+.rf-snack--info {
+  --mdc-snackbar-container-color: var(--rf-info);
+  --mdc-snackbar-supporting-text-color: #fff;
+}
+
+// ---- Bootstrap loader ------------------------------------------------------
+.app-boot-loader {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--rf-page-bg);
+}
+.app-boot-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid var(--rf-border);
+  border-top-color: var(--rf-primary);
+  border-radius: 50%;
+  animation: rf-spin 0.8s linear infinite;
+}
+@keyframes rf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ---- Shared dialog form layout ---------------------------------------------
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  min-width: 480px;
+  max-width: 100%;
+}
+.form-grid mat-form-field {
+  width: 100%;
+}
+.form-grid .span-2 {
+  grid-column: 1 / -1;
+}
+
+// ---- Responsive helpers ----------------------------------------------------
+@media (max-width: 599px) {
+  .rf-hide-xs {
+    display: none !important;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+    min-width: auto;
+  }
+}
+
+/* ---- Maturity-date calendar popup (rf-datepicker panelClass) -------------- */
+/* The datepicker renders in a CDK overlay outside any component, so these live
+   in global styles. Gives the popup a rounded, branded look. */
+.rf-datepicker .mat-datepicker-content {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--rf-border);
+  box-shadow:
+    0 24px 60px oklch(20% 0.02 285 / 0.22),
+    0 4px 12px oklch(20% 0.02 285 / 0.12);
+  background: var(--rf-surface-2);
+}
+.rf-datepicker .mat-calendar {
+  padding: 6px 10px 10px;
+  --mat-datepicker-calendar-date-selected-state-background-color: var(--rf-primary);
+  --mat-datepicker-calendar-date-today-outline-color: var(--rf-primary);
+  --mat-datepicker-calendar-date-focus-state-background-color: color-mix(in oklab, var(--rf-primary) 16%, transparent);
+  --mat-datepicker-calendar-date-hover-state-background-color: color-mix(in oklab, var(--rf-primary) 12%, transparent);
+}
+/* Header (month/year + nav) as a soft gradient band. */
+.rf-datepicker .mat-calendar-header {
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--rf-primary) 14%, transparent),
+    color-mix(in oklab, var(--rf-primary) 4%, transparent));
+  border-radius: 12px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+}
+.rf-datepicker .mat-calendar-period-button {
+  font-weight: 700;
+}
+/* Selected day pill: primary gradient. */
+.rf-datepicker .mat-calendar-body-selected {
+  background: linear-gradient(135deg, var(--rf-primary), color-mix(in oklab, var(--rf-primary) 70%, #7c3aed));
+  color: #fff;
+  box-shadow: 0 4px 12px color-mix(in oklab, var(--rf-primary) 40%, transparent);
+}
+.rf-datepicker .mat-calendar-body-cell-content {
+  border-radius: 9px;
+}
+
+/* ---- Print: show only the generated invoice (#invoice) ------------------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #invoice,
+  #invoice * {
+    visibility: visible;
+  }
+  #invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  #invoice .no-print {
+    display: none !important;
+  }
+  /* Drop the on-screen card chrome so it prints clean. */
+  #invoice .inv {
+    border: none;
+    box-shadow: none;
+    max-width: 100%;
+  }
+}

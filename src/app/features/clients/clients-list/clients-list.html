@@ -1,0 +1,125 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Client Master"
+    subtitle="Manage clients, their profile, documents and contacts."
+    [breadcrumbs]="[{ label: 'Masters' }, { label: 'Client Master' }]"
+  >
+    <a mat-flat-button color="primary" routerLink="/clients/new">
+      <mat-icon>add</mat-icon> New Client
+    </a>
+  </app-page-header>
+</div>
+
+<div class="rf-card tablewrap">
+  <table class="grid">
+    <thead>
+      <tr>
+        <th>
+          <span class="th__name">Client Name</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('clientName', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Group</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('group', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Location</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('location', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Status</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('status', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">On-Board Date</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('onBoardDate', $any($event.target).value)" />
+        </th>
+        <th class="ta-c"><span class="th__name">Active</span></th>
+        <th class="ta-r"><span class="th__name">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of page().items; track c.clientId) {
+        <tr>
+          <td class="name">{{ c.clientName }}</td>
+          <td>{{ c.clientGroupName || '—' }}</td>
+          <td>{{ c.locationName || '—' }}</td>
+          <td>
+            @if (c.statusName) {
+              <span class="rf-chip rf-chip--info">{{ c.statusName }}</span>
+            } @else {
+              —
+            }
+          </td>
+          <td>{{ c.onBoardDate ? (c.onBoardDate | date: 'dd-MMM-yyyy') : '—' }}</td>
+          <td class="ta-c">
+            @if (c.isActive) {
+              <mat-icon class="ok">check_circle</mat-icon>
+            } @else {
+              <mat-icon class="off">cancel</mat-icon>
+            }
+          </td>
+          <td class="ta-r actions">
+            <a class="rf-iconbtn rf-iconbtn--edit" [routerLink]="['/clients', c.clientId, 'edit']" matTooltip="Edit">
+              <mat-icon>edit</mat-icon>
+            </a>
+            <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(c)" matTooltip="Delete">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No clients found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="pager">
+  <div class="pager__size">
+    <span class="rf-muted">Rows per page</span>
+    <select class="rf-select pager__select" (change)="onPageSize($any($event.target).value)">
+      @for (n of pageSizeOptions; track n) {
+        <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
+      }
+    </select>
+  </div>
+
+  <span class="rf-spacer"></span>
+
+  <span class="pager__info rf-muted">
+    {{ fromRow() }}–{{ toRow() }} of {{ page().totalCount }}
+  </span>
+
+  <div class="pager__nav">
+    <button
+      mat-icon-button
+      [disabled]="!page().hasPrevious"
+      (click)="first()"
+      matTooltip="First page"
+    >
+      <mat-icon>first_page</mat-icon>
+    </button>
+    <button
+      mat-icon-button
+      [disabled]="!page().hasPrevious"
+      (click)="prev()"
+      matTooltip="Previous page"
+    >
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="pager__page">{{ page().pageNumber }} / {{ page().totalPages || 1 }}</span>
+    <button mat-icon-button [disabled]="!page().hasNext" (click)="next()" matTooltip="Next page">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="!page().hasNext" (click)="last()" matTooltip="Last page">
+      <mat-icon>last_page</mat-icon>
+    </button>
+  </div>
+</div>

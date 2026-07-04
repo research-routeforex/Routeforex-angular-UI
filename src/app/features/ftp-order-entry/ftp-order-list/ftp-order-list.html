@@ -1,0 +1,128 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="FTP Order Entry"
+    subtitle="All booked orders. Add a new deal to book an order."
+    [breadcrumbs]="[{ label: 'Transactions' }, { label: 'FTP Order Entry' }]"
+  >
+    <a mat-flat-button color="primary" routerLink="/ftp-order-entry/new">
+      <mat-icon>add</mat-icon> Add Deal
+    </a>
+  </app-page-header>
+</div>
+
+<div class="rf-card tablewrap">
+  <table class="grid">
+    <colgroup>
+      <col class="col-order" />
+      <col class="col-client" />
+      <col class="col-txn" />
+      <col class="col-impexp" />
+      <col class="col-ccy" />
+      <col class="col-amount" />
+      <col class="col-maturity" />
+      <col class="col-status" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>
+          <span class="th__name">Order No</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('orderNumber', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Client</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('client', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Transaction Type</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('transactionType', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Imp/Exp</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('impExp', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Currency</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('currency', $any($event.target).value)" />
+        </th>
+        <th class="ta-r">
+          <span class="th__name">Amount</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('amount', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Maturity Date</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('maturity', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Status</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('status', $any($event.target).value)" />
+        </th>
+        <th class="ta-r"><span class="th__name">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (o of page().items; track o.recordId) {
+        <tr>
+          <td class="name">{{ o.orderNumber || '#' + o.recordId }}</td>
+          <td>{{ o.clientName || '—' }}</td>
+          <td>{{ o.transactionType || '—' }}</td>
+          <td>{{ o.impExp || '—' }}</td>
+          <td>{{ o.currencyCode || '—' }}</td>
+          <td class="ta-r">{{ o.amount != null ? (o.amount | number: '1.2-2') : '—' }}</td>
+          <td>{{ o.maturityDate ? (o.maturityDate | date: 'dd-MMM-yyyy') : '—' }}</td>
+          <td>
+            @if (o.activeStatus) {
+              <span class="rf-chip rf-chip--info">{{ o.activeStatus }}</span>
+            } @else {
+              —
+            }
+          </td>
+          <td class="ta-r actions">
+            <a class="rf-iconbtn rf-iconbtn--edit" [routerLink]="['/ftp-order-entry', o.recordId, 'edit']" matTooltip="Edit">
+              <mat-icon>edit</mat-icon>
+            </a>
+            <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(o)" matTooltip="Mark inactive">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="9" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No orders found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="pager">
+  <div class="pager__size">
+    <span class="rf-muted">Rows per page</span>
+    <select class="rf-select pager__select" (change)="onPageSize($any($event.target).value)">
+      @for (n of pageSizeOptions; track n) {
+        <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
+      }
+    </select>
+  </div>
+  <span class="rf-spacer"></span>
+  <span class="pager__info rf-muted">{{ fromRow() }}–{{ toRow() }} of {{ page().totalCount }}</span>
+  <div class="pager__nav">
+    <button mat-icon-button [disabled]="!page().hasPrevious" (click)="first()" matTooltip="First page">
+      <mat-icon>first_page</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="!page().hasPrevious" (click)="prev()" matTooltip="Previous page">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="pager__page">{{ page().pageNumber }} / {{ page().totalPages || 1 }}</span>
+    <button mat-icon-button [disabled]="!page().hasNext" (click)="next()" matTooltip="Next page">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="!page().hasNext" (click)="last()" matTooltip="Last page">
+      <mat-icon>last_page</mat-icon>
+    </button>
+  </div>
+</div>

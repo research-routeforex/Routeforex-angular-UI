@@ -1,0 +1,127 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    [title]="isEdit() ? 'Edit Deal' : 'New Deal'"
+    subtitle="Capture a forex order — client, bank, transaction and rate details."
+    [breadcrumbs]="[
+      { label: 'Transactions' },
+      { label: 'FTP Order Entry', link: '/ftp-order-entry' },
+      { label: isEdit() ? 'Edit' : 'New Deal' }
+    ]"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+  </app-page-header>
+</div>
+
+@if (isEdit()) {
+  <div class="edit">
+    <nav class="etabs">
+      <button
+        type="button"
+        class="etab"
+        [class.etab--active]="tab() === 'details'"
+        (click)="tab.set('details')"
+      >
+        <mat-icon>edit_note</mat-icon> Order Details
+      </button>
+      <button
+        type="button"
+        class="etab"
+        [class.etab--active]="tab() === 'documents'"
+        (click)="tab.set('documents')"
+      >
+        <mat-icon>folder_open</mat-icon> Upload Document
+      </button>
+    </nav>
+    <div class="edit__content">
+      @if (tab() === 'details') {
+        <ng-container [ngTemplateOutlet]="formTpl" />
+      } @else {
+        <div class="rf-card entry">
+          <app-order-documents
+            [recordId]="recordId()"
+            [clientId]="form.controls.client.value"
+            [orderNumber]="form.controls.orderNumber.value ?? ''"
+          />
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <ng-container [ngTemplateOutlet]="formTpl" />
+}
+
+<ng-template #formTpl>
+<form [formGroup]="form" class="rf-card entry" (ngSubmit)="submit()">
+  <div class="fieldgrid">
+    <app-field label="Order Number" hint="Auto-generated on save.">
+      <input class="rf-input" formControlName="orderNumber" placeholder="Auto-generated" />
+    </app-field>
+    <app-field label="Client" required [control]="form.controls.client" error="Select a client.">
+      <app-select formControlName="client" [options]="clientOptions()" placeholder="Select" searchPlaceholder="Search client…" />
+    </app-field>
+    <app-field label="Client Bank">
+      <app-select formControlName="clientBank" [options]="bankOptions()" placeholder="Select" searchPlaceholder="Search bank…" />
+    </app-field>
+    <app-field label="Transactions Type" required [control]="form.controls.transactionType" error="Select a type.">
+      <app-select formControlName="transactionType" [options]="txnOptions()" placeholder="Select" searchPlaceholder="Search type…" />
+    </app-field>
+
+    <app-field label="Import / Export">
+      <app-select formControlName="importExport" [options]="impExpOptions" placeholder="Select" [searchable]="false" />
+    </app-field>
+    <app-field label="Currency" required [control]="form.controls.currency" error="Select a currency.">
+      <app-select formControlName="currency" [options]="currencyOptions()" placeholder="Select" searchPlaceholder="Search currency…" />
+    </app-field>
+    <app-field label="Amount" required [control]="form.controls.amount" error="Enter an amount.">
+      <input class="rf-input" type="number" step="0.01" formControlName="amount" placeholder="0.00" />
+    </app-field>
+    <app-field label="What To Do">
+      <app-select formControlName="whatToDo" [options]="whatToDoOptions" placeholder="Select" [searchable]="false" />
+    </app-field>
+
+    <app-field label="Maturity Date">
+      <div class="rf-datewrap" (click)="md.open()">
+        <input
+          class="rf-input"
+          [matDatepicker]="md"
+          formControlName="maturityDate"
+          placeholder="dd-MMM-yyyy"
+          readonly
+        />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="md" />
+      </div>
+      <mat-datepicker #md panelClass="rf-datepicker" />
+    </app-field>
+    <app-field label="Booking Rate">
+      <input class="rf-input" type="number" step="0.0001" formControlName="bookingRate" placeholder="0.0000" />
+    </app-field>
+    <app-field label="Window / Fix">
+      <app-select formControlName="windowFix" [options]="windowFixOptions" placeholder="Select" [searchable]="false" />
+    </app-field>
+
+    <!-- Forward Cancellation extras -->
+    @if (isForwardCancellation()) {
+      <app-field label="Forward Contact No.">
+        <input class="rf-input" formControlName="forwardContactNo" placeholder="Contact no." />
+      </app-field>
+      <app-field label="Outstanding Amount">
+        <input class="rf-input" type="number" step="0.01" formControlName="outstandingAmount" placeholder="0.00" />
+      </app-field>
+    }
+  </div>
+
+  <div class="entry__actions">
+    @if (isForwardCancellation()) {
+      <span class="rf-chip rf-chip--warn">Forward Cancellation</span>
+    }
+    <span class="rf-spacer"></span>
+    <button mat-button type="button" (click)="clear()">Clear</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving()" class="entry__submit">
+      <mat-icon>check</mat-icon>
+      {{ saving() ? 'Saving…' : isEdit() ? 'Update Order' : 'Book Order' }}
+    </button>
+  </div>
+</form>
+</ng-template>

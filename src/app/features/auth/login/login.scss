@@ -1,0 +1,53 @@
+.login {
+  &__head {
+    margin-bottom: 24px;
+    h2 {
+      margin: 0 0 6px;
+      font-size: 26px;
+      font-weight: 600;
+    }
+    p {
+      margin: 0;
+      font-size: 14px;
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  // Taller username/password fields — login page only.
+  .rf-input {
+    height: 40px;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 4px 0 12px;
+  }
+
+  &__link {
+    font-size: 13px;
+    color: var(--mat-sys-primary);
+    text-decoration: none;
+    cursor: pointer;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__submit {
+    height: 48px;
+    font-size: 15px;
+  }
+
+  &__hint {
+    margin-top: 20px;
+    font-size: 12px;
+    text-align: center;
+  }
+}

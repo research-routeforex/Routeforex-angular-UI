@@ -1,0 +1,218 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Generate Invoice"
+    subtitle="Pick a client and date range to bill their booked orders."
+    [breadcrumbs]="[{ label: 'Transactions' }, { label: 'Generate Invoice' }]"
+  >
+    @if (searched() && lines().length) {
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="generating()"
+        (click)="generateInvoice()"
+      >
+        <mat-icon>receipt_long</mat-icon>
+        {{ generating() ? 'Generating…' : 'Generate Invoice' }}
+      </button>
+    }
+  </app-page-header>
+</div>
+
+<!-- Filters -->
+<form [formGroup]="form" class="rf-card filters" (ngSubmit)="search()">
+  <app-field label="Client" required [control]="form.controls.client" error="Select a client.">
+    <app-select
+      formControlName="client"
+      [options]="clientOptions()"
+      placeholder="Select client"
+      searchPlaceholder="Search client…"
+    />
+  </app-field>
+
+  <app-field label="From Date" required [control]="form.controls.fromDate" error="Required.">
+    <div class="rf-datewrap" (click)="fromPk.open()">
+      <input class="rf-input" [matDatepicker]="fromPk" formControlName="fromDate" placeholder="dd-MMM-yyyy" readonly />
+      <mat-datepicker-toggle class="rf-date-toggle" [for]="fromPk" />
+    </div>
+    <mat-datepicker #fromPk panelClass="rf-datepicker" />
+  </app-field>
+
+  <app-field label="To Date" required [control]="form.controls.toDate" error="Required.">
+    <div class="rf-datewrap" (click)="toPk.open()">
+      <input class="rf-input" [matDatepicker]="toPk" formControlName="toDate" placeholder="dd-MMM-yyyy" readonly />
+      <mat-datepicker-toggle class="rf-date-toggle" [for]="toPk" />
+    </div>
+    <mat-datepicker #toPk panelClass="rf-datepicker" />
+  </app-field>
+
+  <button mat-flat-button color="primary" type="submit" class="filters__btn" [disabled]="loading()">
+    <mat-icon>search</mat-icon>
+    {{ loading() ? 'Searching…' : 'Search' }}
+  </button>
+</form>
+
+<!-- Results -->
+@if (searched()) {
+  @if (lines().length === 0) {
+    <div class="state">
+      <mat-icon>receipt_long</mat-icon>
+      <p class="state__title">No orders found</p>
+      <p class="state__hint">This client has no booked orders in the selected range.</p>
+    </div>
+  } @else {
+    <div class="cards">
+      <div class="card">
+        <span class="card__label">Total Value</span>
+        <span class="card__value">{{ totalValue() | number: '1.2-2' }}</span>
+      </div>
+      <div class="card card--charge">
+        <span class="card__label">Total Charges (₹)</span>
+        <span class="card__value">₹{{ totalCharges() | number: '1.2-2' }}</span>
+      </div>
+      <div class="card card--count">
+        <span class="card__label">Orders</span>
+        <span class="card__value">{{ lines().length }}</span>
+      </div>
+    </div>
+
+    <div class="rf-card tablewrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>Order No</th>
+            <th>Date</th>
+            <th>Transaction Type</th>
+            <th>Imp/Exp</th>
+            <th>Currency</th>
+            <th class="ta-r">Value</th>
+            <th>Charge Type</th>
+            <th class="ta-r">Charge Rate</th>
+            <th class="ta-r">Charge (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of lines(); track l.recordId) {
+            <tr [class.norate]="!l.clientContractID">
+              <td class="name">{{ l.orderNumber || '#' + l.recordId }}</td>
+              <td>{{ l.createdDatetime ? (l.createdDatetime | date: 'dd-MMM-yyyy') : '—' }}</td>
+              <td>{{ l.transactionType || '—' }}</td>
+              <td>{{ l.impExp || '—' }}</td>
+              <td>{{ l.currencyCode || '—' }}</td>
+              <td class="ta-r">{{ l.amount != null ? (l.amount | number: '1.2-2') : '—' }}</td>
+              <td>
+                @if (l.clientContractID) {
+                  {{ l.chargesType || '—' }}
+                } @else {
+                  <span class="rf-muted">No contract</span>
+                }
+              </td>
+              <td class="ta-r">{{ l.chargesValue != null ? (l.chargesValue | number: '1.2-4') : '—' }}</td>
+              <td class="ta-r charge">₹{{ l.charge | number: '1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="ta-r total-lbl">Totals</td>
+            <td class="ta-r total">{{ totalValue() | number: '1.2-2' }}</td>
+            <td colspan="2"></td>
+            <td class="ta-r total">₹{{ totalCharges() | number: '1.2-2' }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  }
+} @else {
+  <div class="state">
+    <mat-icon>receipt_long</mat-icon>
+    <p class="state__title">Generate an invoice</p>
+    <p class="state__hint">Choose a client and a date range, then click Search.</p>
+  </div>
+}
+
+<!-- Printable invoice (rendered after Generate) -->
+@if (generated()) {
+  <div class="invoice" id="invoice">
+    <div class="invoice__actions no-print">
+      <button mat-flat-button color="primary" type="button" (click)="print()">
+        <mat-icon>print</mat-icon> Print / Save PDF
+      </button>
+    </div>
+
+    <div class="inv">
+      <header class="inv__head">
+        <img class="inv__logo" [src]="company.logo" alt="RouteForex" />
+        <div class="inv__co">
+          <h1 class="inv__title">TAX INVOICE</h1>
+          <p class="inv__no">{{ invoiceNo() }}</p>
+          <p class="inv__date">Date: {{ invoiceDate() | date: 'dd-MMM-yyyy' }}</p>
+        </div>
+      </header>
+
+      <div class="inv__parties">
+        <div class="inv__from">
+          <span class="inv__lbl">From</span>
+          <strong>{{ company.name }}</strong>
+          <span class="inv__tag">{{ company.tagline }}</span>
+        </div>
+        <div class="inv__to">
+          <span class="inv__lbl">Bill To</span>
+          <strong>{{ clientName() }}</strong>
+          <span>Period: {{ form.controls.fromDate.value | date: 'dd-MMM-yyyy' }} —
+            {{ form.controls.toDate.value | date: 'dd-MMM-yyyy' }}</span>
+        </div>
+      </div>
+
+      <table class="inv__table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Order No</th>
+            <th>Date</th>
+            <th>Transaction</th>
+            <th>Ccy</th>
+            <th class="ta-r">Value</th>
+            <th>Charge Type</th>
+            <th class="ta-r">Charge (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of lines(); track l.recordId; let i = $index) {
+            <tr>
+              <td>{{ i + 1 }}</td>
+              <td>{{ l.orderNumber || '#' + l.recordId }}</td>
+              <td>{{ l.createdDatetime ? (l.createdDatetime | date: 'dd-MMM-yyyy') : '—' }}</td>
+              <td>{{ l.transactionType || '—' }}</td>
+              <td>{{ l.currencyCode || '—' }}</td>
+              <td class="ta-r">{{ l.amount != null ? (l.amount | number: '1.2-2') : '—' }}</td>
+              <td>{{ l.clientContractID ? (l.chargesType || '—') : '—' }}</td>
+              <td class="ta-r">{{ l.charge | number: '1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="inv__summary">
+        <div class="inv__totals">
+          <div class="inv__row"><span>Total Value</span><span>{{ totalValue() | number: '1.2-2' }}</span></div>
+          <div class="inv__row"><span>Sub Total (Charges)</span><span>₹{{ totalCharges() | number: '1.2-2' }}</span></div>
+          <div class="inv__row"><span>CGST (9%)</span><span>₹{{ gst() / 2 | number: '1.2-2' }}</span></div>
+          <div class="inv__row"><span>SGST (9%)</span><span>₹{{ gst() / 2 | number: '1.2-2' }}</span></div>
+          <div class="inv__row inv__row--grand"><span>Grand Total</span><span>₹{{ grandTotal() | number: '1.2-2' }}</span></div>
+        </div>
+      </div>
+
+      <footer class="inv__foot">
+        <p class="inv__note">This is a computer-generated invoice.</p>
+        <div class="inv__sign">
+          <img class="inv__stamp" [src]="company.stamp" alt="Seal" />
+          <span>For {{ company.name }}</span>
+          <span class="inv__signlbl">Authorized Signatory</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+}

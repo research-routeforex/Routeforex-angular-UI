@@ -1,0 +1,236 @@
+:host {
+  display: block;
+}
+
+// ---- Hero band (matches Client Master / Dealer Pad) -----------------------
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, oklch(62% 0.24 290) 14%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a {
+    top: -120px;
+    right: 8%;
+    background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+    animation: um-blob-a 9s ease-in-out infinite;
+  }
+  &--b {
+    bottom: -150px;
+    left: 12%;
+    background: radial-gradient(circle, oklch(62% 0.24 290), transparent 70%);
+    animation: um-blob-b 11s ease-in-out infinite;
+  }
+}
+@keyframes um-blob-a {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-26px, 18px); }
+}
+@keyframes um-blob-b {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(22px, -16px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__glow {
+    animation: none;
+  }
+}
+
+.tablewrap {
+  // Show ~10 rows; the rest scrolls under the sticky header.
+  max-height: 478px;
+  overflow: auto;
+}
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 760px;
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--mat-sys-primary) 96%, white) 0%,
+      color-mix(in oklab, var(--mat-sys-primary) 82%, black) 100%
+    );
+    color: var(--mat-sys-on-primary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 12px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  thead th:first-child {
+    border-top-left-radius: var(--rf-radius);
+  }
+  thead th:last-child {
+    border-top-right-radius: var(--rf-radius);
+  }
+  thead th {
+    vertical-align: top;
+  }
+  .th__name {
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  td {
+    padding: 2px 14px;
+    border-bottom: 1px solid var(--rf-border);
+  }
+  tbody tr:nth-child(even) td {
+    background: color-mix(in oklab, var(--mat-sys-primary) 3%, transparent);
+  }
+  tbody tr:hover td {
+    background: color-mix(in oklab, var(--mat-sys-primary) 8%, transparent);
+  }
+  .name {
+    font-weight: 600;
+    color: var(--mat-sys-primary);
+  }
+}
+// Filter input sits inside the violet header cell, under the column name.
+.colfilter {
+  display: block;
+  width: 100%;
+  min-width: 80px;
+  height: 28px;
+  padding: 2px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.16);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: #fff;
+  outline: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.75);
+    text-transform: none;
+    font-weight: 400;
+    letter-spacing: normal;
+  }
+  &:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+  &:focus {
+    background: #fff;
+    color: var(--mat-sys-on-surface);
+    border-color: #fff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.45);
+  }
+  &:focus::placeholder {
+    color: var(--rf-muted-fg);
+  }
+}
+
+.ta-c {
+  text-align: center;
+}
+.ta-r {
+  text-align: right;
+}
+.ok {
+  color: var(--rf-success);
+}
+.off {
+  color: var(--rf-muted-fg);
+}
+.actions {
+  white-space: nowrap;
+}
+.empty {
+  text-align: center;
+  padding: 28px;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: var(--rf-gap);
+  font-size: 13px;
+}
+.pager__size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pager__select {
+  width: auto;
+  min-width: 72px;
+  height: 34px;
+  padding: 0 8px;
+}
+.pager__info {
+  white-space: nowrap;
+}
+.pager__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.pager__page {
+  min-width: 64px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+// ---- Column widths --------------------------------------------------------
+.grid {
+  .col-status,
+  .col-login,
+  .col-actions {
+    width: 1%;
+    white-space: nowrap;
+  }
+  .col-status { min-width: 96px; }
+  .col-login { min-width: 150px; }
+  .col-actions { width: 96px; }
+  .col-email { width: 24%; }
+
+  td:nth-child(5),
+  td:nth-child(6) {
+    white-space: nowrap;
+  }
+}

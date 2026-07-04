@@ -1,0 +1,237 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    [title]="isEdit() ? 'Edit Client' : 'New Client'"
+    subtitle="Capture the client profile, documents and contact details."
+    [breadcrumbs]="[
+      { label: 'Masters' },
+      { label: 'Client Master', link: '/clients' },
+      { label: isEdit() ? 'Edit' : 'New' }
+    ]"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving()">
+      <mat-icon>save</mat-icon> {{ saving() ? 'Saving…' : 'Save Client' }}
+    </button>
+  </app-page-header>
+</div>
+
+<div class="editlayout">
+  <!-- Left vertical tabs -->
+  <nav class="editlayout__nav">
+    <button
+      type="button"
+      class="etab"
+      [class.etab--active]="tab() === 'profile'"
+      (click)="setTab('profile')"
+    >
+      <mat-icon>person</mat-icon> Profile
+    </button>
+    <button
+      type="button"
+      class="etab"
+      [class.etab--active]="tab() === 'banks'"
+      [disabled]="!isEdit()"
+      [matTooltip]="isEdit() ? '' : 'Save the client first'"
+      (click)="setTab('banks')"
+    >
+      <mat-icon>account_balance</mat-icon> Client Bank
+    </button>
+    <button
+      type="button"
+      class="etab"
+      [class.etab--active]="tab() === 'contracts'"
+      [disabled]="!isEdit()"
+      [matTooltip]="isEdit() ? '' : 'Save the client first'"
+      (click)="setTab('contracts')"
+    >
+      <mat-icon>description</mat-icon> Client Contract
+    </button>
+  </nav>
+
+  <!-- Tab content -->
+  <div class="editlayout__body">
+    @if (tab() === 'profile') {
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <!-- Client Information -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>person</mat-icon> Client Information</h3>
+    <div class="grid">
+      <app-field label="Client Name" required [control]="form.controls.clientName" error="Client name is required.">
+        <input class="rf-input" formControlName="clientName" placeholder="Client name" />
+      </app-field>
+      <app-field label="Client Group">
+        <app-select formControlName="clientGroup" [options]="groupOptions()" placeholder="Select group" searchPlaceholder="Search group…" />
+      </app-field>
+      <app-field label="Location Name">
+        <input class="rf-input" formControlName="locationName" placeholder="Location" />
+      </app-field>
+      <app-field label="Industry">
+        <input class="rf-input" formControlName="industry" placeholder="Industry" />
+      </app-field>
+      <app-field label="Client Zone">
+        <app-select formControlName="clientZone" [options]="zoneOptions()" placeholder="Select zone" searchPlaceholder="Search zone…" />
+      </app-field>
+    </div>
+  </section>
+
+  <!-- Address -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>location_on</mat-icon> Address</h3>
+    <div class="grid">
+      <app-field label="Region">
+        <app-select formControlName="region" [options]="regionOptions()" placeholder="Select region" searchPlaceholder="Search region…" />
+      </app-field>
+      <app-field label="Country">
+        <app-select formControlName="country" [options]="countryOptions()" placeholder="Select country" searchPlaceholder="Search country…" />
+      </app-field>
+      <app-field label="City">
+        <app-select formControlName="city" [options]="cityOptions()" placeholder="Select city" searchPlaceholder="Search city…" />
+      </app-field>
+      <app-field label="Pincode">
+        <input class="rf-input" formControlName="pincode" placeholder="Pincode" />
+      </app-field>
+      <app-field label="Address Line 1" class="span-2">
+        <input class="rf-input" formControlName="addressLine1" placeholder="Address line 1" />
+      </app-field>
+      <app-field label="Address Line 2" class="span-2">
+        <input class="rf-input" formControlName="addressLine2" placeholder="Address line 2" />
+      </app-field>
+    </div>
+  </section>
+
+  <!-- Tax & Trade -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>receipt_long</mat-icon> Tax &amp; Trade</h3>
+    <div class="grid">
+      <app-field label="PAN">
+        <input class="rf-input" formControlName="pan" placeholder="PAN" />
+      </app-field>
+      <app-field label="GST State Code">
+        <input class="rf-input" formControlName="gsStateCode" placeholder="State code" />
+      </app-field>
+      <app-field label="GSTN">
+        <input class="rf-input" formControlName="gstn" placeholder="GSTIN" />
+      </app-field>
+      <app-field label="Website">
+        <input class="rf-input" formControlName="website" placeholder="https://" />
+      </app-field>
+      <app-field label="Export Figure">
+        <input class="rf-input" type="number" step="0.01" formControlName="exportFigure" placeholder="0.00" />
+      </app-field>
+      <app-field label="Import Figure">
+        <input class="rf-input" type="number" step="0.01" formControlName="importFigure" placeholder="0.00" />
+      </app-field>
+    </div>
+  </section>
+
+  <!-- Onboarding -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>event_available</mat-icon> Onboarding</h3>
+    <div class="grid">
+      <app-field label="On-Board Date">
+        <input class="rf-input" type="date" formControlName="onBoardDate" />
+      </app-field>
+      <app-field label="Status">
+        <app-select formControlName="status" [options]="statusOptions()" placeholder="Select status" searchPlaceholder="Search status…" />
+      </app-field>
+    </div>
+  </section>
+
+  <!-- Documents -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>attach_file</mat-icon> Documents</h3>
+    <div class="grid">
+      <div class="upload">
+        <label class="rf-label">Client SLA</label>
+        <div class="uploadrow">
+          <label class="dropzone">
+            <mat-icon>upload_file</mat-icon>
+            <span>{{ slaFile()?.name || existingSla() || 'Choose SLA file…' }}</span>
+            <input type="file" hidden (change)="onSlaChange($event)" />
+          </label>
+          @if (existingSla() && !slaFile()) {
+            <button class="viewbtn" type="button" (click)="viewDoc('sla')" matTooltip="View / download">
+              <mat-icon>visibility</mat-icon> View
+            </button>
+          }
+        </div>
+      </div>
+      <div class="upload">
+        <label class="rf-label">Authorized Letter</label>
+        <div class="uploadrow">
+          <label class="dropzone">
+            <mat-icon>upload_file</mat-icon>
+            <span>{{ authFile()?.name || existingAuth() || 'Choose authorized letter…' }}</span>
+            <input type="file" hidden (change)="onAuthChange($event)" />
+          </label>
+          @if (existingAuth() && !authFile()) {
+            <button class="viewbtn" type="button" (click)="viewDoc('auth')" matTooltip="View / download">
+              <mat-icon>visibility</mat-icon> View
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contacts -->
+  <section class="rf-card sec">
+    <h3 class="sec__title">
+      <mat-icon>contacts</mat-icon> Contact Details
+      <span class="rf-spacer"></span>
+      <button mat-stroked-button type="button" (click)="addContact()">
+        <mat-icon>add</mat-icon> Add Contact
+      </button>
+    </h3>
+
+    <div class="contacts" formArrayName="contacts">
+      <div class="contacts__head">
+        <span>Contact Name</span>
+        <span>Email</span>
+        <span>Contact Number</span>
+        <span></span>
+      </div>
+      @for (ctrl of contacts.controls; track $index) {
+        <div class="contacts__row" [formGroupName]="$index">
+          <div class="rf-control">
+            <mat-icon class="rf-control__icon">person</mat-icon>
+            <input class="rf-input rf-input--icon" formControlName="contactName" placeholder="Name" />
+          </div>
+          <div class="rf-control">
+            <mat-icon class="rf-control__icon">mail</mat-icon>
+            <input class="rf-input rf-input--icon" formControlName="email" type="email" placeholder="email@company.com" />
+          </div>
+          <div class="rf-control">
+            <mat-icon class="rf-control__icon">call</mat-icon>
+            <input class="rf-input rf-input--icon" formControlName="contactNumber" placeholder="Phone" />
+          </div>
+          <button mat-icon-button type="button" (click)="removeContact($index)" matTooltip="Remove">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      } @empty {
+        <p class="rf-muted contacts__empty">No contacts added yet.</p>
+      }
+    </div>
+  </section>
+
+        <div class="formactions">
+          <span class="rf-spacer"></span>
+          <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+            <mat-icon>save</mat-icon> {{ saving() ? 'Saving…' : 'Save Client' }}
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (tab() === 'banks') {
+      <app-client-banks [clientId]="clientId()" [cityId]="selectedCity()" />
+    }
+    @if (tab() === 'contracts') {
+      <app-client-contracts [clientId]="clientId()" />
+    }
+  </div>
+</div>

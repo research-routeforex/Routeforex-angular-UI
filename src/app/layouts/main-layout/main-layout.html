@@ -1,0 +1,152 @@
+<mat-sidenav-container class="shell" autosize>
+  <mat-sidenav
+    class="shell__nav"
+    [class.shell__nav--rail]="railCollapsed()"
+    [mode]="sidenavMode()"
+    [opened]="sidenavOpened()"
+    (closedStart)="navOpen.set(false)"
+    [disableClose]="!isHandset()"
+  >
+    <div class="brand">
+      <div class="brand__logo">
+        <mat-icon>currency_exchange</mat-icon>
+      </div>
+      @if (!railCollapsed()) {
+        <div class="brand__text">
+          <span class="brand__name">RouteForex</span>
+          <span class="brand__tag">FX MANAGEMENT</span>
+        </div>
+      }
+    </div>
+
+    <nav class="nav">
+      @for (section of sections(); track section.title || $index) {
+        @if (section.title && !railCollapsed()) {
+          <button
+            type="button"
+            class="nav__section"
+            [class.nav__section--collapsed]="isSectionCollapsed(section.title)"
+            (click)="toggleSection(section.title)"
+          >
+            <span>{{ section.title }}</span>
+            <mat-icon class="nav__section-chev">expand_more</mat-icon>
+          </button>
+        }
+        @if (railCollapsed() || !isSectionCollapsed(section.title)) {
+          @for (item of section.items; track item.route) {
+          @if (item.locked) {
+            <div
+              class="nav__item nav__item--locked"
+              [matTooltip]="railCollapsed() ? item.label : (item.badge === 'Pay' ? 'Upgrade required' : 'Coming soon')"
+              matTooltipPosition="right"
+            >
+              <mat-icon>{{ item.icon }}</mat-icon>
+              @if (!railCollapsed()) {
+                <span class="nav__label">{{ item.label }}</span>
+                @if (item.badge) {
+                  <span class="nav__badge nav__badge--{{ badgeClass(item.badge) }}">{{ item.badge }}</span>
+                }
+              }
+            </div>
+          } @else {
+            <a
+              class="nav__item"
+              [routerLink]="item.route"
+              routerLinkActive="nav__item--active"
+              [matTooltip]="railCollapsed() ? item.label : ''"
+              matTooltipPosition="right"
+              (click)="onNavigated()"
+            >
+              <mat-icon>{{ item.icon }}</mat-icon>
+              @if (!railCollapsed()) {
+                <span class="nav__label">{{ item.label }}</span>
+                @if (item.badge) {
+                  <span class="nav__badge nav__badge--{{ badgeClass(item.badge) }}">{{ item.badge }}</span>
+                }
+              }
+            </a>
+          }
+          }
+        }
+      }
+    </nav>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="shell__content">
+    <mat-toolbar class="topbar">
+      <div class="topbar__inner">
+        <button class="topbar__toggle" (click)="toggleSidebar()" aria-label="Toggle navigation">
+          <mat-icon>{{
+            isHandset() ? 'menu' : railCollapsed() ? 'menu' : 'menu_open'
+          }}</mat-icon>
+        </button>
+
+        <div class="topbar__search rf-hide-xs">
+          <mat-icon>search</mat-icon>
+          <input type="search" placeholder="Search anything…" aria-label="Search" />
+          <span class="topbar__kbd">⌘K</span>
+        </div>
+
+        <span class="rf-spacer"></span>
+
+        <button
+          mat-icon-button
+          (click)="theme.toggle()"
+          [matTooltip]="theme.isDark() ? 'Light mode' : 'Dark mode'"
+        >
+          <mat-icon>{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+
+        <button mat-icon-button class="topbar__bell" matTooltip="Notifications">
+          <mat-icon>notifications_none</mat-icon>
+          <span class="topbar__dot"></span>
+        </button>
+
+        <button
+          class="topbar__user"
+          [matMenuTriggerFor]="userMenu"
+          aria-label="Account menu"
+          matTooltip="Account"
+        >
+          <span class="avatar">{{ initials() }}</span>
+        </button>
+      </div>
+
+      <mat-menu #userMenu="matMenu" class="usermenu">
+        <div class="usermenu__head">
+          <strong>{{ auth.displayName() }}</strong>
+          <small class="rf-muted">{{ auth.user()?.email }}</small>
+        </div>
+        <mat-divider></mat-divider>
+        <a mat-menu-item routerLink="/settings">
+          <mat-icon>settings</mat-icon><span>Settings</span>
+        </a>
+        <a mat-menu-item routerLink="/settings">
+          <mat-icon>notifications_none</mat-icon>
+          <span>Notifications</span>
+          <span class="usermenu__badge">{{ notificationCount }}</span>
+        </a>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon><span>Log out</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <div class="topbar__progress">
+      @if (loading.isLoading()) {
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      }
+    </div>
+
+    <main class="page">
+      <router-outlet></router-outlet>
+    </main>
+
+    <footer class="footer rf-muted">
+      <span>© {{ year }} RouteForex — Forex Transaction Management</span>
+      <span class="rf-spacer"></span>
+      <span class="rf-hide-xs">v1.0.0</span>
+    </footer>
+  </mat-sidenav-content>
+</mat-sidenav-container>

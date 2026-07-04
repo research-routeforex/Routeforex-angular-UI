@@ -1,0 +1,127 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    [title]="isEdit() ? 'Edit Bank' : 'New Bank'"
+    subtitle="Capture the bank, its location and relationship-manager contacts."
+    [breadcrumbs]="[
+      { label: 'Masters' },
+      { label: 'Bank Master', link: '/bank-master' },
+      { label: isEdit() ? 'Edit' : 'New' }
+    ]"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving() || loading()">
+      <mat-icon>save</mat-icon> {{ saving() ? 'Saving…' : 'Save Bank' }}
+    </button>
+  </app-page-header>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <!-- Bank information -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>account_balance</mat-icon> Bank Information</h3>
+    <div class="grid">
+      <app-field
+        label="Bank Name"
+        required
+        [control]="form.controls.bankName"
+        error="Bank name is required."
+        class="span-2"
+      >
+        <input class="rf-input" formControlName="bankName" placeholder="e.g. HDFC Bank" />
+      </app-field>
+
+      <app-field
+        label="Bank Category"
+        required
+        [control]="form.controls.bankCategory"
+        error="Select a category."
+      >
+        <app-select
+          formControlName="bankCategory"
+          [options]="categoryOptions"
+          [searchable]="false"
+          placeholder="Select category"
+        />
+      </app-field>
+
+      <app-field label="Region" required [control]="form.controls.regionId" error="Select a region.">
+        <app-select
+          formControlName="regionId"
+          [options]="regionOptions()"
+          placeholder="Select region"
+          searchPlaceholder="Search region…"
+        />
+      </app-field>
+
+      <app-field label="Country" required [control]="form.controls.countryCode" error="Select a country.">
+        <app-select
+          formControlName="countryCode"
+          [options]="countryOptions()"
+          placeholder="Select region first"
+          searchPlaceholder="Search country…"
+        />
+      </app-field>
+
+      <app-field label="City" required [control]="form.controls.cityCode" error="Select a city.">
+        <app-select
+          formControlName="cityCode"
+          [options]="cityOptions()"
+          placeholder="Select country first"
+          searchPlaceholder="Search city…"
+        />
+      </app-field>
+
+      <app-field label="Status">
+        <app-select formControlName="activeStatus" [options]="statusOptions" [searchable]="false" />
+      </app-field>
+    </div>
+  </section>
+
+  <!-- RM contacts -->
+  <section class="rf-card sec">
+    <div class="sec__head">
+      <h3 class="sec__title sec__title--flush"><mat-icon>groups</mat-icon> Contact Persons</h3>
+      <span class="rf-spacer"></span>
+      <button mat-stroked-button type="button" (click)="addContact()">
+        <mat-icon>person_add</mat-icon> Add Contact
+      </button>
+    </div>
+
+    <div formArrayName="contacts">
+      @for (grp of contacts.controls; track $index) {
+        <div class="contact-row" [formGroupName]="$index">
+          <app-field label="RM Name" required [control]="grp.get('rmName')" error="Name is required.">
+            <input class="rf-input" formControlName="rmName" placeholder="e.g. Rahul Sharma" />
+          </app-field>
+          <app-field label="Contact No">
+            <input class="rf-input" formControlName="rmContactNo" placeholder="e.g. +91 98xxxxxx" />
+          </app-field>
+          <app-field
+            label="Email"
+            [control]="grp.get('rmEmail')"
+            [error]="grp.get('rmEmail')?.hasError('email') ? 'Enter a valid email.' : ''"
+          >
+            <input class="rf-input" type="email" formControlName="rmEmail" placeholder="name@bank.com" />
+          </app-field>
+          <app-field label="Landline">
+            <input class="rf-input" formControlName="rmLandLine" placeholder="e.g. 022-xxxxxxx" />
+          </app-field>
+          <button
+            type="button"
+            class="rf-iconbtn rf-iconbtn--del contact-row__del"
+            (click)="removeContact($index)"
+            matTooltip="Remove contact"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      } @empty {
+        <p class="contacts__empty rf-muted">
+          No contacts added. Use “Add Contact” to include relationship managers.
+        </p>
+      }
+    </div>
+  </section>
+</form>

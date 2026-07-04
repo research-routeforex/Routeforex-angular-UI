@@ -1,0 +1,111 @@
+:host {
+  display: block;
+}
+
+// ---- Hero band -------------------------------------------------------------
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, oklch(62% 0.24 290) 14%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a {
+    top: -120px;
+    right: 8%;
+    background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+  }
+  &--b {
+    bottom: -150px;
+    left: 12%;
+    background: radial-gradient(circle, oklch(62% 0.24 290), transparent 70%);
+  }
+}
+
+// ---- Sections (matches Client / Bank Master form) --------------------------
+.sec {
+  padding: 18px 20px;
+  margin-bottom: var(--rf-gap);
+}
+.sec__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rf-border);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+
+  mat-icon {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    font-size: 18px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--mat-sys-primary), oklch(62% 0.24 290));
+  }
+}
+
+// 12-column grid so rows can mix widths (e.g. GSTN/PAN/CIN/Status at 25% each,
+// and Address Line 1 / Address Line 2 / Country with Country at 25%).
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 0 18px;
+
+  > * {
+    min-width: 0;
+  }
+  .c-3 { grid-column: span 3; }
+  .c-4 { grid-column: span 4; }
+  .c-5 { grid-column: span 5; }
+  .c-6 { grid-column: span 6; }
+  .c-12 { grid-column: span 12; }
+}
+// Tablet: two fields per row.
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    .c-3, .c-4, .c-5, .c-6 { grid-column: span 1; }
+    .c-12 { grid-column: span 2; }
+  }
+}
+// Mobile: one field per row.
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: 1fr;
+    .c-3, .c-4, .c-5, .c-6, .c-12 { grid-column: auto; }
+  }
+}

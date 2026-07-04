@@ -1,0 +1,24 @@
+<app-page-header
+  title="Tenors"
+  subtitle="Maintain settlement tenors (Spot, Forward, etc.) and their maturities."
+  [breadcrumbs]="[{ label: 'Masters' }, { label: 'Tenors' }]"
+>
+  @if (canManage) {
+    <button mat-flat-button color="primary" (click)="openForm('create')">
+      <mat-icon>add</mat-icon>
+      Add Tenor
+    </button>
+  }
+</app-page-header>
+
+<app-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  [total]="total()"
+  [loading]="loading()"
+  [actions]="actions()"
+  searchPlaceholder="Search tenors…"
+  emptyMessage="No tenors found."
+  (queryChange)="onQueryChange($event)"
+  (action)="onAction($event)"
+/>

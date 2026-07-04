@@ -1,0 +1,115 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="User Management"
+    subtitle="Create users, manage status and assign roles."
+    [breadcrumbs]="[{ label: 'Administration' }, { label: 'Users' }]"
+  >
+    <button mat-flat-button color="primary" (click)="openForm('create')">
+      <mat-icon>person_add</mat-icon> Add User
+    </button>
+  </app-page-header>
+</div>
+
+<div class="rf-card tablewrap">
+  <table class="grid">
+    <colgroup>
+      <col class="col-user" />
+      <col class="col-name" />
+      <col class="col-email" />
+      <col class="col-roles" />
+      <col class="col-status" />
+      <col class="col-login" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>
+          <span class="th__name">Username</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('userName', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Full Name</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('fullName', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Email</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('email', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Roles</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('roles', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Status</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('status', $any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Last Login</span>
+          <input class="colfilter" placeholder="Search…" (input)="setFilter('lastLogin', $any($event.target).value)" />
+        </th>
+        <th class="ta-r"><span class="th__name">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of pagedRows(); track u.id) {
+        <tr>
+          <td class="name">{{ u.userName }}</td>
+          <td>{{ u.fullName || '—' }}</td>
+          <td>{{ u.email || '—' }}</td>
+          <td>{{ u.roles.length ? u.roles.join(', ') : '—' }}</td>
+          <td>
+            <span class="rf-chip" [class]="statusClass(u)">{{ statusLabel(u) }}</span>
+          </td>
+          <td>{{ u.lastLoginDate ? (u.lastLoginDate | date: 'dd-MMM-yyyy HH:mm') : '—' }}</td>
+          <td class="ta-r actions">
+            <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="openForm('edit', u)" matTooltip="Edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(u)" matTooltip="Delete">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No users found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="pager">
+  <div class="pager__size">
+    <span class="rf-muted">Rows per page</span>
+    <select class="rf-select pager__select" (change)="onPageSize($any($event.target).value)">
+      @for (n of pageSizeOptions; track n) {
+        <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
+      }
+    </select>
+  </div>
+
+  <span class="rf-spacer"></span>
+
+  <span class="pager__info rf-muted">{{ fromRow() }}–{{ toRow() }} of {{ total() }}</span>
+
+  <div class="pager__nav">
+    <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="first()" matTooltip="First page">
+      <mat-icon>first_page</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="prev()" matTooltip="Previous page">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="pager__page">{{ pageNumber() }} / {{ totalPages() }}</span>
+    <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="next()" matTooltip="Next page">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="last()" matTooltip="Last page">
+      <mat-icon>last_page</mat-icon>
+    </button>
+  </div>
+</div>

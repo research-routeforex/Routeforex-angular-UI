@@ -1,0 +1,107 @@
+<div class="child">
+  <!-- Add / edit contract -->
+  <div class="rf-card child__add">
+    <div class="child__addhead">
+      <h4 class="child__addtitle">
+        <mat-icon>description</mat-icon>
+        {{ editingId() ? 'Edit Contract' : 'Client Contracts' }}
+      </h4>
+      <span class="rf-spacer"></span>
+      <button mat-stroked-button type="button" (click)="toggleForm()">
+        <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+        {{ showForm() ? 'Cancel' : 'Add Contract' }}
+      </button>
+    </div>
+
+    @if (showForm()) {
+      <form class="child__form" [formGroup]="form" (ngSubmit)="save()">
+        <div class="child__fields">
+          <app-field label="Service Type" required [control]="form.controls.serviceId" error="Select a service.">
+            <app-select formControlName="serviceId" [options]="serviceOptions()" placeholder="Select service" searchPlaceholder="Search service…" />
+          </app-field>
+          <app-field label="Charges Type">
+            <app-select formControlName="chargesType" [options]="chargesTypeOptions()" placeholder="Select charges type" searchPlaceholder="Search…" />
+          </app-field>
+          <app-field label="Charges Value">
+            <input class="rf-input" type="number" step="0.01" formControlName="chargesValue" placeholder="0.00" />
+          </app-field>
+          <app-field label="Effective From">
+            <input class="rf-input" type="date" formControlName="effectiveFrom" />
+          </app-field>
+          <app-field label="Effective To">
+            <input class="rf-input" type="date" formControlName="effectiveTo" />
+          </app-field>
+          <app-field label="Status">
+            <app-select formControlName="status" [options]="statusOptions()" placeholder="Select status" searchPlaceholder="Search…" />
+          </app-field>
+        </div>
+
+        <!-- Charges Details (multi-select) -->
+        <div class="multi">
+          <span class="rf-label">Charges Details</span>
+          <div class="multi__box">
+            @for (opt of chargeDetailItems(); track opt.id) {
+              <label class="multi__opt">
+                <input type="checkbox" [checked]="isChecked(opt.id)" (change)="toggleDetail(opt.id, $event)" />
+                {{ opt.name }}
+              </label>
+            } @empty {
+              <span class="rf-muted multi__empty">No charge details available.</span>
+            }
+          </div>
+        </div>
+
+        <div class="child__formactions">
+          <button mat-stroked-button type="button" (click)="closeForm()">Cancel</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+            <mat-icon>save</mat-icon>
+            {{ saving() ? 'Saving…' : editingId() ? 'Update Contract' : 'Save Contract' }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+
+  <!-- Existing contracts -->
+  <div class="rf-card child__tablewrap">
+    <table class="child__table">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Charges Type</th>
+          <th>Charges Value</th>
+          <th>Effective From</th>
+          <th>Effective To</th>
+          <th>Status</th>
+          <th class="ta-r">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of contracts(); track c.contractId) {
+          <tr>
+            <td class="name">{{ c.serviceName || '—' }}</td>
+            <td>{{ c.chargesTypeName || '—' }}</td>
+            <td>{{ c.chargesValue != null ? (c.chargesValue | number: '1.2-2') : '—' }}</td>
+            <td>{{ c.effectiveFrom ? (c.effectiveFrom | date: 'dd-MMM-yyyy') : '—' }}</td>
+            <td>{{ c.effectiveTo ? (c.effectiveTo | date: 'dd-MMM-yyyy') : '—' }}</td>
+            <td>{{ c.status || '—' }}</td>
+            <td class="ta-r">
+              <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(c)" matTooltip="Edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(c)" matTooltip="Remove">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7" class="empty rf-muted">
+              {{ loading() ? 'Loading…' : 'No contracts added yet.' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

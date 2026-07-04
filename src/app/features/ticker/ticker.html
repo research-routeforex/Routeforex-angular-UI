@@ -1,0 +1,378 @@
+<div class="ticker" [class.ticker--fs]="fullscreen()" #root>
+  @if (locked()) {
+    <div class="paywall">
+      <div class="paywall__card">
+        <mat-icon class="paywall__icon">lock_clock</mat-icon>
+        <h2 class="paywall__title">Daily access used up</h2>
+        <p class="paywall__msg">
+          Your free <strong>{{ allowanceLabel() }}</strong> of daily access to Ticker Live
+          Rate is over. Pay to continue, or come back tomorrow — your time resets at midnight.
+        </p>
+        <button type="button" class="paywall__btn" (click)="requestPayment()">
+          <mat-icon>lock_open</mat-icon> Pay to unlock
+        </button>
+        @if (payRequested()) {
+          <p class="paywall__note">Payment integration is coming soon. Please contact your administrator.</p>
+        }
+      </div>
+    </div>
+  }
+
+  @if (!fullscreen()) {
+    <div class="hero">
+      <span class="hero__glow hero__glow--a"></span>
+      <span class="hero__glow hero__glow--b"></span>
+      <app-page-header
+        title="Ticker Live Rate"
+        subtitle="Forex, currency futures, market news and support — live."
+        [breadcrumbs]="[{ label: 'Trading' }, { label: 'Ticker Live Rate' }]"
+      >
+        @if (metered() && !locked()) {
+          <span class="meter" title="Daily free access remaining">
+            <mat-icon>timer</mat-icon>{{ remainingLabel() }} left
+          </span>
+        }
+        <span class="live">
+          <span class="live__dot"></span>
+          Live · {{ svc.lastUpdated() | date: 'HH:mm:ss' }}
+        </span>
+      </app-page-header>
+    </div>
+  }
+
+  <!-- Section tabs + full-screen toggle -->
+  <div class="tabs-row">
+    <div class="tabs" role="tablist">
+      @for (t of tabs; track t.key) {
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          [class.tab--active]="active() === t.key"
+          [attr.aria-selected]="active() === t.key"
+          (click)="select(t.key)"
+        >
+          <mat-icon>{{ t.icon }}</mat-icon>
+          {{ t.key }}
+        </button>
+      }
+    </div>
+
+    <span class="rf-spacer"></span>
+
+    @if (metered() && !locked()) {
+      <span class="meter" title="Daily free access remaining">
+        <mat-icon>timer</mat-icon>{{ remainingLabel() }} left
+      </span>
+    }
+
+    @if (fullscreen()) {
+      <span class="fs-live">
+        <span class="live__dot"></span>
+        Live · {{ svc.lastUpdated() | date: 'HH:mm:ss' }}
+      </span>
+    }
+
+    <button type="button" class="fs-btn" (click)="toggleFullscreen()">
+      <mat-icon>{{ fullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+      {{ fullscreen() ? 'Exit Full Screen' : 'Full Screen' }}
+    </button>
+  </div>
+
+<!-- ===== Currency Future ===== -->
+@if (active() === 'Currency Future') {
+  <div class="rf-card tablewrap">
+    <table class="quotes">
+      <thead>
+        <tr>
+          <th class="name">Symbol</th>
+          <th>Expiry</th>
+          <th class="num">Bid Qty</th>
+          <th class="num">BID</th>
+          <th class="num">ASK</th>
+          <th class="num">Ask Qty</th>
+          <th class="num ltp-col">LTP</th>
+          <th class="num">Net Chg</th>
+          <th class="num">% Chg</th>
+          <th class="num">Open</th>
+          <th class="num">High</th>
+          <th class="num">Low</th>
+          <th class="num">Close</th>
+          <th class="num">Volume</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (q of svc.futures(); track q.symbol + q.expiry) {
+          <tr>
+            <td class="name">{{ q.symbol }}</td>
+            <td>{{ q.expiry }}</td>
+            <td class="num rf-muted">{{ q.bidQty }}</td>
+            <td class="num bid {{ dirClass(q.bidDir) }}">{{ q.bid | number: '1.4-4' }}</td>
+            <td class="num ask {{ dirClass(q.askDir) }}">{{ q.ask | number: '1.4-4' }}</td>
+            <td class="num rf-muted">{{ q.askQty }}</td>
+            <td class="num ltp {{ dirClass(q.ltpDir) }}">
+              {{ q.ltp | number: '1.4-4' }}
+              @if (q.ltpDir !== 0) {
+                <mat-icon class="arr">{{ q.ltpDir > 0 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+              }
+            </td>
+            <td class="num chg" [class.up]="netChg(q) >= 0" [class.down]="netChg(q) < 0">
+              {{ netChg(q) >= 0 ? '+' : '' }}{{ netChg(q) | number: '1.4-4' }}
+            </td>
+            <td class="num chg" [class.up]="pctChg(q) >= 0" [class.down]="pctChg(q) < 0">
+              {{ pctChg(q) >= 0 ? '+' : '' }}{{ pctChg(q) | number: '1.2-2' }}%
+            </td>
+            <td class="num">{{ q.open | number: '1.4-4' }}</td>
+            <td class="num">{{ q.high | number: '1.4-4' }}</td>
+            <td class="num">{{ q.low | number: '1.4-4' }}</td>
+            <td class="num rf-muted">{{ q.close | number: '1.4-4' }}</td>
+            <td class="num">{{ q.volume | number: '1.0-0' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- ===== Forex (4-quadrant dashboard) ===== -->
+@if (active() === 'Forex') {
+  <div class="forex-grid">
+    <!-- Q1: Live rates board -->
+    <section class="quad rf-card">
+      <header class="quad__bar">
+        <div class="quad__search">
+          <mat-icon>search</mat-icon>
+          <input
+            type="search"
+            placeholder="Select Pair"
+            (input)="onPairSearch($any($event.target).value)"
+          />
+        </div>
+        <span class="rf-spacer"></span>
+        <button type="button" class="quad__btn quad__btn--add" (click)="addPair()">
+          <mat-icon>add</mat-icon> Add
+        </button>
+        <button
+          type="button"
+          class="quad__btn quad__btn--del"
+          [disabled]="!selectedPair()"
+          (click)="deletePair()"
+        >
+          <mat-icon>remove</mat-icon> Delete
+        </button>
+      </header>
+      <div class="quad__scroll">
+        <table class="quotes quotes--sm">
+          <thead>
+            <tr>
+              <th class="name">Description</th>
+              <th class="num">Bid</th>
+              <th class="num">Ask</th>
+              <th class="num ltp-col">LTP</th>
+              <th class="num">%Chg</th>
+              <th class="num">Netchg</th>
+              <th class="num">High</th>
+              <th class="num">Low</th>
+              <th class="num">Open</th>
+              <th class="num">Close</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of boardRows(); track r.description) {
+              <tr [class.row--sel]="r.description === selectedPair()" (click)="selectRow(r.description)">
+                <td class="name">{{ r.description }}</td>
+                <td class="num bid {{ dirClass(r.bidDir) }}">{{ r.bid | number: '1.4-4' }}</td>
+                <td class="num ask {{ dirClass(r.askDir) }}">{{ r.ask | number: '1.4-4' }}</td>
+                <td class="num ltp {{ dirClass(r.ltpDir) }}">{{ r.ltp | number: '1.4-4' }}</td>
+                <td class="num chg" [class.up]="r.ltp - r.close >= 0" [class.down]="r.ltp - r.close < 0">
+                  {{ (r.ltp - r.close) / r.close * 100 | number: '1.2-2' }}
+                </td>
+                <td class="num chg" [class.up]="r.ltp - r.close >= 0" [class.down]="r.ltp - r.close < 0">
+                  {{ r.ltp - r.close | number: '1.4-4' }}
+                </td>
+                <td class="num">{{ r.high | number: '1.4-4' }}</td>
+                <td class="num">{{ r.low | number: '1.4-4' }}</td>
+                <td class="num">{{ r.open | number: '1.4-4' }}</td>
+                <td class="num rf-muted">{{ r.close | number: '1.4-4' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="10" class="quad__empty rf-muted">No pairs match.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Q2: Forward Premium -->
+    <section class="quad rf-card">
+      <header class="quad__bar">
+        <select
+          class="rf-select quad__ccy"
+          (change)="onFwdCurrency($any($event.target).value)"
+        >
+          @for (c of fwdCurrencies; track c) {
+            <option [value]="c" [selected]="c === selectedFwdCurrency()">{{ c }}</option>
+          }
+        </select>
+        <span class="rf-spacer"></span>
+        <span class="quad__title">Forward Premium</span>
+      </header>
+      <div class="quad__scroll">
+        <table class="quotes quotes--sm">
+          <thead>
+            <tr>
+              <th class="name" rowspan="2">Description</th>
+              <th class="num" rowspan="2">Bid</th>
+              <th class="num" rowspan="2">AskPrice</th>
+              <th class="num group" colspan="2">Forward Premium</th>
+              <th class="num" rowspan="2">Month EndDate</th>
+              <th class="num" rowspan="2">FwdOut Bid</th>
+              <th class="num" rowspan="2">FwdOut Ask</th>
+            </tr>
+            <tr>
+              <th class="num sub">Bid %</th>
+              <th class="num sub">Ask %</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of fwdRows(); track f.description) {
+              <tr>
+                <td class="name">{{ f.description }}</td>
+                <td class="num">{{ f.bid | number: '1.4-4' }}</td>
+                <td class="num">{{ f.ask | number: '1.4-4' }}</td>
+                <td class="num">{{ f.bidPct !== null ? (f.bidPct | number: '1.4-4') : '' }}</td>
+                <td class="num">{{ f.askPct !== null ? (f.askPct | number: '1.4-4') : '' }}</td>
+                <td class="num rf-muted">{{ f.monthEnd }}</td>
+                <td class="num">{{ f.fwdBid | number: '1.4-4' }}</td>
+                <td class="num">{{ f.fwdAsk | number: '1.4-4' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Q3: Forex News -->
+    <section class="quad rf-card">
+      <header class="quad__bar quad__bar--center">
+        <span class="quad__title">Forex News</span>
+      </header>
+      <div class="quad__scroll">
+        <table class="quotes quotes--sm">
+          <thead>
+            <tr>
+              <th class="name">Date</th>
+              <th class="name">Time</th>
+              <th class="name">Subject</th>
+              <th class="name">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (n of forexNews; track n.date + n.time) {
+              <tr>
+                <td class="name">{{ n.date }}</td>
+                <td class="name">{{ n.time }}</td>
+                <td class="name">{{ n.subject }}</td>
+                <td class="name rf-muted">{{ n.source }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Q4: Broken Rate Calculator -->
+    <section class="quad rf-card">
+      <header class="quad__bar quad__bar--center">
+        <span class="quad__title">Broken Rate Calculator</span>
+      </header>
+      <div class="quad__scroll">
+        <table class="quotes quotes--sm">
+          <thead>
+            <tr>
+              <th class="name">Value Date</th>
+              <th class="num">SpotRate Bid</th>
+              <th class="num">SpotRate Ask</th>
+              <th class="num">Swappoint Bid</th>
+              <th class="num">Swappoint Ask</th>
+              <th class="num">FwdOut Bid</th>
+              <th class="num">FwdOut Ask</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="name">
+                <input
+                  type="date"
+                  class="rf-input brc__date"
+                  [value]="brokenDate()"
+                  (change)="onBrokenDate($any($event.target).value)"
+                />
+              </td>
+              <td class="num">{{ brokenResult().spotBid | number: '1.4-4' }}</td>
+              <td class="num">{{ brokenResult().spotAsk | number: '1.4-4' }}</td>
+              <td class="num">{{ brokenResult().swapBid | number: '1.4-4' }}</td>
+              <td class="num">{{ brokenResult().swapAsk | number: '1.4-4' }}</td>
+              <td class="num">{{ brokenResult().fwdBid | number: '1.4-4' }}</td>
+              <td class="num">{{ brokenResult().fwdAsk | number: '1.4-4' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="brc__note rf-muted">
+          {{ selectedFwdCurrency() }} · {{ brokenResult().days }} days forward from spot.
+        </p>
+      </div>
+    </section>
+  </div>
+}
+
+<!-- ===== NEWS ===== -->
+@if (active() === 'NEWS') {
+  <div class="news">
+    @for (n of news; track n.headline) {
+      <article class="news__item rf-card">
+        <div class="news__top">
+          <span class="news__source">{{ n.source }}</span>
+          <span class="news__time rf-muted">{{ n.time }}</span>
+          <span class="news__tag news__tag--{{ n.sentiment | lowercase }}">{{ n.sentiment }}</span>
+        </div>
+        <p class="news__headline">{{ n.headline }}</p>
+      </article>
+    }
+  </div>
+}
+
+<!-- ===== Online Support ===== -->
+@if (active() === 'Online Support') {
+  <div class="support rf-card">
+    <div class="support__icon"><mat-icon>support_agent</mat-icon></div>
+    <h3 class="support__title">We're here to help</h3>
+    <p class="support__sub rf-muted">
+      Dealing-desk support is available on every trading day. Reach us through any channel below.
+    </p>
+    <div class="support__grid">
+      <div class="support__card">
+        <mat-icon>call</mat-icon>
+        <span class="support__label">Dealing Desk</span>
+        <span class="support__value">+91 22 6789 0000</span>
+      </div>
+      <div class="support__card">
+        <mat-icon>mail</mat-icon>
+        <span class="support__label">Email</span>
+        <span class="support__value">dealers&#64;routeforex.com</span>
+      </div>
+      <div class="support__card">
+        <mat-icon>schedule</mat-icon>
+        <span class="support__label">Market Hours</span>
+        <span class="support__value">Mon–Fri · 09:00–17:00 IST</span>
+      </div>
+      <div class="support__card">
+        <mat-icon>chat</mat-icon>
+        <span class="support__label">Live Chat</span>
+        <span class="support__value support__online">● Online now</span>
+      </div>
+    </div>
+  </div>
+}
+</div>
+<!-- /.ticker -->

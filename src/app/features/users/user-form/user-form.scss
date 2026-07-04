@@ -1,0 +1,56 @@
+// Strong-password live checklist.
+.pwrules {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 18px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm);
+  background: var(--rf-surface-2);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--rf-muted-fg);
+    transition: color 0.15s ease;
+
+    mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+      color: var(--rf-muted-fg);
+      transition: color 0.15s ease;
+    }
+
+    &.pwrules__item--ok {
+      color: var(--rf-success);
+      font-weight: 600;
+      mat-icon {
+        color: var(--rf-success);
+      }
+    }
+  }
+}
+
+// Green "strong / matches" state on the input.
+.rf-input--ok {
+  border-color: var(--rf-success) !important;
+  background: color-mix(in oklab, var(--rf-success) 7%, var(--rf-surface-2));
+}
+
+// Green tick, sitting just left of the show/hide toggle.
+.pw-ok {
+  position: absolute;
+  right: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--rf-success);
+  pointer-events: none;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}

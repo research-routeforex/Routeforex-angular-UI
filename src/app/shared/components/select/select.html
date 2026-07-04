@@ -1,0 +1,44 @@
+<button
+  type="button"
+  class="sel__trigger"
+  [class.sel__trigger--open]="open()"
+  [class.sel__trigger--placeholder]="!selectedLabel()"
+  [disabled]="disabled()"
+  (click)="toggle()"
+>
+  <span class="sel__value">{{ selectedLabel() || placeholder() }}</span>
+  <mat-icon class="sel__chev" [class.sel__chev--open]="open()">expand_more</mat-icon>
+</button>
+
+@if (open()) {
+  <div class="sel__panel">
+    @if (searchable()) {
+      <div class="sel__search">
+        <mat-icon>search</mat-icon>
+        <input
+          #searchInput
+          type="text"
+          [value]="search()"
+          [placeholder]="searchPlaceholder()"
+          (input)="search.set($any($event.target).value)"
+        />
+      </div>
+    }
+    <ul class="sel__list">
+      @for (opt of filtered(); track opt.value) {
+        <li
+          class="sel__opt"
+          [class.sel__opt--active]="opt.value === value()"
+          (click)="selectOption(opt)"
+        >
+          <span>{{ opt.label }}</span>
+          @if (opt.value === value()) {
+            <mat-icon>check</mat-icon>
+          }
+        </li>
+      } @empty {
+        <li class="sel__empty">No matches</li>
+      }
+    </ul>
+  </div>
+}

@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/808c8012-b405-4bef-9721-5aacd2827503/resourceGroups/RouteForex/providers/Microsoft.Web/sites/RouteForexApplication",
+    "appService.deploySubpath": "dist\\routeforex-web\\browser"
+}

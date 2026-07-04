@@ -1,0 +1,710 @@
+:host {
+  display: block;
+}
+
+// ---- Hero band ------------------------------------------------------------
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, var(--rf-info) 12%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a {
+    top: -120px;
+    right: 8%;
+    background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+    animation: t-blob-a 9s ease-in-out infinite;
+  }
+  &--b {
+    bottom: -150px;
+    left: 12%;
+    background: radial-gradient(circle, var(--rf-info), transparent 70%);
+    animation: t-blob-b 11s ease-in-out infinite;
+  }
+}
+@keyframes t-blob-a {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-26px, 18px); }
+}
+@keyframes t-blob-b {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(22px, -16px); }
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rf-muted-fg);
+}
+.live__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rf-success);
+  animation: t-pulse 2s ease-out infinite;
+}
+@keyframes t-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--rf-success) 55%, transparent); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+// ---- Tabs row (tabs + full-screen toggle) ---------------------------------
+.tabs-row {
+  display: flex;
+  align-items: center;
+  gap: var(--rf-gap);
+  flex-wrap: wrap;
+  margin-bottom: var(--rf-gap);
+}
+.fs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 30%, var(--rf-border));
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--mat-sys-primary) 14%, var(--rf-surface-2)),
+    var(--rf-surface-2)
+  );
+  color: var(--mat-sys-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+  mat-icon {
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+  }
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px -8px color-mix(in oklab, var(--mat-sys-primary) 60%, transparent);
+  }
+}
+.fs-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rf-success);
+}
+
+// ---- Full-screen (kiosk) overlay ------------------------------------------
+.ticker--fs {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: auto;
+  padding: 14px 18px;
+  background: var(--rf-page-bg);
+}
+.ticker--fs .tabs-row {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 6px 0;
+  background: var(--rf-page-bg);
+}
+// In full screen the quad panels can grow taller to use the space.
+.ticker--fs .quad__scroll {
+  max-height: 42vh;
+  // Quadrants are wide enough now — fit the table, no horizontal scroll.
+  overflow-x: hidden;
+}
+.ticker--fs .quotes--sm {
+  min-width: 0;
+  width: 100%;
+  table-layout: fixed;
+}
+.ticker--fs .quotes--sm th,
+.ticker--fs .quotes--sm td {
+  padding-left: 8px;
+  padding-right: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ticker--fs .tablewrap {
+  max-height: 78vh;
+  overflow: auto;
+}
+
+// ---- Section tabs ---------------------------------------------------------
+.tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 5px;
+  gap: 4px;
+  margin-bottom: 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--mat-sys-primary) 8%, var(--rf-surface-2)),
+    var(--rf-surface-2)
+  );
+  border: 1px solid var(--rf-border);
+  border-radius: 999px;
+  box-shadow: var(--rf-shadow);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rf-muted-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+  &:hover {
+    color: var(--mat-sys-on-surface);
+  }
+  &--active {
+    color: var(--mat-sys-on-primary);
+    background: linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--mat-sys-primary) 92%, white) 0%,
+      color-mix(in oklab, var(--mat-sys-primary) 78%, var(--rf-info)) 100%
+    );
+    box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--mat-sys-primary) 75%, transparent);
+  }
+}
+
+// ---- Quote table ----------------------------------------------------------
+.tablewrap {
+  position: relative;
+  overflow-x: auto;
+  padding: 4px;
+}
+.tablewrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--rf-radius) var(--rf-radius) 0 0;
+  background: linear-gradient(90deg, var(--mat-sys-primary), var(--rf-info), var(--rf-success), var(--rf-warn));
+  background-size: 300% 100%;
+  animation: t-strip 8s linear infinite;
+}
+@keyframes t-strip {
+  0% { background-position: 0% 0; }
+  100% { background-position: 300% 0; }
+}
+
+.quotes {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 1120px;
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--mat-sys-primary) 96%, white) 0%,
+      color-mix(in oklab, var(--mat-sys-primary) 82%, black) 100%
+    );
+    color: var(--mat-sys-on-primary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 12px 12px;
+    white-space: nowrap;
+    border-bottom: 2px solid color-mix(in oklab, var(--mat-sys-primary) 60%, black);
+  }
+  thead th + th {
+    border-left: 1px solid color-mix(in oklab, white 16%, transparent);
+  }
+  thead th:first-child { border-top-left-radius: var(--rf-radius); }
+  thead th:last-child { border-top-right-radius: var(--rf-radius); }
+  thead th.ltp-col {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--mat-sys-primary) 80%, white) 0%,
+      color-mix(in oklab, var(--mat-sys-primary) 70%, black) 100%
+    );
+  }
+  thead th.ltp-col::after {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-left: 6px;
+    border-radius: 50%;
+    vertical-align: middle;
+    background: #fff;
+    animation: t-pulse 1.6s infinite;
+  }
+
+  th.num,
+  td.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  th.name {
+    text-align: left;
+  }
+
+  td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--rf-border);
+  }
+  tbody tr {
+    transition: background 0.14s ease;
+    &:nth-child(even) {
+      background: color-mix(in oklab, var(--mat-sys-primary) 4%, transparent);
+    }
+    &:hover {
+      background: color-mix(in oklab, var(--mat-sys-primary) 10%, transparent);
+      box-shadow: inset 3px 0 0 var(--mat-sys-primary);
+    }
+  }
+  .name {
+    font-weight: 700;
+    color: var(--mat-sys-primary);
+  }
+}
+
+// LTP / % Chg / Net Chg show direction via TEXT colour.
+.up { color: var(--rf-success) !important; }
+.down { color: var(--rf-danger) !important; }
+
+// BID / ASK show direction via BACKGROUND flash; text stays neutral.
+.bid,
+.ask {
+  font-weight: 600;
+  transition: background 0.35s ease;
+}
+.bid.up,
+.ask.up {
+  background: color-mix(in oklab, var(--rf-success) 26%, transparent);
+  color: var(--mat-sys-on-surface) !important;
+}
+.bid.down,
+.ask.down {
+  background: color-mix(in oklab, var(--rf-danger) 26%, transparent);
+  color: var(--mat-sys-on-surface) !important;
+}
+
+.ltp {
+  font-weight: 700;
+  .arr {
+    font-size: 18px;
+    width: 14px;
+    height: 18px;
+    vertical-align: middle;
+    margin-left: -2px;
+  }
+}
+.chg {
+  font-weight: 700;
+}
+
+// ---- Forex 4-quadrant dashboard -------------------------------------------
+.forex-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--rf-gap);
+}
+.quad {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+.quad__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--rf-border);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--mat-sys-primary) 12%, var(--rf-surface-2)),
+    var(--rf-surface-2)
+  );
+  &--center {
+    justify-content: center;
+  }
+}
+.quad__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mat-sys-primary);
+}
+.quad__scroll {
+  overflow: auto;
+  max-height: 340px;
+  scrollbar-width: thin;
+}
+.quad__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--rf-border);
+  border-radius: 999px;
+  background: var(--rf-page-bg);
+  mat-icon {
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+    color: var(--rf-muted-fg);
+  }
+  input {
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    color: var(--rf-text);
+    width: 130px;
+  }
+}
+.quad__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px solid var(--rf-border);
+  border-radius: 8px;
+  background: var(--rf-surface-2);
+  color: var(--mat-sys-on-surface);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+  &:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--mat-sys-primary) 12%, var(--rf-surface-2));
+  }
+  &--add:hover:not(:disabled) {
+    color: var(--rf-success);
+  }
+  &--del:hover:not(:disabled) {
+    color: var(--rf-danger);
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+.quad__ccy {
+  width: 150px;
+  height: 30px;
+}
+.quad__empty {
+  text-align: center;
+  padding: 18px;
+}
+
+// Compact table variant for the quadrants.
+.quotes--sm {
+  min-width: 620px;
+  font-size: 12px;
+  thead th {
+    position: static;
+    padding: 8px 10px;
+    border-radius: 0;
+  }
+  thead th.group {
+    text-align: center;
+  }
+  thead th.sub {
+    text-align: center;
+    font-size: 10px;
+  }
+  td {
+    padding: 5px 10px;
+  }
+}
+.quotes--sm tbody tr.row--sel td {
+  background: color-mix(in oklab, var(--mat-sys-primary) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--mat-sys-primary);
+}
+
+.brc__date {
+  height: 28px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.brc__note {
+  padding: 10px 12px 4px;
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .forex-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---- NEWS -----------------------------------------------------------------
+.news {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--rf-gap);
+}
+.news__item {
+  padding: 14px 16px;
+  border-left: 4px solid var(--mat-sys-primary);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -12px color-mix(in oklab, var(--mat-sys-primary) 50%, transparent);
+  }
+}
+.news__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.news__source {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mat-sys-primary);
+}
+.news__time {
+  font-size: 12px;
+}
+.news__tag {
+  margin-left: auto;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  &--bullish { color: var(--rf-success); background: color-mix(in oklab, var(--rf-success) 14%, transparent); }
+  &--bearish { color: var(--rf-danger); background: color-mix(in oklab, var(--rf-danger) 14%, transparent); }
+  &--neutral { color: var(--rf-info); background: color-mix(in oklab, var(--rf-info) 14%, transparent); }
+}
+.news__headline {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+// ---- Online Support -------------------------------------------------------
+.support {
+  padding: 28px 24px;
+  text-align: center;
+}
+.support__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 12px;
+  border-radius: 18px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--mat-sys-primary), oklch(62% 0.24 290));
+  box-shadow: 0 8px 22px -8px color-mix(in oklab, var(--mat-sys-primary) 65%, transparent);
+  mat-icon {
+    font-size: 34px;
+    width: 34px;
+    height: 34px;
+  }
+}
+.support__title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+}
+.support__sub {
+  margin: 0 auto 20px;
+  max-width: 440px;
+  font-size: 14px;
+}
+.support__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--rf-gap);
+  max-width: 720px;
+  margin: 0 auto;
+}
+.support__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: color-mix(in oklab, var(--mat-sys-primary) 5%, var(--rf-surface-2));
+  mat-icon {
+    color: var(--mat-sys-primary);
+    margin-bottom: 4px;
+  }
+}
+.support__label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--rf-muted-fg);
+}
+.support__value {
+  font-size: 14px;
+  font-weight: 600;
+}
+.support__online {
+  color: var(--rf-success);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__glow,
+  .live__dot,
+  .tablewrap::before,
+  .quotes thead th.ltp-col::after {
+    animation: none;
+  }
+}
+
+// ---- Metered access: countdown chip + paywall -----------------------------
+.ticker {
+  position: relative;
+}
+
+// Remaining-time chip in the header / tabs row.
+.meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--rf-warn, #b45309);
+  background: color-mix(in oklab, #f59e0b 16%, transparent);
+  border: 1px solid color-mix(in oklab, #f59e0b 40%, transparent);
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+}
+
+// Full-cover paywall once the daily budget is spent.
+.paywall {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in oklab, var(--rf-surface) 78%, transparent);
+  backdrop-filter: blur(6px);
+
+  &__card {
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    padding: 32px 28px;
+    border: 1px solid var(--rf-border);
+    border-radius: var(--rf-radius);
+    background: var(--rf-surface-2);
+    box-shadow: 0 24px 60px oklch(20% 0.02 285 / 0.18);
+  }
+  &__icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #f59e0b;
+  }
+  &__title {
+    margin: 10px 0 6px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--rf-text);
+  }
+  &__msg {
+    margin: 0 0 18px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--rf-muted-fg);
+  }
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--rf-radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+    &:hover {
+      filter: brightness(1.05);
+    }
+  }
+  &__note {
+    margin: 14px 0 0;
+    font-size: 12.5px;
+    color: var(--rf-muted-fg);
+  }
+}

@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit Role' : 'New Role' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <mat-dialog-content>
+    <div style="min-width: 420px; max-width: 100%">
+      <app-field label="Name" required [control]="form.controls.name" error="Name is required.">
+        <input class="rf-input" formControlName="name" placeholder="e.g. Dealer" />
+      </app-field>
+
+      <app-field label="Description" hint="Optional — describe what this role can do.">
+        <textarea
+          class="rf-textarea"
+          formControlName="description"
+          rows="3"
+          placeholder="Short description"
+        ></textarea>
+      </app-field>
+
+      @if (isEdit) {
+        <mat-slide-toggle formControlName="isActive" color="primary">Active</mat-slide-toggle>
+      }
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+      {{ isEdit ? 'Save changes' : 'Create' }}
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -1,0 +1,62 @@
+<div class="login">
+  <header class="login__head">
+    <h2>Welcome back</h2>
+    <p class="rf-muted">Sign in to your RouteForex account to continue.</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="login__form">
+    <app-field
+      label="Username"
+      [control]="form.controls.userName"
+      error="Username is required."
+    >
+      <mat-icon class="rf-control__icon">person</mat-icon>
+      <input
+        class="rf-input rf-input--icon"
+        formControlName="userName"
+        autocomplete="username"
+        placeholder="Enter your username"
+      />
+    </app-field>
+
+    <app-field label="Password" [control]="form.controls.password" error="Password is required.">
+      <mat-icon class="rf-control__icon">lock</mat-icon>
+      <input
+        class="rf-input rf-input--icon rf-input--affix"
+        [type]="hidePassword() ? 'password' : 'text'"
+        formControlName="password"
+        autocomplete="current-password"
+        placeholder="Enter your password"
+      />
+      <button
+        mat-icon-button
+        type="button"
+        class="rf-control__affix"
+        (click)="hidePassword.set(!hidePassword())"
+        [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
+      >
+        <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+    </app-field>
+
+    <div class="login__row">
+      <mat-checkbox formControlName="rememberMe" color="primary">Remember me</mat-checkbox>
+      <a class="login__link" routerLink="/auth/forgot-password">Forgot password?</a>
+    </div>
+
+    <button
+      mat-flat-button
+      color="primary"
+      class="login__submit"
+      type="submit"
+      [disabled]="submitting()"
+    >
+      {{ submitting() ? 'Signing in…' : 'Sign in' }}
+    </button>
+  </form>
+
+  <p class="login__hint rf-muted">
+    Use your administrator-issued credentials. Trouble signing in? Contact your system
+    administrator.
+  </p>
+</div>

@@ -1,0 +1,128 @@
+:host {
+  display: block;
+}
+
+// ---- Hero band ------------------------------------------------------------
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, oklch(62% 0.24 290) 14%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a { top: -120px; right: 8%; background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%); }
+  &--b { bottom: -150px; left: 12%; background: radial-gradient(circle, oklch(62% 0.24 290), transparent 70%); }
+}
+
+// ---- Master selector tabs -------------------------------------------------
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: var(--rf-gap);
+  padding: 6px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: var(--rf-surface-2);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: var(--rf-radius-sm);
+  background: transparent;
+  color: var(--rf-muted-fg);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  mat-icon {
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+  }
+  &:hover {
+    background: var(--rf-surface-muted);
+    color: var(--rf-text);
+  }
+  &--active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--rf-primary), color-mix(in oklab, var(--rf-primary) 70%, #7c3aed));
+    box-shadow: 0 4px 12px color-mix(in oklab, var(--rf-primary) 30%, transparent);
+  }
+  &__soon {
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--rf-warn-bg);
+    color: var(--rf-warn);
+  }
+  &--active &__soon {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
+}
+
+// ---- Coming-soon state ----------------------------------------------------
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 260px;
+  padding: 40px 20px;
+  text-align: center;
+  border: 1px dashed var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: var(--rf-surface-2);
+
+  mat-icon {
+    font-size: 42px;
+    width: 42px;
+    height: 42px;
+    color: var(--rf-muted-fg);
+    opacity: 0.7;
+  }
+  &__title {
+    margin: 6px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--rf-text);
+  }
+  &__hint {
+    margin: 0;
+    max-width: 460px;
+    font-size: 13px;
+    color: var(--rf-muted-fg);
+  }
+}

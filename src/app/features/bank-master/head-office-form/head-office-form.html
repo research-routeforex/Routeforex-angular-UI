@@ -1,0 +1,123 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    [title]="isEdit() ? 'Edit Head Office' : 'New Head Office'"
+    subtitle="Capture the head office, its location and contact persons."
+    [breadcrumbs]="[
+      { label: 'Masters' },
+      { label: 'Bank Master', link: '/bank-master' },
+      { label: isEdit() ? 'Edit Head Office' : 'New Head Office' }
+    ]"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving() || loading()">
+      <mat-icon>save</mat-icon> {{ saving() ? 'Saving…' : 'Save Head Office' }}
+    </button>
+  </app-page-header>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <!-- Head office information -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>apartment</mat-icon> Head Office Information</h3>
+    <div class="grid">
+      <app-field
+        label="Bank"
+        required
+        [control]="form.controls.headOfficeName"
+        error="Select a bank."
+      >
+        <app-select
+          formControlName="headOfficeName"
+          [options]="bankOptions()"
+          placeholder="Select bank"
+          searchPlaceholder="Search bank…"
+        />
+      </app-field>
+
+      <app-field label="Region" required [control]="form.controls.regionId" error="Select a region.">
+        <app-select
+          formControlName="regionId"
+          [options]="regionOptions()"
+          placeholder="Select region"
+          searchPlaceholder="Search region…"
+        />
+      </app-field>
+
+      <app-field label="Country" required [control]="form.controls.countryCode" error="Select a country.">
+        <app-select
+          formControlName="countryCode"
+          [options]="countryOptions()"
+          placeholder="Select region first"
+          searchPlaceholder="Search country…"
+        />
+      </app-field>
+
+      <app-field label="City" required [control]="form.controls.cityCode" error="Select a city.">
+        <app-select
+          formControlName="cityCode"
+          [options]="cityOptions()"
+          placeholder="Select country first"
+          searchPlaceholder="Search city…"
+        />
+      </app-field>
+
+      <app-field label="Address Line 1" class="span-2">
+        <input class="rf-input" formControlName="addressLine1" placeholder="Building, street…" />
+      </app-field>
+
+      <app-field label="Address Line 2" class="span-2">
+        <input class="rf-input" formControlName="addressLine2" placeholder="Area, landmark…" />
+      </app-field>
+
+      <app-field label="PIN Code">
+        <input class="rf-input" type="number" formControlName="pin" placeholder="e.g. 400001" />
+      </app-field>
+
+      <app-field label="Land Line">
+        <input class="rf-input" formControlName="landLineNo" placeholder="e.g. 022-xxxxxxx" />
+      </app-field>
+
+      <app-field label="Status">
+        <app-select formControlName="activeStatus" [options]="statusOptions" [searchable]="false" />
+      </app-field>
+    </div>
+  </section>
+
+  <!-- Contact persons -->
+  <section class="rf-card sec">
+    <div class="sec__head">
+      <h3 class="sec__title sec__title--flush"><mat-icon>groups</mat-icon> Contact Persons</h3>
+      <span class="rf-spacer"></span>
+      <button mat-stroked-button type="button" (click)="addContact()">
+        <mat-icon>person_add</mat-icon> Add Contact
+      </button>
+    </div>
+
+    <div formArrayName="contacts">
+      @for (grp of contacts.controls; track $index) {
+        <div class="contact-row" [formGroupName]="$index">
+          <app-field label="Contact Name" required [control]="grp.get('contactName')" error="Name is required.">
+            <input class="rf-input" formControlName="contactName" placeholder="e.g. Rahul Sharma" />
+          </app-field>
+          <app-field label="Contact Number">
+            <input class="rf-input" formControlName="contactNumber" placeholder="e.g. +91 98xxxxxx" />
+          </app-field>
+          <button
+            type="button"
+            class="rf-iconbtn rf-iconbtn--del contact-row__del"
+            (click)="removeContact($index)"
+            matTooltip="Remove contact"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      } @empty {
+        <p class="contacts__empty rf-muted">
+          No contacts added. Use “Add Contact” to include contact persons.
+        </p>
+      }
+    </div>
+  </section>
+</form>

@@ -1,0 +1,98 @@
+<div class="rf-card dt">
+  @if (title() || searchable()) {
+    <div class="dt__toolbar">
+      @if (title()) {
+        <h3 class="dt__title">{{ title() }}</h3>
+      }
+      <span class="rf-spacer"></span>
+      @if (searchable()) {
+        <div class="rf-control dt__search">
+          <mat-icon class="rf-control__icon">search</mat-icon>
+          <input
+            class="rf-input rf-input--icon"
+            type="search"
+            [placeholder]="searchPlaceholder()"
+            (input)="onSearch($any($event.target).value)"
+          />
+        </div>
+      }
+      <ng-content select="[toolbarActions]"></ng-content>
+    </div>
+  }
+
+  <div class="dt__progress">
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+  </div>
+
+  <div class="dt__scroll">
+    <table mat-table [dataSource]="rows()" matSort (matSortChange)="onSort($event)" class="rf-full">
+      @for (col of columns(); track col.key) {
+        <ng-container [matColumnDef]="col.key">
+          @if (col.sortable) {
+            <th mat-header-cell *matHeaderCellDef mat-sort-header [style.text-align]="col.align || 'left'">
+              {{ col.header }}
+            </th>
+          } @else {
+            <th mat-header-cell *matHeaderCellDef [style.text-align]="col.align || 'left'">
+              {{ col.header }}
+            </th>
+          }
+          <td mat-cell *matCellDef="let row" [style.text-align]="col.align || 'left'" [style.width]="col.width">
+            @switch (col.type) {
+              @case ('badge') {
+                <span class="rf-chip rf-chip--{{ badgeFor(col, row).variant }}">
+                  {{ badgeFor(col, row).label }}
+                </span>
+              }
+              @case ('boolean') {
+                <mat-icon class="dt__bool" [class.dt__bool--on]="row[col.key]">
+                  {{ row[col.key] ? 'check_circle' : 'remove_circle_outline' }}
+                </mat-icon>
+              }
+              @default {
+                {{ cellText(col, row) }}
+              }
+            }
+          </td>
+        </ng-container>
+      }
+
+      @if (actions().length) {
+        <ng-container matColumnDef="__actions">
+          <th mat-header-cell *matHeaderCellDef class="dt__actions-col">Actions</th>
+          <td mat-cell *matCellDef="let row" class="dt__actions-col">
+            @for (act of actions(); track act.id) {
+              @if (actionVisible(act, row)) {
+                <button
+                  mat-icon-button
+                  [color]="act.color || 'primary'"
+                  [matTooltip]="act.tooltip"
+                  (click)="onAction(act.id, row)"
+                >
+                  <mat-icon>{{ act.icon }}</mat-icon>
+                </button>
+              }
+            }
+          </td>
+        </ng-container>
+      }
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+    </table>
+
+    @if (!loading() && rows().length === 0) {
+      <app-empty-state icon="inbox" [message]="emptyMessage()"></app-empty-state>
+    }
+  </div>
+
+  <mat-paginator
+    [length]="total()"
+    [pageSize]="pageSizeOptions()[1] || 20"
+    [pageSizeOptions]="pageSizeOptions()"
+    showFirstLastButtons
+    (page)="onPage($event)"
+  ></mat-paginator>
+</div>

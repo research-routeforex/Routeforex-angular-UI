@@ -1,0 +1,136 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    [title]="isEdit() ? 'Edit Company' : 'New Company'"
+    subtitle="Capture the company profile, statutory details and contact."
+    [breadcrumbs]="[
+      { label: 'Masters' },
+      { label: 'Company Master', link: '/company-master' },
+      { label: isEdit() ? 'Edit' : 'New' }
+    ]"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving() || loading()">
+      <mat-icon>save</mat-icon> {{ saving() ? 'Saving…' : 'Save Company' }}
+    </button>
+  </app-page-header>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <!-- Company information -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>domain</mat-icon> Company Information</h3>
+    <div class="grid">
+      <app-field
+        label="Company Name"
+        required
+        [control]="form.controls.companyName"
+        error="Company name is required."
+        class="c-6"
+      >
+        <input class="rf-input" formControlName="companyName" placeholder="e.g. RouteForex Solutions Pvt. Ltd." />
+      </app-field>
+
+      <app-field label="Website" class="c-6">
+        <input class="rf-input" formControlName="website" placeholder="e.g. www.routeforex.com" />
+      </app-field>
+
+      <app-field label="GSTN" class="c-3">
+        <input class="rf-input" formControlName="gstn" placeholder="15-digit GSTIN" />
+      </app-field>
+
+      <app-field label="PAN" class="c-3">
+        <input class="rf-input" formControlName="pan" placeholder="e.g. ABCDE1234F" />
+      </app-field>
+
+      <app-field label="CIN" class="c-3">
+        <input class="rf-input" formControlName="cin" placeholder="Corporate Identity Number" />
+      </app-field>
+
+      <app-field label="Status" class="c-3">
+        <app-select formControlName="activeStatus" [options]="statusOptions" [searchable]="false" />
+      </app-field>
+    </div>
+  </section>
+
+  <!-- Address -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>location_on</mat-icon> Address</h3>
+    <div class="grid">
+      <app-field label="Address Line 1" class="c-5">
+        <input class="rf-input" formControlName="addressLine1" placeholder="Building, street…" />
+      </app-field>
+      <app-field label="Address Line 2" class="c-4">
+        <input class="rf-input" formControlName="addressLine2" placeholder="Area, landmark…" />
+      </app-field>
+      <app-field label="Country" class="c-3">
+        <app-select
+          formControlName="country"
+          [options]="countryOptions()"
+          placeholder="Select country"
+          searchPlaceholder="Search country…"
+        />
+      </app-field>
+
+      <app-field label="State" class="c-3">
+        <app-select
+          formControlName="state"
+          [options]="stateOptions()"
+          placeholder="Select country first"
+          searchPlaceholder="Search state…"
+        />
+      </app-field>
+      <app-field label="City" class="c-3">
+        <app-select
+          formControlName="city"
+          [options]="cityOptions()"
+          placeholder="Select country first"
+          searchPlaceholder="Search city…"
+        />
+      </app-field>
+      <app-field label="PIN Code" class="c-3">
+        <input class="rf-input" type="number" formControlName="pin" placeholder="e.g. 400001" />
+      </app-field>
+      <app-field label="GST State Code" class="c-3">
+        <input class="rf-input" formControlName="gsStateCode" placeholder="e.g. 27" />
+      </app-field>
+    </div>
+  </section>
+
+  <!-- Contact details -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>contacts</mat-icon> Contact Details</h3>
+    <div class="grid">
+      <app-field label="Contact 1" class="c-4">
+        <input class="rf-input" formControlName="contact1" placeholder="Primary phone" />
+      </app-field>
+      <app-field label="Contact 2" class="c-4">
+        <input class="rf-input" formControlName="contact2" placeholder="Alternate phone" />
+      </app-field>
+      <app-field
+        label="Email"
+        class="c-4"
+        [control]="form.controls.emailId"
+        [error]="form.controls.emailId.hasError('email') ? 'Enter a valid email.' : ''"
+      >
+        <input class="rf-input" type="email" formControlName="emailId" placeholder="company@domain.com" />
+      </app-field>
+
+      <app-field label="Contact Name" class="c-4">
+        <input class="rf-input" formControlName="contactName" placeholder="e.g. Rahul Sharma" />
+      </app-field>
+      <app-field
+        label="Contact Email"
+        class="c-4"
+        [control]="form.controls.contactEmail"
+        [error]="form.controls.contactEmail.hasError('email') ? 'Enter a valid email.' : ''"
+      >
+        <input class="rf-input" type="email" formControlName="contactEmail" placeholder="name@domain.com" />
+      </app-field>
+      <app-field label="Contact Number" class="c-4">
+        <input class="rf-input" formControlName="contactNumber" placeholder="e.g. +91 98xxxxxx" />
+      </app-field>
+    </div>
+  </section>
+</form>

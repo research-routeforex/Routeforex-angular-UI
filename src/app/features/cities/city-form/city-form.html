@@ -1,0 +1,39 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit City' : 'New City' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <mat-dialog-content>
+    <div class="form-grid">
+      <app-field
+        label="Code"
+        required
+        [control]="form.controls.code"
+        [error]="form.controls.code.hasError('code') ? 'Letters, numbers, dash or underscore only.' : 'Code is required.'"
+      >
+        <input class="rf-input" formControlName="code" maxlength="20" placeholder="e.g. MUM" />
+      </app-field>
+
+      <app-field label="Name" required [control]="form.controls.name" error="Name is required.">
+        <input class="rf-input" formControlName="name" placeholder="e.g. Mumbai" />
+      </app-field>
+
+      <app-field label="State">
+        <input class="rf-input" formControlName="stateName" placeholder="e.g. Maharashtra" />
+      </app-field>
+
+      <app-field label="Country">
+        <input class="rf-input" formControlName="countryName" placeholder="e.g. India" />
+      </app-field>
+    </div>
+
+    @if (isEdit) {
+      <mat-slide-toggle formControlName="isActive" color="primary">Active</mat-slide-toggle>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+      {{ isEdit ? 'Save changes' : 'Create' }}
+    </button>
+  </mat-dialog-actions>
+</form>

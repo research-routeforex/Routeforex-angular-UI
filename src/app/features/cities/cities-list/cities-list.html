@@ -1,0 +1,24 @@
+<app-page-header
+  title="Cities"
+  subtitle="Manage the city master used across parties and branches."
+  [breadcrumbs]="[{ label: 'Masters' }, { label: 'Cities' }]"
+>
+  @if (canManage) {
+    <button mat-flat-button color="primary" (click)="openForm('create')">
+      <mat-icon>add</mat-icon>
+      Add City
+    </button>
+  }
+</app-page-header>
+
+<app-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  [total]="total()"
+  [loading]="loading()"
+  [actions]="actions()"
+  searchPlaceholder="Search cities…"
+  emptyMessage="No cities found."
+  (queryChange)="onQueryChange($event)"
+  (action)="onAction($event)"
+/>

@@ -1,0 +1,90 @@
+<div class="child">
+  <!-- Add bank (collapsible, with the full TPO_Mast_ClientBank field set) -->
+  <div class="rf-card child__add">
+    <div class="child__addhead">
+      <h4 class="child__addtitle">
+        <mat-icon>account_balance</mat-icon>
+        {{ editingId() ? 'Edit Bank' : 'Client Banks' }}
+      </h4>
+      <span class="rf-spacer"></span>
+      <button mat-stroked-button type="button" (click)="toggleForm()">
+        <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+        {{ showForm() ? 'Cancel' : 'Add Bank' }}
+      </button>
+    </div>
+
+    @if (showForm()) {
+      <form class="child__form" [formGroup]="form" (ngSubmit)="save()">
+        <div class="child__fields">
+          <app-field label="Bank" required [control]="form.controls.bankId" error="Select a bank.">
+            <app-select formControlName="bankId" [options]="bankOptions()" placeholder="Select bank" searchPlaceholder="Search bank…" />
+          </app-field>
+          <app-field label="Account No"><input class="rf-input" formControlName="accountNo" /></app-field>
+          <app-field label="IFSC Code"><input class="rf-input" formControlName="ifscCode" /></app-field>
+          <app-field label="Swift Code"><input class="rf-input" formControlName="swiftCode" /></app-field>
+          <app-field label="Bank Branch"><input class="rf-input" formControlName="bankBranch" /></app-field>
+          <app-field label="Branch Code"><input class="rf-input" formControlName="branchCode" /></app-field>
+          <app-field label="Bank Margin"><input class="rf-input" type="number" step="0.0001" formControlName="bankMargin" /></app-field>
+          <app-field label="Address Line 1"><input class="rf-input" formControlName="address1" /></app-field>
+          <app-field label="Address Line 2"><input class="rf-input" formControlName="address2" /></app-field>
+          <app-field label="PIN"><input class="rf-input" type="number" formControlName="pin" /></app-field>
+          <app-field label="RM Name"><input class="rf-input" formControlName="rmName" /></app-field>
+          <app-field label="RM Contact No"><input class="rf-input" formControlName="rmContactNo" /></app-field>
+          <app-field label="RM Email"><input class="rf-input" type="email" formControlName="rmEmail" /></app-field>
+        </div>
+        <div class="child__formactions">
+          <button mat-stroked-button type="button" (click)="closeForm()">Cancel</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+            <mat-icon>save</mat-icon>
+            {{ saving() ? 'Saving…' : editingId() ? 'Update Bank' : 'Save Bank' }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+
+  <!-- Existing banks -->
+  <div class="rf-card child__tablewrap">
+    <table class="child__table">
+      <thead>
+        <tr>
+          <th>Bank</th>
+          <th>Account No</th>
+          <th>IFSC</th>
+          <th>Branch</th>
+          <th>Margin</th>
+          <th>RM Name</th>
+          <th>RM Contact</th>
+          <th class="ta-r">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (b of banks(); track b.clientBankId) {
+          <tr>
+            <td class="name">{{ b.bankName || ('#' + b.bankId) || '—' }}</td>
+            <td>{{ b.accountNo || '—' }}</td>
+            <td>{{ b.ifscCode || '—' }}</td>
+            <td>{{ b.bankBranch || '—' }}</td>
+            <td>{{ b.bankMargin ?? '—' }}</td>
+            <td>{{ b.rmName || '—' }}</td>
+            <td>{{ b.rmContactNo || '—' }}</td>
+            <td class="ta-r">
+              <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(b)" matTooltip="Edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(b)" matTooltip="Remove">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8" class="empty rf-muted">
+              {{ loading() ? 'Loading…' : 'No banks added yet.' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

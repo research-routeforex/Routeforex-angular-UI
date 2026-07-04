@@ -1,0 +1,44 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit Tenor' : 'New Tenor' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <mat-dialog-content>
+    <div class="form-grid">
+      <app-field
+        label="Code"
+        required
+        [control]="form.controls.code"
+        [error]="form.controls.code.hasError('code') ? 'Letters, numbers, dash or underscore only.' : 'Code is required.'"
+      >
+        <input class="rf-input" formControlName="code" maxlength="20" placeholder="e.g. SPOT" />
+      </app-field>
+
+      <app-field label="Name" required [control]="form.controls.name" error="Name is required.">
+        <input class="rf-input" formControlName="name" placeholder="e.g. Spot" />
+      </app-field>
+
+      <app-field
+        label="Days to Maturity"
+        required
+        [control]="form.controls.daysToMaturity"
+        error="Enter a valid number of days."
+      >
+        <input class="rf-input" type="number" formControlName="daysToMaturity" min="0" />
+      </app-field>
+
+      <app-field label="Sort Order" [control]="form.controls.sortOrder">
+        <input class="rf-input" type="number" formControlName="sortOrder" min="0" />
+      </app-field>
+    </div>
+
+    @if (isEdit) {
+      <mat-slide-toggle formControlName="isActive" color="primary">Active</mat-slide-toggle>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+      {{ isEdit ? 'Save changes' : 'Create' }}
+    </button>
+  </mat-dialog-actions>
+</form>

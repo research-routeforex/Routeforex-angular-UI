@@ -1,0 +1,195 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Management Dashboard"
+    subtitle="Mark-to-market of deals & positions — live, refreshed every 2 seconds"
+    [breadcrumbs]="[{ label: 'Home', link: '/dashboard' }, { label: 'Management Dashboard' }]"
+  >
+    @if (hasClient() && svc.lastUpdated(); as updated) {
+      <span class="live">
+        <span class="live__dot"></span>
+        Live · {{ updated | date: 'HH:mm:ss' }}
+      </span>
+    }
+  </app-page-header>
+</div>
+
+<!-- Controls: client picker + Import / Export section switch -->
+<div class="controls">
+  <div class="client">
+    <label class="client__label" for="md-client">
+      <mat-icon>apartment</mat-icon> Client
+    </label>
+    <app-select
+      class="client__select"
+      [options]="clientOptions()"
+      [ngModel]="selectedClient()"
+      (ngModelChange)="selectClient($event)"
+      placeholder="Select client…"
+      searchPlaceholder="Search client…"
+    />
+  </div>
+
+  <span class="controls__spacer"></span>
+
+  <div class="seg" role="tablist">
+    @for (s of sections; track s) {
+      <button
+        type="button"
+        role="tab"
+        class="seg__btn"
+        [class.seg__btn--active]="section() === s"
+        [attr.aria-selected]="section() === s"
+        (click)="selectSection(s)"
+      >
+        <mat-icon>{{ s === 'Import' ? 'south_west' : 'north_east' }}</mat-icon>
+        {{ s }}
+      </button>
+    }
+  </div>
+</div>
+
+@if (!hasClient()) {
+  <div class="state">
+    <mat-icon>apartment</mat-icon>
+    <p class="state__title">Select a client to begin</p>
+    <p class="state__hint">Choose a client above to load their Import / Export positions.</p>
+  </div>
+} @else if (svc.loading()) {
+  <div class="state">
+    <mat-icon class="state__spin">progress_activity</mat-icon>
+    <p class="state__title">Loading positions…</p>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <mat-icon>inbox</mat-icon>
+    <p class="state__title">No {{ section() }} transactions</p>
+    <p class="state__hint">This client has no {{ section() }} positions to show.</p>
+  </div>
+} @else {
+
+<!-- Summary strip (INR) -->
+<div class="cards">
+  <div class="card card--exposure">
+    <div class="card__icon"><mat-icon>account_balance_wallet</mat-icon></div>
+    <div class="card__body">
+      <span class="card__label">Outstanding Exposure</span>
+      <span class="card__value">
+        {{ totals().outstandingExposure < 0 ? '-' : '' }}{{ amountSymbol()
+        }}{{ abs(totals().outstandingExposure) | number: '1.0-0' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="card card--forward">
+    <div class="card__icon"><mat-icon>verified_user</mat-icon></div>
+    <div class="card__body">
+      <span class="card__label">Forward Cover</span>
+      <span class="card__value">
+        {{ totals().forwardCover < 0 ? '-' : '' }}{{ amountSymbol()
+        }}{{ abs(totals().forwardCover) | number: '1.0-0' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="card card--unhedged">
+    <div class="card__icon"><mat-icon>gpp_maybe</mat-icon></div>
+    <div class="card__body">
+      <span class="card__label">Amount Unhedged</span>
+      <span class="card__value">
+        {{ totals().amountUnhedged < 0 ? '-' : '' }}{{ amountSymbol()
+        }}{{ abs(totals().amountUnhedged) | number: '1.0-0' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="card card--mtm" [class.is-down]="totals().markToMarket < 0">
+    <div class="card__icon">
+      <mat-icon>{{ totals().markToMarket >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+    </div>
+    <div class="card__body">
+      <span class="card__label">Net Mark to Market <span class="card__live"></span></span>
+      <span class="card__value">
+        <mat-icon class="card__arrow">{{
+          totals().markToMarket >= 0 ? 'arrow_upward' : 'arrow_downward'
+        }}</mat-icon>
+        {{ totals().markToMarket < 0 ? '-' : '' }}₹{{ abs(totals().markToMarket) | number: '1.0-0' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="card card--hedge">
+    <div class="card__icon"><mat-icon>donut_large</mat-icon></div>
+    <div class="card__body">
+      <span class="card__label">Overall Hedge Ratio</span>
+      <span class="card__value">{{ totals().hedgeRatio | percent: '1.1-1' }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Drill-down table: Currency → Month → Date -->
+<div class="rf-card tablewrap">
+  <table class="mtm">
+    <thead>
+      <tr>
+        <th class="name">Currency / Period</th>
+        <th class="num">Outstanding Exposure</th>
+        <th class="num">Forward Contract Amt</th>
+        <th class="num">Amount Unhedged</th>
+        <th class="num">Avg. Costing</th>
+        <th class="num">Fwd Contract Rate</th>
+        <th class="num mtm-col">Mark to Market (₹)</th>
+        <th class="num">Hedge Ratio</th>
+        <th class="num">Avg. WC Cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.id) {
+        <tr
+          class="row row--l{{ row.level }} ccy-{{ row.currency }}"
+          [class.row--expandable]="row.expandable"
+          (click)="toggle(row)"
+        >
+          <td class="name">
+            <span class="indent" [style.width.px]="row.level * 22"></span>
+            @if (row.expandable) {
+              <mat-icon class="chev" [class.chev--open]="row.expanded">chevron_right</mat-icon>
+            } @else {
+              <span class="chev chev--leaf"></span>
+            }
+            @if (row.level === 0) {
+              <span class="ccy-badge">{{ row.symbol }}</span>
+            }
+            <span class="lbl">{{ row.label }}</span>
+          </td>
+          <td class="num">
+            <span class="sym">{{ row.symbol }}</span>{{ row.metrics.outstandingExposure | number: '1.0-0' }}
+          </td>
+          <td class="num">
+            <span class="sym">{{ row.symbol }}</span>{{ row.metrics.forwardContractAmount | number: '1.0-0' }}
+          </td>
+          <td class="num">
+            <span class="sym">{{ row.symbol }}</span>{{ row.metrics.amountUnhedged | number: '1.0-0' }}
+          </td>
+          <td class="num"><span class="sym">{{ inr }}</span>{{ row.metrics.avgCosting | number: '1.4-4' }}</td>
+          <td class="num"><span class="sym">{{ inr }}</span>{{ row.metrics.rateOfForwardContract | number: '1.4-4' }}</td>
+          <td class="num mtm-val {{ mtmClass(row.metrics) }}">
+            {{ row.metrics.markToMarket < 0 ? '-' : '' }}<span class="sym">{{ inr }}</span
+            >{{ abs(row.metrics.markToMarket) | number: '1.0-0' }}
+          </td>
+          <td class="num">{{ row.metrics.hedgeRatio | percent: '1.1-1' }}</td>
+          <td class="num">{{ row.metrics.avgWorkingCapitalCost | number: '1.2-2' }}%</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<p class="footnote rf-muted">
+  Amounts (exposure, forward, unhedged) are in foreign-currency units; rates and
+  mark-to-market are in INR. Click a currency to drill into months, then a month for
+  dates. Mark-to-market is computed server-side.
+</p>
+
+}

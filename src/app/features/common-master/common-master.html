@@ -1,0 +1,54 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Common Master"
+    subtitle="Maintain Country Region, Country, State and City masters."
+    [breadcrumbs]="[{ label: 'Masters' }, { label: 'Common Master' }]"
+  />
+</div>
+
+<!-- Master selector tabs -->
+<div class="tabs" role="tablist">
+  @for (t of tabs; track t.key) {
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [class.tab--active]="active() === t.key"
+      [attr.aria-selected]="active() === t.key"
+      (click)="select(t.key)"
+    >
+      <mat-icon>{{ t.icon }}</mat-icon>
+      {{ t.label }}
+      @if (!t.ready) {
+        <span class="tab__soon">Soon</span>
+      }
+    </button>
+  }
+</div>
+
+<!-- Active master -->
+@switch (active()) {
+  @case ('country-region') {
+    <app-country-region />
+  }
+  @case ('country') {
+    <app-country />
+  }
+  @case ('state') {
+    <app-state />
+  }
+  @case ('city') {
+    <app-city />
+  }
+  @default {
+    <div class="state">
+      <mat-icon>construction</mat-icon>
+      <p class="state__title">{{ activeTab().label }} master — coming soon</p>
+      <p class="state__hint">
+        Share the table schema for {{ activeTab().label }} and it will be enabled here, just like Country Region.
+      </p>
+    </div>
+  }
+}

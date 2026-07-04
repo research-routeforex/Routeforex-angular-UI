@@ -1,0 +1,286 @@
+:host {
+  display: block;
+}
+
+.docs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ---- Upload panel --------------------------------------------------------- */
+.docs__upload {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: var(--rf-surface-2);
+}
+
+.docs__row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.docs__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rf-text);
+}
+
+.docs__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--rf-muted-fg);
+}
+
+/* Voice / Screenshot segmented toggle. */
+.seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--rf-border);
+  border-radius: 999px;
+  background: var(--rf-surface);
+  width: fit-content;
+}
+
+.seg__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rf-muted-fg);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+  &--active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--rf-primary), color-mix(in oklab, var(--rf-primary) 70%, #7c3aed));
+    box-shadow: 0 4px 12px color-mix(in oklab, var(--rf-primary) 36%, transparent);
+  }
+}
+
+/* File picker. */
+.filepick {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filepick__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px dashed color-mix(in oklab, var(--rf-primary) 45%, var(--rf-border));
+  border-radius: var(--rf-radius-sm);
+  color: var(--rf-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: color-mix(in oklab, var(--rf-primary) 6%, transparent);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+  &:hover {
+    background: color-mix(in oklab, var(--rf-primary) 12%, transparent);
+  }
+}
+
+.filepick__name {
+  font-size: 13px;
+  color: var(--rf-muted-fg);
+}
+
+.docs__actions {
+  display: flex;
+}
+
+.docs__upbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border: none;
+  border-radius: var(--rf-radius-sm);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--rf-primary), color-mix(in oklab, var(--rf-primary) 70%, #7c3aed));
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  &:not(:disabled):hover {
+    filter: brightness(1.05);
+  }
+}
+
+/* ---- Inline player -------------------------------------------------------- */
+.player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in oklab, var(--rf-primary) 30%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: color-mix(in oklab, var(--rf-primary) 6%, var(--rf-surface-2));
+
+  &__icon {
+    color: var(--rf-primary);
+    flex: none;
+  }
+  &__body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    audio {
+      width: 100%;
+      height: 36px;
+    }
+  }
+  &__name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--rf-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  &__close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--rf-muted-fg);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--rf-surface-muted);
+    }
+  }
+}
+
+/* ---- Uploaded list -------------------------------------------------------- */
+.docs__listhead {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rf-text);
+}
+
+.docs__empty {
+  margin: 0;
+  padding: 18px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--rf-muted-fg);
+  border: 1px dashed var(--rf-border);
+  border-radius: var(--rf-radius);
+}
+
+.filerow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm);
+  background: var(--rf-surface-2);
+
+  & + & {
+    margin-top: 8px;
+  }
+
+  &__icon {
+    flex: none;
+    color: var(--rf-muted-fg);
+  }
+  &--voice &__icon {
+    color: var(--rf-primary);
+  }
+  &__body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  &__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--rf-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  &__meta {
+    font-size: 11.5px;
+    color: var(--rf-muted-fg);
+  }
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border: 1px solid var(--rf-border);
+    border-radius: var(--rf-radius-sm);
+    background: var(--rf-surface);
+    color: var(--rf-text);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+
+    mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+    &--open {
+      color: var(--rf-primary);
+      border-color: color-mix(in oklab, var(--rf-primary) 40%, var(--rf-border));
+    }
+    &--open:hover {
+      background: color-mix(in oklab, var(--rf-primary) 10%, transparent);
+    }
+    &--del {
+      flex: none;
+      padding: 6px 8px;
+      color: #dc2626;
+      border-color: color-mix(in oklab, #dc2626 35%, var(--rf-border));
+    }
+    &--del:hover {
+      background: color-mix(in oklab, #dc2626 10%, transparent);
+    }
+  }
+}

@@ -1,0 +1,59 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Settings"
+    subtitle="Manage your profile and application preferences."
+    [breadcrumbs]="[{ label: 'Settings' }]"
+  />
+</div>
+
+<div class="settings">
+  <div class="rf-card panel">
+    <h3 class="panel__title"><mat-icon>person</mat-icon> Profile</h3>
+    <div class="profile">
+      <div class="profile__avatar">
+        {{ (auth.displayName()[0] || 'U') | uppercase }}
+      </div>
+      <div class="profile__meta">
+        <span class="profile__name">{{ auth.displayName() }}</span>
+        <span class="rf-muted">{{ user()?.email }}</span>
+        <div class="profile__roles">
+          @for (role of roleLabels(); track role) {
+            <span class="rf-chip rf-chip--info">{{ role }}</span>
+          }
+        </div>
+      </div>
+    </div>
+    <dl class="kv">
+      <div><dt>Username</dt><dd>{{ user()?.userName }}</dd></div>
+      <div><dt>User ID</dt><dd>#{{ user()?.id }}</dd></div>
+    </dl>
+  </div>
+
+  <div class="rf-card panel">
+    <h3 class="panel__title"><mat-icon>palette</mat-icon> Appearance</h3>
+    <div class="rf-between pref">
+      <div>
+        <strong>Dark theme</strong>
+        <p class="rf-muted">Switch between the light and dark dashboard themes.</p>
+      </div>
+      <mat-slide-toggle
+        color="primary"
+        [checked]="theme.isDark()"
+        (change)="theme.toggle()"
+      ></mat-slide-toggle>
+    </div>
+  </div>
+
+  <div class="rf-card panel">
+    <h3 class="panel__title"><mat-icon>security</mat-icon> Security</h3>
+    <p class="rf-muted">
+      Update your password. You'll need your current password to set a new one.
+    </p>
+    <button mat-stroked-button type="button" (click)="changePassword()">
+      <mat-icon>lock_reset</mat-icon>
+      Change password
+    </button>
+  </div>
+</div>
