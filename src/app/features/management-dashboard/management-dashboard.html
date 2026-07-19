@@ -31,6 +31,22 @@
     />
   </div>
 
+  @if (hasClient()) {
+    <div class="client">
+      <label class="client__label" for="md-bank">
+        <mat-icon>account_balance</mat-icon> Client Bank
+      </label>
+      <app-select
+        class="client__select"
+        [options]="bankOptions()"
+        [ngModel]="selectedBank()"
+        (ngModelChange)="selectBank($event)"
+        placeholder="All banks"
+        searchPlaceholder="Search bank…"
+      />
+    </div>
+  }
+
   <span class="controls__spacer"></span>
 
   <div class="seg" role="tablist">

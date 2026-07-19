@@ -1,19 +1,15 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { menuAccessGuard } from './core/guards/menu-access.guard';
-import { roleGuard } from './core/guards/role.guard';
-import { AppRole } from './core/enums/role.enum';
 import { MainLayoutComponent } from './layouts/main-layout/main-layout';
 
 /** Builds a route for a not-yet-implemented module backed by the placeholder page. */
 const placeholder = (
   path: string,
   data: { title: string; description: string; icon: string; section: string },
-  roles?: AppRole[],
 ) => ({
   path,
-  canActivate: roles ? [roleGuard] : [],
-  data: roles ? { ...data, roles } : data,
+  data,
   loadComponent: () =>
     import('./shared/components/placeholder/placeholder').then((m) => m.PlaceholderComponent),
 });
@@ -23,6 +19,17 @@ export const routes: Routes = [
   {
     path: 'auth',
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
+  },
+
+  // ---- Standalone printable invoice (opens in a new tab, no app shell) ----
+  {
+    path: 'invoice/print/:id',
+    title: 'Invoice — RouteForex',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/generate-invoice/invoice-print/invoice-print').then(
+        (m) => m.InvoicePrintComponent,
+      ),
   },
 
   // ---- Authenticated app shell -------------------------------------------
@@ -42,8 +49,6 @@ export const routes: Routes = [
       },
       {
         path: 'dealer-pad',
-        canActivate: [roleGuard],
-        data: { roles: [AppRole.Admin, AppRole.Dealer] },
         loadChildren: () =>
           import('./features/dealer-pad/dealer-pad.routes').then((m) => m.DEALER_PAD_ROUTES),
       },
@@ -52,6 +57,20 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/management-dashboard/management-dashboard.routes').then(
             (m) => m.MANAGEMENT_DASHBOARD_ROUTES,
+          ),
+      },
+      {
+        path: 'executive-dashboard',
+        loadChildren: () =>
+          import('./features/executive-dashboard/executive-dashboard.routes').then(
+            (m) => m.EXECUTIVE_DASHBOARD_ROUTES,
+          ),
+      },
+      {
+        path: 'executive-expiry',
+        loadChildren: () =>
+          import('./features/executive-expiry/executive-expiry.routes').then(
+            (m) => m.EXECUTIVE_EXPIRY_ROUTES,
           ),
       },
       {
@@ -112,26 +131,18 @@ export const routes: Routes = [
             (m) => m.GENERATE_INVOICE_ROUTES,
           ),
       },
-      placeholder(
-        'purchase',
-        {
-          title: 'Purchase',
-          description: 'Purchase orders, entries and reports.',
-          icon: 'shopping_cart',
-          section: 'Transactions',
-        },
-        [AppRole.Admin, AppRole.Dealer],
-      ),
-      placeholder(
-        'sales',
-        {
-          title: 'Sales',
-          description: 'Sales orders, invoices and reports.',
-          icon: 'point_of_sale',
-          section: 'Transactions',
-        },
-        [AppRole.Admin, AppRole.RelationshipManager, AppRole.SalesUser],
-      ),
+      placeholder('purchase', {
+        title: 'Purchase',
+        description: 'Purchase orders, entries and reports.',
+        icon: 'shopping_cart',
+        section: 'Transactions',
+      }),
+      placeholder('sales', {
+        title: 'Sales',
+        description: 'Sales orders, invoices and reports.',
+        icon: 'point_of_sale',
+        section: 'Transactions',
+      }),
       placeholder('inventory', {
         title: 'Inventory',
         description: 'Stock ledger, movement and adjustments.',
@@ -142,22 +153,16 @@ export const routes: Routes = [
       // Administration
       {
         path: 'users',
-        canActivate: [roleGuard],
-        data: { roles: [AppRole.Admin] },
         loadChildren: () => import('./features/users/users.routes').then((m) => m.USERS_ROUTES),
       },
       {
         path: 'roles',
-        canActivate: [roleGuard],
-        data: { roles: [AppRole.Admin] },
         loadChildren: () => import('./features/roles/roles.routes').then((m) => m.ROLES_ROUTES),
       },
-      placeholder('reports', {
-        title: 'Reports',
-        description: 'Operational and regulatory reports.',
-        icon: 'assessment',
-        section: 'Administration',
-      }),
+      {
+        path: 'reports',
+        loadChildren: () => import('./features/reports/reports.routes').then((m) => m.REPORTS_ROUTES),
+      },
       {
         path: 'settings',
         loadChildren: () =>

@@ -1,0 +1,98 @@
+<div class="hero">
+  <div class="hero__bg">
+    <span class="hero__glow hero__glow--a"></span>
+    <span class="hero__glow hero__glow--b"></span>
+  </div>
+  <app-page-header
+    title="Report UC"
+    subtitle="Utilization / cancellation report — filter by client, transaction type and import/export."
+    [breadcrumbs]="[{ label: 'Reports' }, { label: 'Report UC' }]"
+  >
+    <button mat-flat-button color="primary" type="button" [disabled]="loading()" (click)="generate()">
+      <mat-icon>play_arrow</mat-icon> Generate
+    </button>
+    <button mat-stroked-button type="button" [disabled]="!rows()?.length || loading()" (click)="exportExcel()">
+      <mat-icon>download</mat-icon> Export to Excel
+    </button>
+  </app-page-header>
+</div>
+
+<form [formGroup]="form" class="rf-card filters">
+  <label class="filters__field">
+    <span class="filters__lbl">Client Name</span>
+    <app-select formControlName="clientId" [options]="clientOptions()" placeholder="All clients" />
+  </label>
+  <label class="filters__field">
+    <span class="filters__lbl">Import / Export</span>
+    <app-select formControlName="importExport" [options]="impExpOptions" [searchable]="false" placeholder="All" />
+  </label>
+  <label class="filters__field">
+    <span class="filters__lbl">Transaction Type</span>
+    <app-select formControlName="transactionType" [options]="txnOptions" [searchable]="false" placeholder="All" />
+  </label>
+</form>
+
+@if (loading()) {
+  <div class="uc__state">Loading report…</div>
+} @else if (rows(); as data) {
+  @if (data.length) {
+    <div class="uc__toolbar">
+      <div class="uc__search">
+        <mat-icon>search</mat-icon>
+        <input
+          type="search"
+          placeholder="Search rows…"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+        />
+      </div>
+      <span class="uc__count rf-muted">{{ filteredRows().length }} of {{ data.length }} row(s)</span>
+    </div>
+    <div class="uc__scroll">
+      <table class="uc__table">
+        <thead>
+          <tr>
+            @for (col of columns; track col.key) {
+              <th [class.uc__num]="isNum(col)" [class.uc__sticky]="$first">{{ col.label }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of filteredRows(); track row.rowNumber) {
+            <tr>
+              @for (col of columns; track col.key) {
+                <td [class.uc__num]="isNum(col)" [class.uc__sticky]="$first">{{ format(col, row) }}</td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td [attr.colspan]="columns.length" class="uc__nomatch">No rows match your search.</td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            @for (col of columns; track col.key) {
+              @if ($first) {
+                <td class="uc__sticky uc__foot">Total</td>
+              } @else {
+                <td
+                  class="uc__foot"
+                  [class.uc__num]="isNum(col)"
+                  [class.uc__foot--pl]="col.key === 'profitLoss'"
+                >{{ totalFmt(col) }}</td>
+              }
+            }
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  } @else {
+    <div class="uc__state">No records found for the selected filters.</div>
+  }
+} @else {
+  <div class="uc__state uc__state--empty">
+    <mat-icon>table_view</mat-icon>
+    <p>Choose filters and click <strong>Generate</strong> to view the report.</p>
+  </div>
+}

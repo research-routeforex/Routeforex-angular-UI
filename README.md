@@ -1,6 +1,6 @@
 # RouteForex Web
 
-Enterprise frontend for the **RouteForex Forex Transaction Management System** — Angular 22, standalone + zoneless, Signals state, Angular Material 3, wired to the RouteForex ASP.NET Core Web API (JWT + refresh tokens, standardized `ApiResponse` envelope, role-based authorization).
+Enterprise frontend for the **RouteForex Forex Transaction Management System** — Angular 22, standalone + zoneless, Signals state, Angular Material 3, wired to the RouteForex ASP.NET Core Web API (JWT + refresh tokens, standardized `ApiResponse` envelope, backend-driven per-screen authorization).
 
 > **Architecture & design decisions:** see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
@@ -31,12 +31,15 @@ The dev server proxies `/api/*` to `https://localhost:7080` (see `proxy.conf.jso
 
 ## What's implemented
 
-- **Auth:** login, automatic JWT attach, transparent refresh-token rotation + retry, logout, session persistence, guest/auth guards.
-- **Dashboard:** KPI cards, SVG turnover/volume charts, recent deals, alerts.
-- **Masters (live API):** Cities & Tenors — full server-side CRUD (paging, sort, debounced search).
+- **Auth:** login, automatic JWT attach, transparent refresh-token rotation + retry, logout, "remember me" storage scope, forgot/reset/change password, session persistence, guest/auth guards.
+- **Dashboard & analytics:** KPI cards, SVG turnover/volume charts, recent deals, alerts; Management Dashboard; Ticker Live Rate (time-metered).
+- **Masters (live API):** Cities, Tenors, Client Master (banks + contracts), Common Master (Country Region / Country / State / City), Currency Master, Bank Master (RM contacts + **Head Office** tab), Company Master (+ **Company Bank** tab).
+- **Transactions (live API):** Dealer Pad, FTP Order Entry (+ recordings/documents), **Generate Invoice** — bill orders by client/date range, choose GST number + invoice number/date, server-computed CGST/SGST-or-IGST split, a **Generated Invoices** history grid (per-column filters, totals, paging), plus **e-mail to client** and a standalone **print** page (From/Bill-To company + consignee details, applicable-tax-only line, auto fit-to-one-A4-page).
+- **Reports (live API):** Client Wise Revenue and Report UC — filterable result grids with column totals, global + per-column search, and Excel (.xls) export of the filtered rows.
 - **Administration (live API):** Users (CRUD + role assignment), Roles (CRUD).
-- **Settings:** profile, theme preference.
-- **Scaffolded placeholders:** Items, Brands, UOM, Parties, Purchase, Sales, Inventory, Reports — guarded, lazy routes ready to become full masters using the `CrudService` + DataTable pattern.
+- **Settings:** profile, security (change password), theme preference.
+- **Access control:** per-screen `canAccess` from the backend menu gates routes (`menuAccessGuard`) — no hard-coded role rules in the frontend.
+- **Scaffolded placeholders:** Items, Brands, UOM, Parties, Purchase, Sales, Inventory — guarded, lazy routes ready to become full masters using the `CrudService` + DataTable pattern.
 
 ## Project layout
 

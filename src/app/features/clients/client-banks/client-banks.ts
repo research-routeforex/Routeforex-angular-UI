@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -32,19 +33,29 @@ export class ClientBanksComponent {
   private readonly confirm = inject(ConfirmService);
 
   readonly clientId = input.required<number>();
-  /** Selected city from the profile — filters the Bank dropdown. */
-  readonly cityId = input<number | null>(null);
+  /** Client name — shown in the tab header. */
+  readonly clientName = input<string>('');
 
   protected readonly banks = signal<ClientBank[]>([]);
-  protected readonly bankOptions = signal<SelectOption[]>([]);
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
   protected readonly showForm = signal(false);
   /** ClientBankId currently being edited (0 = adding a new bank). */
   protected readonly editingId = signal(0);
 
+  // Cascade dropdowns: Region → Country → City → Bank.
+  protected readonly regionOptions = signal<SelectOption[]>([]);
+  protected readonly countryOptions = signal<SelectOption[]>([]);
+  protected readonly cityOptions = signal<SelectOption[]>([]);
+  protected readonly bankOptions = signal<SelectOption[]>([]);
+  protected readonly statusOptions = signal<SelectOption[]>([]);
+
   protected readonly form = this.fb.nonNullable.group({
+    region: this.fb.control<number | null>(null),
+    country: this.fb.control<number | null>(null),
+    city: this.fb.control<number | null>(null),
     bankId: this.fb.control<number | null>(null, [Validators.required]),
+    status: this.fb.control<string | null>('Active'),
     accountNo: [''],
     ifscCode: [''],
     swiftCode: [''],
@@ -60,18 +71,60 @@ export class ClientBanksComponent {
   });
 
   constructor() {
-    // Reload bank options whenever the selected city changes (city → bank cascade).
-    effect(() => {
-      const city = this.cityId();
-      this.service
-        .getBankOptions(city)
-        .subscribe((opts) => this.bankOptions.set(opts.map((o) => ({ value: o.id, label: o.name }))));
+    // Region → Country → City → Bank cascade. A user change resets the children.
+    this.form.controls.region.valueChanges.pipe(takeUntilDestroyed()).subscribe((regionId) => {
+      this.form.controls.country.setValue(null, { emitEvent: false });
+      this.form.controls.city.setValue(null, { emitEvent: false });
+      this.form.controls.bankId.setValue(null, { emitEvent: false });
+      this.cityOptions.set([]);
+      this.bankOptions.set([]);
+      this.loadCountries(regionId);
+    });
+    this.form.controls.country.valueChanges.pipe(takeUntilDestroyed()).subscribe((countryId) => {
+      this.form.controls.city.setValue(null, { emitEvent: false });
+      this.form.controls.bankId.setValue(null, { emitEvent: false });
+      this.bankOptions.set([]);
+      this.loadCities(countryId);
+    });
+    this.form.controls.city.valueChanges.pipe(takeUntilDestroyed()).subscribe((cityId) => {
+      this.form.controls.bankId.setValue(null, { emitEvent: false });
+      this.loadBanks(cityId);
+    });
+
+    // Load the region + status lookups once.
+    this.service.getLookups().subscribe((l) => {
+      this.regionOptions.set(toIdOptions(l.regions));
+      this.statusOptions.set(toNameOptions(l.statuses));
     });
 
     effect(() => {
       const id = this.clientId();
       if (id > 0) this.load(id);
     });
+  }
+
+  private loadCountries(regionId: number | null): void {
+    if (!regionId) {
+      this.countryOptions.set([]);
+      return;
+    }
+    this.service.getCountries(regionId).subscribe((l) => this.countryOptions.set(toIdOptions(l)));
+  }
+
+  private loadCities(countryId: number | null): void {
+    if (!countryId) {
+      this.cityOptions.set([]);
+      return;
+    }
+    this.service.getCities(countryId).subscribe((l) => this.cityOptions.set(toIdOptions(l)));
+  }
+
+  private loadBanks(cityId: number | null): void {
+    if (!cityId) {
+      this.bankOptions.set([]);
+      return;
+    }
+    this.service.getBankOptions(cityId).subscribe((l) => this.bankOptions.set(toIdOptions(l)));
   }
 
   private load(id: number): void {
@@ -88,37 +141,71 @@ export class ClientBanksComponent {
       this.closeForm();
     } else {
       this.editingId.set(0);
-      this.form.reset();
+      this.resetForm();
       this.showForm.set(true);
     }
   }
 
-  /** Load an existing bank into the form for editing. */
+  private resetForm(): void {
+    this.form.reset({ status: 'Active' });
+    this.countryOptions.set([]);
+    this.cityOptions.set([]);
+    this.bankOptions.set([]);
+  }
+
+  /** Load an existing bank into the form for editing (restores the cascade). */
   protected edit(bank: ClientBank): void {
     this.editingId.set(bank.clientBankId);
-    this.form.reset();
-    this.form.patchValue({
-      bankId: bank.bankId ?? null,
-      accountNo: bank.accountNo ?? '',
-      ifscCode: bank.ifscCode ?? '',
-      swiftCode: bank.swiftCode ?? '',
-      bankBranch: bank.bankBranch ?? '',
-      branchCode: bank.branchCode ?? '',
-      bankMargin: bank.bankMargin ?? null,
-      address1: bank.address1 ?? '',
-      address2: bank.address2 ?? '',
-      pin: bank.pin ?? null,
-      rmName: bank.rmName ?? '',
-      rmContactNo: bank.rmContactNo ?? '',
-      rmEmail: bank.rmEmail ?? '',
-    });
+    this.resetForm();
+    this.form.patchValue(
+      {
+        status: bank.activeStatus ?? 'Active',
+        accountNo: bank.accountNo ?? '',
+        ifscCode: bank.ifscCode ?? '',
+        swiftCode: bank.swiftCode ?? '',
+        bankBranch: bank.bankBranch ?? '',
+        branchCode: bank.branchCode ?? '',
+        bankMargin: bank.bankMargin ?? null,
+        address1: bank.address1 ?? '',
+        address2: bank.address2 ?? '',
+        pin: bank.pin ?? null,
+        rmName: bank.rmName ?? '',
+        rmContactNo: bank.rmContactNo ?? '',
+        rmEmail: bank.rmEmail ?? '',
+      },
+      { emitEvent: false },
+    );
+
+    // Restore Region → Country → City → Bank in order without firing the reset cascade.
+    const regionId = toNum(bank.region);
+    const countryId = toNum(bank.country);
+    const cityId = toNum(bank.city);
+    this.form.controls.region.setValue(regionId, { emitEvent: false });
+    if (regionId) {
+      this.service.getCountries(regionId).subscribe((countries) => {
+        this.countryOptions.set(toIdOptions(countries));
+        this.form.controls.country.setValue(countryId, { emitEvent: false });
+        if (countryId) {
+          this.service.getCities(countryId).subscribe((cities) => {
+            this.cityOptions.set(toIdOptions(cities));
+            this.form.controls.city.setValue(cityId, { emitEvent: false });
+            if (cityId) {
+              this.service.getBankOptions(cityId).subscribe((banks) => {
+                this.bankOptions.set(toIdOptions(banks));
+                this.form.controls.bankId.setValue(bank.bankId ?? null, { emitEvent: false });
+              });
+            }
+          });
+        }
+      });
+    }
     this.showForm.set(true);
   }
 
   protected closeForm(): void {
     this.showForm.set(false);
     this.editingId.set(0);
-    this.form.reset();
+    this.resetForm();
   }
 
   /** Insert (editingId = 0) or update the bank. */
@@ -142,14 +229,15 @@ export class ClientBanksComponent {
         bankMargin: v.bankMargin,
         address1: v.address1 || null,
         address2: v.address2 || null,
-        region: null,
-        city: null,
+        region: toStr(v.region),
+        city: toStr(v.city),
         state: null,
         pin: v.pin,
-        country: null,
+        country: toStr(v.country),
         rmName: v.rmName || null,
         rmContactNo: v.rmContactNo || null,
         rmEmail: v.rmEmail || null,
+        status: v.status || 'Active',
       })
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe(() => {
@@ -175,4 +263,26 @@ export class ClientBanksComponent {
         });
       });
   }
+}
+
+/** Lookup items → options whose value is the numeric id. */
+function toIdOptions(items?: { id: number; name: string }[]): SelectOption[] {
+  return (items ?? []).map((i) => ({ value: i.id, label: i.name }));
+}
+
+/** Lookup items → options whose value is the name (used for Status → ActiveStatus). */
+function toNameOptions(items?: { id: number; name: string }[]): SelectOption[] {
+  return (items ?? []).map((i) => ({ value: i.name, label: i.name }));
+}
+
+/** Stored id-text → numeric control value. */
+function toNum(value: string | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isNaN(n) ? null : n;
+}
+
+/** Numeric control value → id-text for the payload (varchar columns). */
+function toStr(value: number | null | undefined): string | null {
+  return value === null || value === undefined ? null : String(value);
 }

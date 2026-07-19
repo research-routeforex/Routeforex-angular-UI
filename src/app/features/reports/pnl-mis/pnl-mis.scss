@@ -1,0 +1,370 @@
+:host {
+  display: block;
+  // Per-accent hues reused by KPI cards + section cards.
+  --acc-a: oklch(62% 0.2 290); // violet — As-on
+  --acc-b: oklch(64% 0.15 230); // blue — MTD
+  --acc-c: oklch(64% 0.15 155); // green — YTD
+}
+
+// ---- Gradient hero band ----------------------------------------------------
+.hero {
+  position: relative;
+  z-index: 30;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, oklch(62% 0.24 290) 14%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a {
+    top: -120px;
+    right: 8%;
+    background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+  }
+  &--b {
+    bottom: -150px;
+    left: 12%;
+    background: radial-gradient(circle, oklch(62% 0.24 290), transparent 70%);
+  }
+}
+
+// To Date field + buttons projected into the page-header actions slot.
+.pnl__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pnl__lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rf-muted-fg);
+}
+.pnl__field .rf-input {
+  width: 168px;
+}
+button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// ---- States ----------------------------------------------------------------
+.pnl__state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: var(--rf-gap);
+  padding: 44px;
+  text-align: center;
+  color: var(--rf-muted-fg);
+  background: var(--rf-surface-2);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+
+  &--empty {
+    flex-direction: column;
+    gap: 10px;
+    padding: 64px;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      opacity: 0.35;
+      color: var(--mat-sys-primary);
+    }
+    p { margin: 0; }
+  }
+}
+.pnl__spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--rf-border);
+  border-top-color: var(--mat-sys-primary);
+  border-radius: 50%;
+  animation: pnl-spin 0.8s linear infinite;
+}
+@keyframes pnl-spin {
+  to { transform: rotate(360deg); }
+}
+
+// ---- Company meta line -----------------------------------------------------
+.pnl__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-bottom: var(--rf-gap);
+  font-size: 13px;
+  color: var(--rf-muted-fg);
+
+  &-co {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.35;
+    margin-right: auto;
+    strong { color: var(--mat-sys-on-surface); font-size: 15px; }
+  }
+}
+.pnl__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+  background: color-mix(in oklab, var(--mat-sys-primary) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 26%, transparent);
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  &--muted {
+    color: var(--rf-muted-fg);
+    background: color-mix(in oklab, var(--rf-muted-fg) 10%, transparent);
+    border-color: var(--rf-border);
+  }
+}
+
+// ---- KPI summary cards ------------------------------------------------------
+.kpi {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 800px) {
+  .kpi { grid-template-columns: 1fr; }
+}
+.kpi__card {
+  --acc: var(--acc-a);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: var(--rf-radius);
+  background:
+    linear-gradient(135deg, color-mix(in oklab, var(--acc) 14%, var(--rf-surface-2)), var(--rf-surface-2) 70%);
+  border: 1px solid color-mix(in oklab, var(--acc) 30%, var(--rf-border));
+  box-shadow: var(--rf-shadow);
+  overflow: hidden;
+
+  &[data-accent='a'] { --acc: var(--acc-a); }
+  &[data-accent='b'] { --acc: var(--acc-b); }
+  &[data-accent='c'] { --acc: var(--acc-c); }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--acc);
+  }
+}
+.kpi__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(140deg, var(--acc), color-mix(in oklab, var(--acc) 60%, black));
+  box-shadow: 0 6px 16px -6px var(--acc);
+
+  mat-icon { font-size: 24px; width: 24px; height: 24px; }
+}
+.kpi__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.kpi__label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--rf-muted-fg);
+}
+.kpi__value {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--mat-sys-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+.kpi__sub {
+  font-size: 11px;
+  color: var(--rf-muted-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ---- Section cards ---------------------------------------------------------
+.card {
+  --acc: var(--acc-a);
+  margin-bottom: 18px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: var(--mat-sys-surface);
+  box-shadow: var(--rf-shadow);
+  overflow: hidden;
+
+  &[data-accent='a'] { --acc: var(--acc-a); }
+  &[data-accent='b'] { --acc: var(--acc-b); }
+  &[data-accent='c'] { --acc: var(--acc-c); }
+}
+.card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rf-border);
+  background: linear-gradient(90deg, color-mix(in oklab, var(--acc) 12%, var(--rf-surface-2)), var(--rf-surface-2) 60%);
+}
+.card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(140deg, var(--acc), color-mix(in oklab, var(--acc) 60%, black));
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+}
+.card__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mat-sys-on-surface);
+}
+.card__total {
+  margin-left: auto;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--acc);
+  font-variant-numeric: tabular-nums;
+}
+.card__scroll {
+  overflow: auto;
+  max-height: calc(100vh - 220px);
+}
+
+// ---- Table -----------------------------------------------------------------
+.pnl__table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+
+  th,
+  td {
+    border-bottom: 1px solid var(--rf-border);
+    padding: 7px 14px;
+    white-space: nowrap;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--acc) 92%, white) 0%,
+      color-mix(in oklab, var(--acc) 82%, black) 100%
+    );
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .pnl__lcol { text-align: left; }
+  .pnl__zone { font-weight: 700; color: var(--acc); }
+  .pnl__num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .pnl__num--total {
+    font-weight: 700;
+    background: color-mix(in oklab, var(--acc) 6%, transparent);
+  }
+  .pnl__num--zero { color: var(--rf-muted-fg); opacity: 0.55; }
+
+  tbody td { color: var(--mat-sys-on-surface); }
+  tbody tr:nth-child(even) td { background: color-mix(in oklab, var(--acc) 3%, transparent); }
+  tbody tr:hover td { background: color-mix(in oklab, var(--acc) 10%, transparent); }
+
+  // Per-zone subtotal rows.
+  tbody tr.pnl__row--sub td {
+    font-weight: 700;
+    background: color-mix(in oklab, var(--acc) 10%, var(--mat-sys-surface));
+    border-top: 1px solid color-mix(in oklab, var(--acc) 32%, var(--rf-border));
+    color: var(--mat-sys-on-surface);
+  }
+  tbody tr.pnl__row--sub .pnl__num--zero { opacity: 1; color: var(--mat-sys-on-surface); }
+
+  .pnl__none {
+    text-align: center;
+    color: var(--rf-muted-fg);
+    padding: 28px;
+
+    mat-icon { vertical-align: middle; margin-right: 6px; opacity: 0.5; }
+  }
+
+  // Sticky grand-total footer.
+  tfoot td {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    background: color-mix(in oklab, var(--acc) 16%, var(--mat-sys-surface));
+    border-top: 2px solid color-mix(in oklab, var(--acc) 48%, var(--rf-border));
+    font-weight: 800;
+    color: var(--acc);
+    font-variant-numeric: tabular-nums;
+  }
+}

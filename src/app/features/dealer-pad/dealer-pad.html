@@ -169,6 +169,33 @@
           <app-field label="Contact Person 2">
             <input class="rf-input" formControlName="contactPerson2" />
           </app-field>
+
+          <!-- Client documents (download only) -->
+          <div class="doc-downloads">
+            <span class="doc-downloads__label">Documents</span>
+            <button
+              type="button"
+              class="doc-btn"
+              [disabled]="!slaDoc()"
+              (click)="downloadDoc('sla')"
+              [matTooltip]="slaDoc() ? 'Download SLA' : 'No SLA on file'"
+            >
+              <mat-icon>description</mat-icon>
+              SLA
+              @if (!slaDoc()) { <span class="doc-btn__na">not uploaded</span> }
+            </button>
+            <button
+              type="button"
+              class="doc-btn"
+              [disabled]="!authDoc()"
+              (click)="downloadDoc('auth')"
+              [matTooltip]="authDoc() ? 'Download Authorized Letter' : 'No Authorized Letter on file'"
+            >
+              <mat-icon>verified_user</mat-icon>
+              Authorized Letter
+              @if (!authDoc()) { <span class="doc-btn__na">not uploaded</span> }
+            </button>
+          </div>
             </div>
           </div>
         </div>

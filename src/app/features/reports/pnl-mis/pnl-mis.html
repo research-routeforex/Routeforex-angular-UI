@@ -1,0 +1,110 @@
+<div class="hero">
+  <div class="hero__bg">
+    <span class="hero__glow hero__glow--a"></span>
+    <span class="hero__glow hero__glow--b"></span>
+  </div>
+  <app-page-header
+    title="PNL MIS Report"
+    subtitle="Zone-wise profit &amp; loss — As-on, Month-to-Date and Year-to-Date for a To Date."
+    [breadcrumbs]="[{ label: 'Reports' }, { label: 'PNL MIS' }]"
+  >
+    <label class="pnl__field">
+      <span class="pnl__lbl">To Date</span>
+      <input class="rf-input" type="date" [formControl]="toDate" />
+    </label>
+    <button mat-flat-button color="primary" type="button" [disabled]="loading()" (click)="generate()">
+      <mat-icon>search</mat-icon> Search
+    </button>
+    <button mat-stroked-button type="button" [disabled]="!report() || loading()" (click)="exportExcel()">
+      <mat-icon>download</mat-icon> Export
+    </button>
+  </app-page-header>
+</div>
+
+@if (loading()) {
+  <div class="pnl__state">
+    <span class="pnl__spinner"></span>
+    <span>Loading report…</span>
+  </div>
+} @else if (report(); as r) {
+  <div class="pnl__meta">
+    <div class="pnl__meta-co">
+      <strong>{{ r.companyName }}</strong>
+      @if (r.addressLine1) { <span>{{ r.addressLine1 }}</span> }
+      @if (r.addressLine2) { <span>{{ r.addressLine2 }}</span> }
+    </div>
+    <span class="pnl__chip"><mat-icon>event</mat-icon> To Date {{ r.toDate }}</span>
+    <span class="pnl__chip pnl__chip--muted"><mat-icon>schedule</mat-icon> Generated {{ r.generatedDate }}</span>
+  </div>
+
+  <!-- KPI summary: one card per section showing its grand total. -->
+  <div class="kpi">
+    @for (m of sectionMeta(); track m.short) {
+      <div class="kpi__card" [attr.data-accent]="m.accent">
+        <div class="kpi__icon"><mat-icon>{{ m.icon }}</mat-icon></div>
+        <div class="kpi__body">
+          <span class="kpi__label">{{ m.label }}</span>
+          <span class="kpi__value">₹ {{ m.section.grandTotal.total | number: '1.2-2' }}</span>
+          <span class="kpi__sub">{{ m.section.title }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  @for (m of sectionMeta(); track m.short) {
+    <section class="card" [attr.data-accent]="m.accent">
+      <header class="card__head">
+        <span class="card__badge"><mat-icon>{{ m.icon }}</mat-icon> {{ m.short }}</span>
+        <h3 class="card__title">{{ m.section.title }}</h3>
+        <span class="card__total">₹ {{ m.section.grandTotal.total | number: '1.2-2' }}</span>
+      </header>
+      <div class="card__scroll">
+        <table class="pnl__table">
+          <thead>
+            <tr>
+              <th class="pnl__lcol">Zone</th>
+              <th class="pnl__lcol">Centers</th>
+              <th class="pnl__lcol">RM</th>
+              @for (c of r.columns; track $index) {
+                <th class="pnl__num" [class.pnl__num--total]="$last">{{ c }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of m.section.rows; track $index) {
+              <tr [class.pnl__row--sub]="row.kind !== 'data'">
+                <td class="pnl__lcol pnl__zone">{{ row.zone }}</td>
+                <td class="pnl__lcol">{{ row.centers }}</td>
+                <td class="pnl__lcol">{{ row.rm }}</td>
+                @for (v of cells(row); track $index) {
+                  <td class="pnl__num" [class.pnl__num--total]="$last" [class.pnl__num--zero]="!v">
+                    {{ v | number: '1.2-2' }}
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="3 + r.columns.length" class="pnl__none">
+                  <mat-icon>inbox</mat-icon> No records for this period.
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="pnl__row--grand">
+              <td class="pnl__lcol" colspan="3">Grand Total</td>
+              @for (v of cells(m.section.grandTotal); track $index) {
+                <td class="pnl__num" [class.pnl__num--total]="$last">{{ v | number: '1.2-2' }}</td>
+              }
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  }
+} @else {
+  <div class="pnl__state pnl__state--empty">
+    <mat-icon>account_balance</mat-icon>
+    <p>Pick a <strong>To Date</strong> and click <strong>Search</strong> to view the report.</p>
+  </div>
+}

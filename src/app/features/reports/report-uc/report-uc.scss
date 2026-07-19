@@ -1,0 +1,211 @@
+:host {
+  display: block;
+}
+
+// ---- Gradient hero band (same treatment as the other reports) --------------
+.hero {
+  position: relative;
+  z-index: 30;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, oklch(62% 0.24 290) 14%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a {
+    top: -120px;
+    right: 8%;
+    background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+    animation: uc-blob-a 9s ease-in-out infinite;
+  }
+  &--b {
+    bottom: -150px;
+    left: 12%;
+    background: radial-gradient(circle, oklch(62% 0.24 290), transparent 70%);
+    animation: uc-blob-b 11s ease-in-out infinite;
+  }
+}
+@keyframes uc-blob-a {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-26px, 18px); }
+}
+@keyframes uc-blob-b {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(22px, -16px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__glow { animation: none; }
+}
+button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// ---- Filters ---------------------------------------------------------------
+.filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: var(--rf-gap);
+
+  &__field { display: flex; flex-direction: column; gap: 6px; }
+  &__lbl { font-size: 12px; font-weight: 600; color: var(--rf-muted-fg); }
+}
+@media (max-width: 720px) {
+  .filters { grid-template-columns: 1fr; }
+}
+
+// ---- States ----------------------------------------------------------------
+.uc__state {
+  padding: 40px;
+  text-align: center;
+  color: var(--rf-muted-fg);
+  background: var(--rf-surface-2);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+
+  &--empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 56px;
+
+    mat-icon { font-size: 40px; width: 40px; height: 40px; opacity: 0.35; color: var(--mat-sys-primary); }
+    p { margin: 0; }
+  }
+}
+.uc__count { font-size: 12px; }
+
+// ---- Grid search toolbar ---------------------------------------------------
+.uc__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.uc__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  max-width: 320px;
+  padding: 6px 10px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: var(--mat-sys-surface);
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--rf-muted-fg); }
+  input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    color: var(--mat-sys-on-surface);
+  }
+  input::placeholder { color: var(--rf-muted-fg); }
+}
+.uc__toolbar .uc__count { margin-left: auto; }
+
+.uc__nomatch {
+  text-align: center;
+  padding: 24px;
+  color: var(--rf-muted-fg);
+}
+
+// ---- Grid (Client Master visual language) ----------------------------------
+.uc__scroll {
+  overflow: auto;
+  max-height: calc(100vh - 320px);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+}
+.uc__table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  white-space: nowrap;
+
+  th,
+  td { border-bottom: 1px solid var(--rf-border); padding: 6px 12px; text-align: left; }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--mat-sys-primary) 96%, white) 0%,
+      color-mix(in oklab, var(--mat-sys-primary) 84%, black) 100%
+    );
+    color: var(--mat-sys-on-primary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  thead th:first-child { border-top-left-radius: var(--rf-radius); }
+
+  tbody td { color: var(--mat-sys-on-surface); }
+  tbody tr:nth-child(even) td { background: color-mix(in oklab, var(--mat-sys-primary) 3%, transparent); }
+  tbody tr:hover td { background: color-mix(in oklab, var(--mat-sys-primary) 9%, transparent); }
+
+  .uc__num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  // Sticky first column (Sl.)
+  .uc__sticky { position: sticky; left: 0; z-index: 3; text-align: center; min-width: 46px; background: var(--mat-sys-surface); }
+  thead .uc__sticky { z-index: 4; background: color-mix(in oklab, var(--mat-sys-primary) 88%, black); }
+  tbody tr:nth-child(even) .uc__sticky { background: color-mix(in oklab, var(--mat-sys-primary) 3%, var(--mat-sys-surface)); }
+  tbody tr:hover .uc__sticky { background: color-mix(in oklab, var(--mat-sys-primary) 9%, var(--mat-sys-surface)); }
+
+  // Sticky totals row.
+  tfoot .uc__foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    background: color-mix(in oklab, var(--mat-sys-primary) 12%, var(--mat-sys-surface));
+    border-top: 2px solid color-mix(in oklab, var(--mat-sys-primary) 45%, var(--rf-border));
+    font-weight: 700;
+    text-align: left;
+  }
+  tfoot .uc__foot.uc__num { text-align: right; }
+  tfoot .uc__foot.uc__sticky { z-index: 6; text-align: center; }
+  tfoot .uc__foot--pl { color: var(--mat-sys-primary); font-weight: 800; }
+}

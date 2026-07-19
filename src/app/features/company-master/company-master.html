@@ -3,118 +3,146 @@
   <span class="hero__glow hero__glow--b"></span>
   <app-page-header
     title="Company Master"
-    subtitle="Maintain company profiles, statutory details and contacts."
+    subtitle="Maintain company profiles, statutory details, banks and contacts."
     [breadcrumbs]="[{ label: 'Masters' }, { label: 'Company Master' }]"
-  >
-    <a mat-flat-button color="primary" routerLink="/company-master/new">
-      <mat-icon>add</mat-icon> Add Company
-    </a>
-  </app-page-header>
+  />
 </div>
 
-<div class="rf-card tablewrap">
-  <table class="grid">
-    <colgroup>
-      <col />
-      <col class="col-loc" />
-      <col class="col-loc" />
-      <col class="col-loc" />
-      <col class="col-gstn" />
-      <col class="col-pan" />
-      <col class="col-status" />
-      <col class="col-created" />
-      <col class="col-actions" />
-    </colgroup>
-    <thead>
-      <tr>
-        <th>
-          <span class="th__name">Company Name</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('companyName', $any($event.target).value)" />
-        </th>
-        <th>
-          <span class="th__name">City</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('cityName', $any($event.target).value)" />
-        </th>
-        <th>
-          <span class="th__name">State</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('stateName', $any($event.target).value)" />
-        </th>
-        <th>
-          <span class="th__name">Country</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('countryName', $any($event.target).value)" />
-        </th>
-        <th>
-          <span class="th__name">GSTN</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('gstn', $any($event.target).value)" />
-        </th>
-        <th><span class="th__name">PAN</span></th>
-        <th>
-          <span class="th__name">Status</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('activeStatus', $any($event.target).value)" />
-        </th>
-        <th><span class="th__name">Created</span></th>
-        <th class="ta-r"><span class="th__name">Actions</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (r of pagedRows(); track r.companyId) {
-        <tr>
-          <td class="name">{{ r.companyName }}</td>
-          <td>{{ r.cityName || '—' }}</td>
-          <td>{{ r.stateName || '—' }}</td>
-          <td>{{ r.countryName || '—' }}</td>
-          <td>{{ r.gstn || '—' }}</td>
-          <td>{{ r.pan || '—' }}</td>
-          <td>
-            <span class="rf-chip" [class.rf-chip--success]="r.activeStatus === 'Active'" [class.rf-chip--warn]="r.activeStatus !== 'Active'">
-              {{ r.activeStatus || '—' }}
-            </span>
-          </td>
-          <td>{{ r.createdDatetime ? (r.createdDatetime | date: 'dd-MMM-yyyy') : '—' }}</td>
-          <td class="ta-r actions">
-            <a class="rf-iconbtn rf-iconbtn--edit" [routerLink]="['/company-master', r.companyId, 'edit']" matTooltip="Edit">
-              <mat-icon>edit</mat-icon>
-            </a>
-            <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(r)" matTooltip="Delete">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="9" class="empty rf-muted">
-            {{ loading() ? 'Loading…' : 'No companies found.' }}
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
+<!-- Section tabs -->
+<div class="tabs" role="tablist">
+  @for (t of tabs; track t.key) {
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [class.tab--active]="active() === t.key"
+      [attr.aria-selected]="active() === t.key"
+      (click)="select(t.key)"
+    >
+      <mat-icon>{{ t.icon }}</mat-icon>
+      {{ t.label }}
+    </button>
+  }
 </div>
 
-<div class="pager">
-  <div class="pager__size">
-    <span class="rf-muted">Rows per page</span>
-    <select class="rf-select pager__select" (change)="onPageSize($any($event.target).value)">
-      @for (n of pageSizeOptions; track n) {
-        <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
-      }
-    </select>
-  </div>
-  <span class="rf-spacer"></span>
-  <span class="pager__info rf-muted">{{ fromRow() }}–{{ toRow() }} of {{ total() }}</span>
-  <div class="pager__nav">
-    <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="first()" matTooltip="First page">
-      <mat-icon>first_page</mat-icon>
-    </button>
-    <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="prev()" matTooltip="Previous page">
-      <mat-icon>chevron_left</mat-icon>
-    </button>
-    <span class="pager__page">{{ pageNumber() }} / {{ totalPages() }}</span>
-    <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="next()" matTooltip="Next page">
-      <mat-icon>chevron_right</mat-icon>
-    </button>
-    <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="last()" matTooltip="Last page">
-      <mat-icon>last_page</mat-icon>
-    </button>
-  </div>
-</div>
+@switch (active()) {
+  @case ('company') {
+    <div class="bar">
+      <h3 class="bar__title">Companies</h3>
+      <span class="rf-spacer"></span>
+      <a mat-flat-button color="primary" routerLink="/company-master/new">
+        <mat-icon>add</mat-icon> Add Company
+      </a>
+    </div>
+
+    <div class="rf-card tablewrap">
+      <table class="grid">
+        <colgroup>
+          <col />
+          <col class="col-loc" />
+          <col class="col-loc" />
+          <col class="col-loc" />
+          <col class="col-gstn" />
+          <col class="col-pan" />
+          <col class="col-status" />
+          <col class="col-created" />
+          <col class="col-actions" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>
+              <span class="th__name">Company Name</span>
+              <input class="colfilter" placeholder="Search…" (input)="setFilter('companyName', $any($event.target).value)" />
+            </th>
+            <th>
+              <span class="th__name">City</span>
+              <input class="colfilter" placeholder="Search…" (input)="setFilter('cityName', $any($event.target).value)" />
+            </th>
+            <th>
+              <span class="th__name">State</span>
+              <input class="colfilter" placeholder="Search…" (input)="setFilter('stateName', $any($event.target).value)" />
+            </th>
+            <th>
+              <span class="th__name">Country</span>
+              <input class="colfilter" placeholder="Search…" (input)="setFilter('countryName', $any($event.target).value)" />
+            </th>
+            <th>
+              <span class="th__name">GSTN</span>
+              <input class="colfilter" placeholder="Search…" (input)="setFilter('gstn', $any($event.target).value)" />
+            </th>
+            <th><span class="th__name">PAN</span></th>
+            <th>
+              <span class="th__name">Status</span>
+              <input class="colfilter" placeholder="Search…" (input)="setFilter('activeStatus', $any($event.target).value)" />
+            </th>
+            <th><span class="th__name">Created</span></th>
+            <th class="ta-r"><span class="th__name">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of pagedRows(); track r.companyId) {
+            <tr>
+              <td class="name">{{ r.companyName }}</td>
+              <td>{{ r.cityName || '—' }}</td>
+              <td>{{ r.stateName || '—' }}</td>
+              <td>{{ r.countryName || '—' }}</td>
+              <td>{{ r.gstn || '—' }}</td>
+              <td>{{ r.pan || '—' }}</td>
+              <td>
+                <span class="rf-chip" [class.rf-chip--success]="r.activeStatus === 'Active'" [class.rf-chip--warn]="r.activeStatus !== 'Active'">
+                  {{ r.activeStatus || '—' }}
+                </span>
+              </td>
+              <td>{{ r.createdDatetime ? (r.createdDatetime | date: 'dd-MMM-yyyy') : '—' }}</td>
+              <td class="ta-r actions">
+                <a class="rf-iconbtn rf-iconbtn--edit" [routerLink]="['/company-master', r.companyId, 'edit']" matTooltip="Edit">
+                  <mat-icon>edit</mat-icon>
+                </a>
+                <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(r)" matTooltip="Delete">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9" class="empty rf-muted">
+                {{ loading() ? 'Loading…' : 'No companies found.' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      <div class="pager__size">
+        <span class="rf-muted">Rows per page</span>
+        <select class="rf-select pager__select" (change)="onPageSize($any($event.target).value)">
+          @for (n of pageSizeOptions; track n) {
+            <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
+          }
+        </select>
+      </div>
+      <span class="rf-spacer"></span>
+      <span class="pager__info rf-muted">{{ fromRow() }}–{{ toRow() }} of {{ total() }}</span>
+      <div class="pager__nav">
+        <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="first()" matTooltip="First page">
+          <mat-icon>first_page</mat-icon>
+        </button>
+        <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="prev()" matTooltip="Previous page">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span class="pager__page">{{ pageNumber() }} / {{ totalPages() }}</span>
+        <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="next()" matTooltip="Next page">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="last()" matTooltip="Last page">
+          <mat-icon>last_page</mat-icon>
+        </button>
+      </div>
+    </div>
+  }
+  @case ('comp-bank') {
+    <app-comp-bank-list />
+  }
+}

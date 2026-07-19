@@ -69,6 +69,7 @@
         <tr>
           <th>Service</th>
           <th>Charges Type</th>
+          <th>Charges Detail</th>
           <th>Charges Value</th>
           <th>Effective From</th>
           <th>Effective To</th>
@@ -81,6 +82,7 @@
           <tr>
             <td class="name">{{ c.serviceName || '—' }}</td>
             <td>{{ c.chargesTypeName || '—' }}</td>
+            <td>{{ c.chargesDetailName || c.chargesDetail || '—' }}</td>
             <td>{{ c.chargesValue != null ? (c.chargesValue | number: '1.2-2') : '—' }}</td>
             <td>{{ c.effectiveFrom ? (c.effectiveFrom | date: 'dd-MMM-yyyy') : '—' }}</td>
             <td>{{ c.effectiveTo ? (c.effectiveTo | date: 'dd-MMM-yyyy') : '—' }}</td>
@@ -96,7 +98,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="7" class="empty rf-muted">
+            <td colspan="8" class="empty rf-muted">
               {{ loading() ? 'Loading…' : 'No contracts added yet.' }}
             </td>
           </tr>

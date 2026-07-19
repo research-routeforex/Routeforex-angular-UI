@@ -228,7 +228,7 @@
     }
 
     @if (tab() === 'banks') {
-      <app-client-banks [clientId]="clientId()" [cityId]="selectedCity()" />
+      <app-client-banks [clientId]="clientId()" [clientName]="form.controls.clientName.value" />
     }
     @if (tab() === 'contracts') {
       <app-client-contracts [clientId]="clientId()" />

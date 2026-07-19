@@ -5,6 +5,9 @@
       <h4 class="child__addtitle">
         <mat-icon>account_balance</mat-icon>
         {{ editingId() ? 'Edit Bank' : 'Client Banks' }}
+        @if (clientName()) {
+          <span class="child__client">— {{ clientName() }}</span>
+        }
       </h4>
       <span class="rf-spacer"></span>
       <button mat-stroked-button type="button" (click)="toggleForm()">
@@ -15,22 +18,47 @@
 
     @if (showForm()) {
       <form class="child__form" [formGroup]="form" (ngSubmit)="save()">
-        <div class="child__fields">
+        <!-- Row 1: Region, Country, City, Bank -->
+        <div class="child__row child__row--4">
+          <app-field label="Region">
+            <app-select formControlName="region" [options]="regionOptions()" placeholder="Select region" />
+          </app-field>
+          <app-field label="Country">
+            <app-select formControlName="country" [options]="countryOptions()" placeholder="Select country" />
+          </app-field>
+          <app-field label="City">
+            <app-select formControlName="city" [options]="cityOptions()" placeholder="Select city" />
+          </app-field>
           <app-field label="Bank" required [control]="form.controls.bankId" error="Select a bank.">
             <app-select formControlName="bankId" [options]="bankOptions()" placeholder="Select bank" searchPlaceholder="Search bank…" />
           </app-field>
-          <app-field label="Account No"><input class="rf-input" formControlName="accountNo" /></app-field>
-          <app-field label="IFSC Code"><input class="rf-input" formControlName="ifscCode" /></app-field>
-          <app-field label="Swift Code"><input class="rf-input" formControlName="swiftCode" /></app-field>
+        </div>
+
+        <!-- Row 2: Bank Branch, IFSC, Account No, Bank Margin, Branch Code -->
+        <div class="child__row child__row--5">
           <app-field label="Bank Branch"><input class="rf-input" formControlName="bankBranch" /></app-field>
-          <app-field label="Branch Code"><input class="rf-input" formControlName="branchCode" /></app-field>
+          <app-field label="IFSC Code"><input class="rf-input" formControlName="ifscCode" /></app-field>
+          <app-field label="Account No"><input class="rf-input" formControlName="accountNo" /></app-field>
           <app-field label="Bank Margin"><input class="rf-input" type="number" step="0.0001" formControlName="bankMargin" /></app-field>
-          <app-field label="Address Line 1"><input class="rf-input" formControlName="address1" /></app-field>
-          <app-field label="Address Line 2"><input class="rf-input" formControlName="address2" /></app-field>
-          <app-field label="PIN"><input class="rf-input" type="number" formControlName="pin" /></app-field>
+          <app-field label="Branch Code"><input class="rf-input" formControlName="branchCode" /></app-field>
+        </div>
+
+        <!-- Row 3: Swift Code, RM Name, RM Contact No, RM Email -->
+        <div class="child__row child__row--4">
+          <app-field label="Swift Code"><input class="rf-input" formControlName="swiftCode" /></app-field>
           <app-field label="RM Name"><input class="rf-input" formControlName="rmName" /></app-field>
           <app-field label="RM Contact No"><input class="rf-input" formControlName="rmContactNo" /></app-field>
           <app-field label="RM Email"><input class="rf-input" type="email" formControlName="rmEmail" /></app-field>
+        </div>
+
+        <!-- Row 4: Address Line 1, Address Line 2, PIN, Status -->
+        <div class="child__row child__row--addr">
+          <app-field label="Address Line 1"><input class="rf-input" formControlName="address1" /></app-field>
+          <app-field label="Address Line 2"><input class="rf-input" formControlName="address2" /></app-field>
+          <app-field label="PIN"><input class="rf-input" type="number" formControlName="pin" /></app-field>
+          <app-field label="Status">
+            <app-select formControlName="status" [options]="statusOptions()" [searchable]="false" placeholder="Status" />
+          </app-field>
         </div>
         <div class="child__formactions">
           <button mat-stroked-button type="button" (click)="closeForm()">Cancel</button>
@@ -55,6 +83,7 @@
           <th>Margin</th>
           <th>RM Name</th>
           <th>RM Contact</th>
+          <th>Status</th>
           <th class="ta-r">Actions</th>
         </tr>
       </thead>
@@ -68,6 +97,7 @@
             <td>{{ b.bankMargin ?? '—' }}</td>
             <td>{{ b.rmName || '—' }}</td>
             <td>{{ b.rmContactNo || '—' }}</td>
+            <td>{{ b.activeStatus || '—' }}</td>
             <td class="ta-r">
               <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(b)" matTooltip="Edit">
                 <mat-icon>edit</mat-icon>
@@ -79,7 +109,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="8" class="empty rf-muted">
+            <td colspan="9" class="empty rf-muted">
               {{ loading() ? 'Loading…' : 'No banks added yet.' }}
             </td>
           </tr>

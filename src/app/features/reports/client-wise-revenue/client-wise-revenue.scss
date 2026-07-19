@@ -1,0 +1,232 @@
+:host {
+  display: block;
+}
+
+// ---- Gradient hero band (same treatment as Currency Master, etc.) ----------
+.hero {
+  position: relative;
+  // Sit above the grid's sticky header/footer (z-index up to 6) so the FY
+  // dropdown panel isn't painted over when it overflows onto the table.
+  z-index: 30;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, oklch(62% 0.24 290) 14%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+// Clip the animated glows here (not on .hero) so the FY dropdown can overflow.
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a {
+    top: -120px;
+    right: 8%;
+    background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+    animation: cwr-blob-a 9s ease-in-out infinite;
+  }
+  &--b {
+    bottom: -150px;
+    left: 12%;
+    background: radial-gradient(circle, oklch(62% 0.24 290), transparent 70%);
+    animation: cwr-blob-b 11s ease-in-out infinite;
+  }
+}
+@keyframes cwr-blob-a {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-26px, 18px); }
+}
+@keyframes cwr-blob-b {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(22px, -16px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__glow { animation: none; }
+}
+
+// Toolbar controls projected into the page-header actions slot.
+.cwr__fy {
+  min-width: 170px;
+}
+button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cwr__state {
+  margin-top: var(--rf-gap);
+  padding: 40px;
+  text-align: center;
+  color: var(--rf-muted-fg);
+  background: var(--rf-surface-2);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+
+  &--empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 56px;
+
+    mat-icon {
+      font-size: 40px;
+      width: 40px;
+      height: 40px;
+      opacity: 0.35;
+      color: var(--mat-sys-primary);
+    }
+    p { margin: 0; }
+  }
+}
+
+.cwr__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-bottom: var(--rf-gap);
+  font-size: 13px;
+  color: var(--rf-muted-fg);
+
+  strong { color: var(--mat-sys-on-surface); font-size: 15px; }
+  &-tag { margin-left: auto; font-weight: 600; }
+}
+
+// ---- Wide pivot: same visual language as the Client Master / history grids ----
+.cwr__scroll {
+  margin-top: var(--rf-gap);
+  overflow: auto;
+  max-height: calc(100vh - 240px);
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+}
+
+.cwr__table {
+  --cwr-head: color-mix(in oklab, var(--mat-sys-primary) 88%, black);
+  --cwr-head-2: color-mix(in oklab, var(--mat-sys-primary) 74%, black);
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+
+  th,
+  td {
+    border-bottom: 1px solid var(--rf-border);
+    padding: 5px 12px;
+    white-space: nowrap;
+  }
+
+  // Header — primary gradient like the standard grids.
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--mat-sys-primary) 96%, white) 0%,
+      color-mix(in oklab, var(--mat-sys-primary) 84%, black) 100%
+    );
+    color: var(--mat-sys-on-primary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: center;
+  }
+  // Second header row (category sub-labels) sits just below the first.
+  thead tr:nth-child(2) th {
+    top: 24px;
+    background: var(--cwr-head-2);
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+  thead th:first-child { border-top-left-radius: var(--rf-radius); }
+
+  // Month group separators + total/grand emphasis (subtle, not heavy).
+  .cwr__group { border-left: 2px solid color-mix(in oklab, var(--mat-sys-on-primary) 28%, transparent); }
+  .cwr__cat--total,
+  .cwr__group--total,
+  th.cwr__grand { background: var(--cwr-head-2); }
+
+  // Body — compact rows, subtle zebra + hover (design tokens).
+  tbody td { color: var(--mat-sys-on-surface); }
+  tbody tr:nth-child(even) td { background: color-mix(in oklab, var(--mat-sys-primary) 3%, transparent); }
+  tbody tr:hover td { background: color-mix(in oklab, var(--mat-sys-primary) 9%, transparent); }
+
+  .cwr__num { text-align: right; font-variant-numeric: tabular-nums; }
+  .cwr__num--total { font-weight: 600; background: color-mix(in oklab, var(--mat-sys-primary) 5%, transparent); }
+  td.cwr__grand { font-weight: 700; color: var(--mat-sys-primary); background: color-mix(in oklab, var(--mat-sys-primary) 9%, transparent); }
+  .cwr__name { font-weight: 600; color: var(--mat-sys-primary); }
+
+  // Sticky totals row.
+  tfoot td {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    background: color-mix(in oklab, var(--mat-sys-primary) 12%, var(--mat-sys-surface));
+    border-top: 2px solid color-mix(in oklab, var(--mat-sys-primary) 45%, var(--rf-border));
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  tfoot .cwr__grand { color: var(--mat-sys-primary); font-weight: 800; }
+}
+
+// ---- Frozen identity columns (Sl. / Client / Zone / RM) --------------------
+// Opaque backgrounds are essential so scrolled columns don't bleed through.
+.cwr__sticky {
+  position: sticky;
+  z-index: 3;
+  background: var(--mat-sys-surface);
+}
+.cwr__sticky--1 { left: 0;     width: 48px;  min-width: 48px;  text-align: center; }
+.cwr__sticky--2 { left: 48px;  width: 220px; min-width: 220px; }
+.cwr__sticky--3 { left: 268px; width: 90px;  min-width: 90px;  text-align: left; }
+.cwr__sticky--4 { left: 358px; width: 150px; min-width: 150px; text-align: left; }
+
+// Freeze-boundary shadow on the last frozen column.
+.cwr__table .cwr__sticky--4 { box-shadow: 8px 0 8px -6px rgba(0, 0, 0, 0.18); }
+
+// Keep frozen body cells opaque over zebra + hover.
+.cwr__table tbody tr:nth-child(even) .cwr__sticky {
+  background: color-mix(in oklab, var(--mat-sys-primary) 3%, var(--mat-sys-surface));
+}
+.cwr__table tbody tr:hover .cwr__sticky {
+  background: color-mix(in oklab, var(--mat-sys-primary) 9%, var(--mat-sys-surface));
+}
+// Frozen header + footer cells sit above and stay opaque.
+.cwr__table thead .cwr__sticky { z-index: 6; background: var(--cwr-head); }
+.cwr__table tfoot .cwr__sticky {
+  z-index: 6;
+  background: color-mix(in oklab, var(--mat-sys-primary) 14%, var(--mat-sys-surface));
+}

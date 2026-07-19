@@ -50,6 +50,62 @@
   }
 }
 
+// ---- Section tabs (matches Common Master) ----------------------------------
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: var(--rf-gap);
+  padding: 6px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: var(--rf-surface-2);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: var(--rf-radius-sm);
+  background: transparent;
+  color: var(--rf-muted-fg);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  mat-icon {
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+  }
+  &:hover {
+    background: var(--rf-surface-muted);
+    color: var(--rf-text);
+  }
+  &--active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--rf-primary), color-mix(in oklab, var(--rf-primary) 70%, #7c3aed));
+    box-shadow: 0 4px 12px color-mix(in oklab, var(--rf-primary) 30%, transparent);
+  }
+}
+
+// ---- Section action bar ----------------------------------------------------
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  &__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--rf-text);
+  }
+}
+
 .tablewrap {
   max-height: 478px;
   overflow: auto;

@@ -160,6 +160,7 @@ export interface SaveBankRequest {
   rmName?: string | null;
   rmContactNo?: string | null;
   rmEmail?: string | null;
+  status?: string | null;
 }
 
 // ----- Client Contract (tpo_mast_clientContract) ----------------------------
@@ -177,7 +178,8 @@ export interface ClientContract {
   serviceName?: string | null;
   chargesType?: string | null; // ChargesTypeID stored as text
   chargesTypeName?: string | null;
-  chargesDetail?: string | null; // CSV of transaction ids
+  chargesDetail?: string | null; // Single transaction id (one charge per row)
+  chargesDetailName?: string | null; // Resolved charge name for the row
   chargesValue?: number | null;
   effectiveFrom?: string | null;
   effectiveTo?: string | null;
@@ -188,7 +190,7 @@ export interface SaveContractRequest {
   contractId: number;
   serviceID?: number | null;
   chargesType?: string | null;
-  chargesDetail?: string | null; // CSV of transaction ids
+  chargesDetail?: string | null; // CSV of transaction ids; saved as one row per id
   chargesValue?: number | null;
   effectiveFrom?: string | null;
   effectiveTo?: string | null;

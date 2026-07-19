@@ -1,0 +1,63 @@
+<h2 mat-dialog-title>{{ title }}</h2>
+
+<mat-dialog-content>
+  @if (loading()) {
+    <div class="fdp-state">
+      <mat-icon class="fdp-state__spin">progress_activity</mat-icon>
+      <span>Loading Forward deals…</span>
+    </div>
+  } @else if (deals().length === 0) {
+    <div class="fdp-state">
+      <mat-icon>inbox</mat-icon>
+      <span>No open Forward deals with a remaining balance for this client.</span>
+    </div>
+  } @else {
+    <div class="fdp-tablewrap">
+      <table class="fdp-table">
+        <thead>
+          <tr>
+            <th>Order No.</th>
+            <th>Imp/Exp</th>
+            <th>Ccy</th>
+            <th class="fdp-num">Order Value</th>
+            <th class="fdp-num">Balance</th>
+            <th class="fdp-num">Rate</th>
+            <th>Window / Fix</th>
+            <th>Maturity / From–To</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of deals(); track d.orderNumber) {
+            <tr (click)="select(d)">
+              <td class="fdp-order">{{ d.orderNumber }}</td>
+              <td>{{ d.impExp }}</td>
+              <td>{{ d.currencyCode }}</td>
+              <td class="fdp-num">{{ d.orderValue | number: '1.2-2' }}</td>
+              <td class="fdp-num fdp-bal">{{ d.balance | number: '1.2-2' }}</td>
+              <td class="fdp-num">{{ d.bookingRate | number: '1.4-4' }}</td>
+              <td>{{ d.dateSelectionType }}</td>
+              <td>
+                @if (d.dateSelectionType === 'Fix') {
+                  {{ d.maturityDate ? (d.maturityDate | date: 'dd-MMM-yyyy') : '—' }}
+                } @else {
+                  {{ d.fromDate ? (d.fromDate | date: 'dd-MMM-yyyy') : '—' }} –
+                  {{ d.toDate ? (d.toDate | date: 'dd-MMM-yyyy') : '—' }}
+                }
+              </td>
+              <td>
+                <button mat-flat-button color="primary" type="button" (click)="select(d); $event.stopPropagation()">
+                  Select
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">Cancel</button>
+</mat-dialog-actions>

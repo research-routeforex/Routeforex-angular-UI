@@ -1,0 +1,170 @@
+:host {
+  display: block;
+}
+
+// ---- Header band (full-bleed; surface padding is zeroed by .uc-dialog) -----
+.uc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  color: #fff;
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 92%, white) 0%,
+    color-mix(in oklab, var(--mat-sys-primary) 78%, var(--rf-info)) 100%
+  );
+
+  &--warn {
+    background: linear-gradient(
+      120deg,
+      color-mix(in oklab, var(--rf-danger) 88%, black) 0%,
+      color-mix(in oklab, var(--rf-danger) 74%, #b91c1c) 100%
+    );
+  }
+}
+.uc-head__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+}
+.uc-head__close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// ---- Divider ---------------------------------------------------------------
+.uc-hr {
+  height: 1px;
+  border: 0;
+  margin: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--mat-sys-primary) 45%, var(--rf-border)) 20%,
+    color-mix(in oklab, var(--mat-sys-primary) 45%, var(--rf-border)) 80%,
+    transparent
+  );
+}
+// The in-body divider between the two field groups sits a touch tighter.
+.uc-body .uc-hr {
+  margin: 14px 0 16px;
+}
+
+// ---- Body ------------------------------------------------------------------
+.uc-body {
+  padding: 18px 20px 20px;
+  background: var(--rf-surface-2);
+}
+.uc-body__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mat-sys-primary);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.uc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px 18px;
+
+  > * {
+    min-width: 0;
+  }
+}
+@media (max-width: 560px) {
+  .uc-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Read-only inputs read as context, not editable fields.
+.rf-input[readonly] {
+  color: var(--rf-muted-fg);
+  background: var(--rf-surface-muted);
+  cursor: default;
+}
+
+// Partial / Full toggle.
+.uc-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.uc-toggle__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rf-text);
+}
+.uc-seg {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--rf-border);
+  border-radius: 999px;
+  background: var(--rf-surface-muted);
+  width: fit-content;
+}
+.uc-seg__btn {
+  padding: 7px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rf-muted-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.uc-seg__btn--active {
+  color: var(--mat-sys-on-primary);
+  background: var(--mat-sys-primary);
+}
+
+// ---- Footer ----------------------------------------------------------------
+.uc-foot {
+  padding: 14px 20px;
+  margin: 0;
+  background: var(--rf-surface-2);
+}
+.uc-foot__submit {
+  font-weight: 600;
+}

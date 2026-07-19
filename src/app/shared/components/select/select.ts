@@ -66,8 +66,20 @@ export class SelectComponent implements ControlValueAccessor {
   });
 
   protected readonly selectedLabel = computed(
-    () => this.normalized().find((o) => o.value === this.value())?.label ?? '',
+    () => this.normalized().find((o) => this.sameValue(o.value, this.value()))?.label ?? '',
   );
+
+  /** True when an option is the current value — tolerant of number-vs-string ids. */
+  protected isSelected(optValue: unknown): boolean {
+    return this.sameValue(optValue, this.value());
+  }
+
+  /** Loose value match: a stored id resolves whether it arrives as a number or a string. */
+  private sameValue(a: unknown, b: unknown): boolean {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    return String(a) === String(b);
+  }
 
   private onChange: (v: unknown) => void = () => {};
   private onTouched: () => void = () => {};

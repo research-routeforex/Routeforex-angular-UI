@@ -1,0 +1,101 @@
+<!-- Header band -->
+<header class="uc-head" [class.uc-head--warn]="!isUtilization">
+  <div class="uc-head__title">
+    <mat-icon>{{ isUtilization ? 'call_split' : 'copyright' }}</mat-icon>
+    <span>{{ data.mode }}</span>
+  </div>
+  <button type="button" class="uc-head__close" aria-label="Close" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="uc-body">
+    <div class="uc-body__label">
+      <mat-icon>info</mat-icon> Information
+    </div>
+
+    <!-- Read-only context + Partial/Full -->
+    <div class="uc-grid">
+      <app-field label="Amount Outstanding">
+        <input class="rf-input" [value]="outstanding" readonly />
+      </app-field>
+      <app-field label="Booking Rate">
+        <input class="rf-input" [value]="bookingRate" readonly />
+      </app-field>
+
+      <div class="uc-toggle">
+        <span class="uc-toggle__label">Scope</span>
+        <div class="uc-seg">
+          <button
+            type="button"
+            class="uc-seg__btn"
+            [class.uc-seg__btn--active]="partialFull() === 'Partial'"
+            (click)="setPartialFull('Partial')"
+          >
+            Partial
+          </button>
+          <button
+            type="button"
+            class="uc-seg__btn"
+            [class.uc-seg__btn--active]="partialFull() === 'Full'"
+            (click)="setPartialFull('Full')"
+          >
+            Full
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <hr class="uc-hr" />
+
+    <!-- Amount + type-specific fields -->
+    <div class="uc-grid">
+      <app-field
+        [label]="isUtilization ? 'Utilized Amount' : 'Cancelled Amount'"
+        required
+        [control]="form.controls.amount"
+        error="Enter an amount."
+      >
+        <input class="rf-input" type="number" step="0.01" formControlName="amount" placeholder="0.00" />
+      </app-field>
+
+      @if (isUtilization) {
+        <app-field label="EDC Charge" required [control]="form.controls.edcCharge" error="Enter the EDC charge.">
+          <input class="rf-input" type="number" step="0.0001" formControlName="edcCharge" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Final Rate" hint="Booking Rate − EDC Charge.">
+          <input class="rf-input" [value]="finalRate() | number: '1.4-4'" readonly />
+        </app-field>
+      } @else {
+        <app-field label="Spot Rate" required [control]="form.controls.spot" error="Enter the spot rate.">
+          <input class="rf-input" type="number" step="0.0001" formControlName="spot" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Premium / Cash Spot">
+          <input class="rf-input" type="number" step="0.0001" formControlName="premiumCashSpot" placeholder="0.0000" />
+        </app-field>
+        <app-field
+          label="Cancellation Rate"
+          required
+          [control]="form.controls.cancellationRate"
+          error="Enter the cancellation rate."
+        >
+          <input class="rf-input" type="number" step="0.0001" formControlName="cancellationRate" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Profit / Loss" hint="(Cancellation Rate − Booking Rate) × amount.">
+          <input class="rf-input" type="number" step="0.01" formControlName="profitLoss" placeholder="0.00" />
+        </app-field>
+      }
+    </div>
+  </mat-dialog-content>
+
+  <hr class="uc-hr uc-hr--foot" />
+
+  <!-- Footer -->
+  <mat-dialog-actions class="uc-foot" align="end">
+    <button mat-stroked-button type="button" (click)="close()">Close</button>
+    <button mat-flat-button color="primary" type="submit" class="uc-foot__submit" [disabled]="saving()">
+      {{ saving() ? 'Saving…' : 'Submit' }}
+    </button>
+  </mat-dialog-actions>
+</form>

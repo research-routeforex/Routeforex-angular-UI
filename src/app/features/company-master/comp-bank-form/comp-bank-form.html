@@ -1,0 +1,96 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    [title]="isEdit() ? 'Edit Company Bank' : 'New Company Bank'"
+    subtitle="Capture the bank account, its identifiers and location."
+    [breadcrumbs]="[
+      { label: 'Masters' },
+      { label: 'Company Master', link: '/company-master' },
+      { label: isEdit() ? 'Edit Company Bank' : 'New Company Bank' }
+    ]"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving() || loading()">
+      <mat-icon>save</mat-icon> {{ saving() ? 'Saving…' : 'Save Company Bank' }}
+    </button>
+  </app-page-header>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <!-- Bank account information -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>account_balance</mat-icon> Bank Account</h3>
+    <div class="grid">
+      <app-field label="Bank" required [control]="form.controls.bankId" error="Select a bank." class="span-2">
+        <app-select
+          formControlName="bankId"
+          [options]="bankOptions()"
+          placeholder="Select bank"
+          searchPlaceholder="Search bank…"
+        />
+      </app-field>
+
+      <app-field label="Status">
+        <app-select formControlName="activeStatus" [options]="statusOptions" [searchable]="false" />
+      </app-field>
+
+      <app-field label="Account No">
+        <input class="rf-input" formControlName="accountNo" placeholder="e.g. 001234567890" />
+      </app-field>
+
+      <app-field label="IFSC Code">
+        <input class="rf-input" formControlName="ifscCode" placeholder="e.g. HDFC0000123" />
+      </app-field>
+
+      <app-field label="Swift Code">
+        <input class="rf-input" formControlName="swiftCode" placeholder="e.g. HDFCINBB" />
+      </app-field>
+    </div>
+  </section>
+
+  <!-- Location -->
+  <section class="rf-card sec">
+    <h3 class="sec__title"><mat-icon>location_on</mat-icon> Location</h3>
+    <div class="grid">
+      <app-field label="Address Line 1" class="span-2">
+        <input class="rf-input" formControlName="address1" placeholder="Building, street…" />
+      </app-field>
+
+      <app-field label="Address Line 2" class="span-2">
+        <input class="rf-input" formControlName="address2" placeholder="Area, landmark…" />
+      </app-field>
+
+      <app-field label="Country">
+        <app-select
+          formControlName="country"
+          [options]="countryOptions()"
+          placeholder="Select country"
+          searchPlaceholder="Search country…"
+        />
+      </app-field>
+
+      <app-field label="State">
+        <app-select
+          formControlName="state"
+          [options]="stateOptions()"
+          placeholder="Select country first"
+          searchPlaceholder="Search state…"
+        />
+      </app-field>
+
+      <app-field label="City">
+        <app-select
+          formControlName="city"
+          [options]="cityOptions()"
+          placeholder="Select country first"
+          searchPlaceholder="Search city…"
+        />
+      </app-field>
+
+      <app-field label="PIN Code">
+        <input class="rf-input" type="number" formControlName="pin" placeholder="e.g. 400001" />
+      </app-field>
+    </div>
+  </section>
+</form>

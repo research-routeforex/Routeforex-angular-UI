@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { interval } from 'rxjs';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header';
 import { SelectComponent, SelectOption } from '../../shared/components/select/select';
+import { DropdownService } from '../../shared/services/dropdown.service';
 import {
   aggregate,
   currencySymbol,
@@ -49,6 +50,7 @@ interface SectionTotals {
 })
 export class ManagementDashboardComponent {
   protected readonly svc = inject(ManagementDashboardService);
+  private readonly dropdowns = inject(DropdownService);
 
   protected readonly sections = SECTIONS;
   protected readonly section = signal<Section>('Import');
@@ -56,6 +58,10 @@ export class ManagementDashboardComponent {
   /** Client selector — data loads only after a client is chosen. */
   protected readonly clientOptions = signal<SelectOption[]>([]);
   protected readonly selectedClient = signal<number | null>(null);
+
+  /** Optional Client Bank filter — when set, only that bank's positions are shown. */
+  protected readonly bankOptions = signal<SelectOption[]>([]);
+  protected readonly selectedBank = signal<number | null>(null);
 
   /** Exposed to the template for sign-aware currency formatting. */
   protected readonly inr = INR_SYMBOL;
@@ -65,18 +71,38 @@ export class ManagementDashboardComponent {
   private readonly expandedCurrencies = signal<ReadonlySet<string>>(new Set());
   private readonly expandedMonths = signal<ReadonlySet<string>>(new Set());
 
+  /**
+   * Set when a new client is picked: once the first load completes, if the Import
+   * tab has no data we auto-select the Export tab. Consumed after one check so it
+   * never fights the user's own tab choice.
+   */
+  private readonly autoSectionPending = signal(false);
+
   constructor() {
     // Client list (key = ClientID, label = ClientName) for the picker, scoped to
     // the signed-in user via GetClientInformation.
     this.svc.getClients().subscribe((opts) => this.clientOptions.set(opts));
     this.svc.clear();
 
-    // Reload (with the loading state) whenever the client or the section changes.
+    // Reload (with the loading state) whenever the client, section or bank changes.
     effect(() => {
       const clientId = this.selectedClient();
       const section = this.section();
+      const bankId = this.selectedBank();
       if (clientId == null) return;
-      this.svc.load(clientId, section);
+      this.svc.load(clientId, section, bankId);
+    });
+
+    // After a client is picked, if the (default) Import tab has no data once the
+    // load completes, auto-select the Export tab. Runs once per client selection.
+    effect(() => {
+      if (!this.autoSectionPending() || !this.svc.loaded()) return;
+      const importHasData = this.svc.leaves().some((l) => l.section === 'Import');
+      this.autoSectionPending.set(false);
+      if (!importHasData && this.section() === 'Import') {
+        this.section.set('Export');
+        this.resetDrilldown();
+      }
     });
 
     // Live feed: re-fetch from the DB every 2 seconds, silently (no loading
@@ -86,7 +112,7 @@ export class ManagementDashboardComponent {
       .subscribe(() => {
         const clientId = this.selectedClient();
         if (clientId == null) return;
-        this.svc.load(clientId, this.section(), true);
+        this.svc.load(clientId, this.section(), this.selectedBank(), true);
       });
   }
 
@@ -228,6 +254,23 @@ export class ManagementDashboardComponent {
     const id = client == null || client === '' ? null : Number(client);
     if (id === this.selectedClient()) return;
     this.selectedClient.set(id);
+
+    // Reload the bank filter for the new client (and clear any prior selection).
+    this.selectedBank.set(null);
+    this.bankOptions.set([]);
+    if (id != null) this.dropdowns.get('ClientBank', id).subscribe((o) => this.bankOptions.set(o));
+
+    // Start each client on the Import tab; auto-switch to Export after load if empty.
+    this.section.set('Import');
+    this.autoSectionPending.set(id != null);
+    this.resetDrilldown();
+  }
+
+  /** Filter positions to a single Client Bank (null = all banks). */
+  protected selectBank(bank: number | string | null): void {
+    const id = bank == null || bank === '' ? null : Number(bank);
+    if (id === this.selectedBank()) return;
+    this.selectedBank.set(id);
     this.resetDrilldown();
   }
 

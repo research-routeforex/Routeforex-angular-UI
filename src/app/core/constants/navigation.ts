@@ -15,9 +15,16 @@ export const NAVIGATION: NavSection[] = [
         label: 'Dealer Pad',
         icon: 'candlestick_chart',
         route: '/dealer-pad',
-        roles: [AppRole.Admin, AppRole.Dealer],
+        
       },
       { label: 'Management Dashboard', icon: 'monitoring', route: '/management-dashboard' },
+      { label: 'Executive Dashboard', icon: 'insights', route: '/executive-dashboard', badge: 'New' },
+      {
+        label: 'Executive Expiry Transaction',
+        icon: 'event_busy',
+        route: '/executive-expiry',
+        badge: 'New',
+      },
       { label: 'Ticker Live Rate', icon: 'show_chart', route: '/ticker' },
     ],
   },
@@ -66,8 +73,29 @@ export const NAVIGATION: NavSection[] = [
     items: [
       { label: 'Users', icon: 'manage_accounts', route: '/users', roles: [AppRole.Admin] },
       { label: 'Roles', icon: 'admin_panel_settings', route: '/roles', roles: [AppRole.Admin] },
-      { label: 'Reports', icon: 'assessment', route: '/reports', badge: 'Soon' },
-      { label: 'Settings', icon: 'settings', route: '/settings' },
+    ],
+  },
+  {
+    title: 'Reports',
+    items: [
+      {
+        label: 'Client Wise Revenue',
+        icon: 'assessment',
+        route: '/reports/client-wise-revenue',
+        badge: 'New',
+      },
+      {
+        label: 'Report UC',
+        icon: 'table_view',
+        route: '/reports/report-uc',
+        badge: 'New',
+      },
+      {
+        label: 'PNL MIS',
+        icon: 'account_balance',
+        route: '/reports/pnl-mis',
+        badge: 'New',
+      },
     ],
   },
 ];

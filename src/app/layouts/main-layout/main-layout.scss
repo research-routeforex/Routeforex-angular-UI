@@ -25,6 +25,16 @@
     &--rail {
       width: var(--rf-sidebar-width-collapsed);
     }
+
+    // Material projects the content into .mat-drawer-inner-container; make THAT
+    // the flex column (full height) so .nav can grow and the pinned Settings
+    // footer is pushed to the bottom of the screen.
+    ::ng-deep .mat-drawer-inner-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
   }
 
   &__content {
@@ -70,6 +80,13 @@
     letter-spacing: 0.04em;
     color: var(--nav-muted);
   }
+}
+
+// ---- Pinned bottom (Settings) ----------------------------------------------
+.nav__footer {
+  flex: none;
+  padding: 8px;
+  border-top: 1px solid var(--nav-border);
 }
 
 // ---- Nav -------------------------------------------------------------------

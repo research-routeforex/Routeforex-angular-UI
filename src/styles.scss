@@ -150,6 +150,14 @@ body {
   margin-bottom: 12px;
 }
 
+// Compact field spacing across the Dealer Pad deal form (keeps the rate bands
+// within reach without scrolling). Listed before the tighter Client-Information
+// override so that override still wins for those fields.
+.dealform .rf-field {
+  gap: 3px;
+  margin-bottom: 7px;
+}
+
 // Compact field spacing — Client Information only.
 .client-info .rf-field {
   gap: 0;
@@ -556,6 +564,15 @@ textarea.rf-textarea:disabled {
 }
 .rf-datepicker .mat-calendar-body-cell-content {
   border-radius: 9px;
+}
+
+/* ---- UC dialog (uc-dialog panelClass) ------------------------------------ */
+/* Zero the surface padding so the dialog's own header band can sit flush to the
+   rounded edges; the component styles the header / body / footer. */
+.uc-dialog .mat-mdc-dialog-surface {
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 /* ---- Print: show only the generated invoice (#invoice) ------------------- */

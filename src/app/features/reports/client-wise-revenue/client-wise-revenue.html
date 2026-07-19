@@ -1,0 +1,110 @@
+<div class="hero">
+  <div class="hero__bg">
+    <span class="hero__glow hero__glow--a"></span>
+    <span class="hero__glow hero__glow--b"></span>
+  </div>
+  <app-page-header
+    title="Client Wise Revenue"
+    subtitle="Monthly revenue by client, split across charge categories for a financial year."
+    [breadcrumbs]="[{ label: 'Reports' }, { label: 'Client Wise Revenue' }]"
+  >
+    <app-select
+      class="cwr__fy"
+      [options]="faYears"
+      [formControl]="fyControl"
+      [searchable]="false"
+      placeholder="Financial year"
+    />
+    <button mat-flat-button color="primary" type="button" [disabled]="loading()" (click)="generate()">
+      <mat-icon>play_arrow</mat-icon> Generate
+    </button>
+    <button mat-stroked-button type="button" [disabled]="!report() || loading()" (click)="exportExcel()">
+      <mat-icon>download</mat-icon> Export to Excel
+    </button>
+  </app-page-header>
+</div>
+
+@if (loading()) {
+  <div class="cwr__state">Loading report…</div>
+} @else if (report(); as r) {
+  <div class="cwr__meta">
+    <strong>{{ r.companyName }}</strong>
+    @if (r.addressLine1) { <span>{{ r.addressLine1 }}</span> }
+    @if (r.addressLine2) { <span>{{ r.addressLine2 }}</span> }
+    <span class="cwr__meta-tag">FY {{ r.faYear }} · Generated {{ r.generatedDate }}</span>
+  </div>
+
+  @if (r.rows.length) {
+    <div class="cwr__scroll">
+      <table class="cwr__table">
+        <thead>
+          <tr>
+            <th class="cwr__sticky cwr__sticky--1" rowspan="2">Sl.</th>
+            <th class="cwr__sticky cwr__sticky--2" rowspan="2">Client Name</th>
+            <th class="cwr__sticky cwr__sticky--3" rowspan="2">Zone</th>
+            <th class="cwr__sticky cwr__sticky--4" rowspan="2">RM</th>
+            @for (m of r.months; track $index) {
+              <th class="cwr__group" [attr.colspan]="r.categories.length">{{ m }}</th>
+            }
+            <th class="cwr__group cwr__group--total" [attr.colspan]="r.categories.length">Total</th>
+            <th class="cwr__grand" rowspan="2">Grand Total</th>
+          </tr>
+          <tr>
+            @for (m of r.months; track $index) {
+              @for (c of r.categories; track $index) {
+                <th class="cwr__cat">{{ c }}</th>
+              }
+            }
+            @for (c of r.categories; track $index) {
+              <th class="cwr__cat cwr__cat--total">{{ c }}</th>
+            }
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (row of r.rows; track row.clientId) {
+            <tr>
+              <td class="cwr__sticky cwr__sticky--1">{{ row.slNo }}</td>
+              <td class="cwr__sticky cwr__sticky--2 cwr__name">{{ row.clientName }}</td>
+              <td class="cwr__sticky cwr__sticky--3">{{ row.zone }}</td>
+              <td class="cwr__sticky cwr__sticky--4">{{ row.rm }}</td>
+              @for (month of row.months; track $index) {
+                @for (v of month; track $index) {
+                  <td class="cwr__num">{{ v | number: '1.2-2' }}</td>
+                }
+              }
+              @for (v of row.categoryTotals; track $index) {
+                <td class="cwr__num cwr__num--total">{{ v | number: '1.2-2' }}</td>
+              }
+              <td class="cwr__num cwr__grand">{{ row.total | number: '1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+
+        @if (footer(); as f) {
+          <tfoot>
+            <tr>
+              <td class="cwr__sticky cwr__sticky--1 cwr__foot" colspan="4">Grand Total</td>
+              @for (month of f.months; track $index) {
+                @for (v of month; track $index) {
+                  <td class="cwr__num cwr__foot">{{ v | number: '1.2-2' }}</td>
+                }
+              }
+              @for (v of f.categoryTotals; track $index) {
+                <td class="cwr__num cwr__num--total cwr__foot">{{ v | number: '1.2-2' }}</td>
+              }
+              <td class="cwr__num cwr__grand cwr__foot">{{ f.total | number: '1.2-2' }}</td>
+            </tr>
+          </tfoot>
+        }
+      </table>
+    </div>
+  } @else {
+    <div class="cwr__state">No revenue found for FY {{ r.faYear }}.</div>
+  }
+} @else {
+  <div class="cwr__state cwr__state--empty">
+    <mat-icon>assessment</mat-icon>
+    <p>Select a financial year and click <strong>Generate</strong> to view the report.</p>
+  </div>
+}

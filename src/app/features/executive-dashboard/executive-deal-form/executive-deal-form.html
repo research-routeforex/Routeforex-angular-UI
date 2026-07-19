@@ -1,0 +1,169 @@
+<div class="hero">
+  <app-page-header
+    [title]="pageTitle()"
+    [subtitle]="pageSubtitle()"
+    [breadcrumbs]="[
+      { label: 'Executive Dashboard', link: '/executive-dashboard' },
+      { label: pageTitle() }
+    ]"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">
+      {{ isView() ? 'Back' : 'Cancel' }}
+    </button>
+  </app-page-header>
+</div>
+
+<form [formGroup]="form" class="rf-card dealform" (ngSubmit)="submit()">
+  <div class="dealform__grid">
+    <app-field label="Client" required [control]="form.controls.client" error="Select a client.">
+      <app-select formControlName="client" [options]="clientOptions()" placeholder="Select" searchPlaceholder="Search client…" />
+    </app-field>
+
+    <app-field label="Type" required [control]="form.controls.type" error="Select a type." class="col-sm">
+      <app-select formControlName="type" [options]="typeOptions" placeholder="Select" [searchable]="false" />
+    </app-field>
+
+    @if (!isImport()) {
+      <app-field label="EBRD / EPC / PCFC / Bill dis">
+        <app-select formControlName="bcRollover" [options]="financingOptions" placeholder="Select" [searchable]="false" />
+      </app-field>
+    }
+
+    <app-field label="Bank Name">
+      <app-select formControlName="bankName" [options]="bankOptions()" placeholder="Select" searchPlaceholder="Search bank…" />
+    </app-field>
+
+    <app-field [label]="lcNoLabel()">
+      <input class="rf-input" formControlName="bankLcNo" placeholder="Enter…" />
+    </app-field>
+
+    <app-field [label]="lcDateLabel()" class="col-sm">
+      <div class="rf-datewrap" (click)="d1.open()">
+        <input class="rf-input" [matDatepicker]="d1" formControlName="bankLcDate" placeholder="dd-MMM-yyyy" readonly />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="d1" />
+      </div>
+      <mat-datepicker #d1 panelClass="rf-datepicker" />
+    </app-field>
+
+    @if (isImport()) {
+      <app-field label="Sight / Usance">
+        <app-select formControlName="bcRollover" [options]="sightUsanceOptions" placeholder="Select" [searchable]="false" />
+      </app-field>
+      <app-field label="BC / USANCE LC">
+        <app-select formControlName="bcUsanceLc" [options]="usanceLcOptions" placeholder="Select" [searchable]="false" />
+      </app-field>
+    }
+
+    <app-field label="Interest Rate">
+      <input class="rf-input" type="number" step="0.0001" formControlName="interstRate" placeholder="0.0000" />
+    </app-field>
+
+    @if (!isImport()) {
+      <app-field label="DrawDown Amount" class="col-sm">
+        <input class="rf-input" type="number" step="0.01" formControlName="drawDownAmount" placeholder="0.00" />
+      </app-field>
+      <app-field label="DrawDown Rate" class="col-sm">
+        <input class="rf-input" type="number" step="0.0001" formControlName="drawDownRate" placeholder="0.0000" />
+      </app-field>
+    }
+
+    <app-field [label]="takenDateLabel()" class="col-sm">
+      <div class="rf-datewrap" (click)="d2.open()">
+        <input class="rf-input" [matDatepicker]="d2" formControlName="buyersCreditTakenDate" placeholder="dd-MMM-yyyy" readonly />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="d2" />
+      </div>
+      <mat-datepicker #d2 panelClass="rf-datepicker" />
+    </app-field>
+
+    <app-field label="Party Name">
+      <input class="rf-input" formControlName="partyName" placeholder="Enter…" />
+    </app-field>
+
+    <app-field label="Due Date" class="col-sm">
+      <div class="rf-datewrap" (click)="d3.open()">
+        <input class="rf-input" [matDatepicker]="d3" formControlName="dueDate" placeholder="dd-MMM-yyyy" readonly />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="d3" />
+      </div>
+      <mat-datepicker #d3 panelClass="rf-datepicker" />
+    </app-field>
+
+    <app-field label="Currency" required [control]="form.controls.currencyFrom" error="Select a currency.">
+      <app-select formControlName="currencyFrom" [options]="currencyOptions()" placeholder="Select" searchPlaceholder="Search currency…" />
+    </app-field>
+
+    <app-field label="Invoice Amount" class="col-sm">
+      <input class="rf-input" type="number" step="0.01" formControlName="invoiceAmount" placeholder="0.00" />
+    </app-field>
+
+    <app-field [label]="interestLabel()">
+      <input class="rf-input" type="number" step="0.01" formControlName="interestBuyersCredit" placeholder="0.00" />
+    </app-field>
+
+    @if (isImport()) {
+      <app-field label="Bank Swift Charges" class="col-sm">
+        <input class="rf-input" type="number" step="0.01" formControlName="bankSwiftCharges" placeholder="0.00" />
+      </app-field>
+    }
+
+    <app-field label="Total Amount Due" class="col-sm">
+      <input class="rf-input" type="number" step="0.01" formControlName="totalAmountDue" placeholder="0.00" />
+    </app-field>
+
+    <app-field label="Forward Contract Amount" class="col-sm">
+      <input class="rf-input" type="number" step="0.01" formControlName="forwardContractAmount" placeholder="0.00" />
+    </app-field>
+
+    <app-field label="Forward Contract Rate Booked">
+      <input class="rf-input" type="number" step="0.0001" formControlName="forwardContractRateBooked" placeholder="0.0000" />
+    </app-field>
+
+    <app-field label="Forward Contract Booking Date" class="col-sm">
+      <div class="rf-datewrap" (click)="d4.open()">
+        <input class="rf-input" [matDatepicker]="d4" formControlName="forwardContractBookingDate" placeholder="dd-MMM-yyyy" readonly />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="d4" />
+      </div>
+      <mat-datepicker #d4 panelClass="rf-datepicker" />
+    </app-field>
+
+    <app-field label="Forward Contract Booking No.">
+      <input class="rf-input" formControlName="forwardContractBookingNo" placeholder="Enter…" />
+    </app-field>
+
+    @if (!isImport()) {
+      <app-field label="Subvention (If Any)" class="col-sm">
+        <input class="rf-input" type="number" step="0.01" formControlName="subvention" placeholder="0.00" />
+      </app-field>
+    }
+
+    <app-field label="RBI Reference Rate" class="col-sm">
+      <input class="rf-input" type="number" step="0.0001" formControlName="rbiReferenceRate" placeholder="0.0000" />
+    </app-field>
+
+    <app-field label="Status" class="col-sm">
+      <app-select formControlName="status" [options]="statusOptions" placeholder="Select" [searchable]="false" />
+    </app-field>
+
+    <app-field label="Remarks" class="dealform__wide">
+      <input class="rf-input" formControlName="remarks" placeholder="Enter…" />
+    </app-field>
+  </div>
+
+  <div class="dealform__actions">
+    <span class="rf-spacer"></span>
+    @if (isView()) {
+      <button mat-flat-button color="primary" type="button" (click)="editThis()" class="dealform__submit">
+        <mat-icon>edit</mat-icon> Edit
+      </button>
+    } @else {
+      <button mat-button type="button" (click)="clear()">Clear</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="saving()" class="dealform__submit">
+        <mat-icon>check</mat-icon>
+        @if (isEdit()) {
+          {{ saving() ? 'Updating…' : 'Update' }}
+        } @else {
+          {{ saving() ? 'Saving…' : 'Submit' }}
+        }
+      </button>
+    }
+  </div>
+</form>

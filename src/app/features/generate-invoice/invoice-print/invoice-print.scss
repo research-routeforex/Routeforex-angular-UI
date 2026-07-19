@@ -1,0 +1,356 @@
+// ---------------------------------------------------------------------------
+// Modern invoice — clean cards, brand gradient header, soft shadows.
+// Brand colour: #2b3a8c. Print rules at the bottom keep it to one clean page.
+// ---------------------------------------------------------------------------
+$brand: #2b3a8c;
+$brand-2: #3f51b5;
+$ink: #1f2430;
+$muted: #6b7280;
+$line: #e6e9f2;
+$soft: #f5f7fb;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  padding: 28px 16px 48px;
+  background: linear-gradient(180deg, #eef1f8 0%, #e7ebf5 100%);
+  font-family: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
+  color: $ink;
+}
+
+.loading {
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 48px;
+  text-align: center;
+  color: $muted;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(20, 30, 60, 0.08);
+}
+
+.invoice {
+  max-width: 940px;
+  margin: 0 auto;
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+  }
+}
+
+.inv {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(20, 30, 60, 0.14);
+
+  // ---- Header band ---------------------------------------------------------
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 24px 32px;
+    color: #fff;
+    background: linear-gradient(120deg, $brand 0%, $brand-2 100%);
+  }
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  &__logo {
+    height: 48px;
+    width: auto;
+    padding: 6px;
+    background: #fff;
+    border-radius: 10px;
+  }
+  &__brand-txt { display: flex; flex-direction: column; }
+  &__brand-name { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+  &__brand-tag { font-size: 11px; opacity: 0.85; }
+
+  &__head-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  &__title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  &__meta { display: flex; gap: 8px; }
+  &__pill {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(2px);
+    &--ghost { background: rgba(255, 255, 255, 0.12); font-weight: 500; }
+  }
+  &__gstin { font-size: 11px; opacity: 0.9; letter-spacing: 0.02em; }
+
+  // ---- Parties -------------------------------------------------------------
+  &__parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 22px 32px 6px;
+  }
+  &__party {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 14px 16px;
+    border: 1px solid $line;
+    border-radius: 12px;
+    background: $soft;
+    &--to { text-align: right; align-items: flex-end; }
+  }
+  &__party-lbl {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: $brand;
+  }
+  &__party-name { font-size: 15px; font-weight: 700; }
+  &__party-sub { font-size: 12px; color: $muted; }
+
+  // ---- Line items ----------------------------------------------------------
+  &__table-wrap {
+    padding: 16px 32px 4px;
+  }
+  &__table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+    border: 1px solid $line;
+    border-radius: 12px;
+    overflow: hidden;
+
+    th {
+      background: $brand;
+      color: #fff;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    td {
+      padding: 9px 12px;
+      border-bottom: 1px solid $line;
+      color: $ink;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:nth-child(even) td { background: $soft; }
+  }
+  &__charge { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  // ---- Bank details + tax summary -----------------------------------------
+  &__pay {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 18px 32px;
+  }
+  &__card {
+    border: 1px solid $line;
+    border-radius: 12px;
+    padding: 16px 18px;
+    background: #fff;
+  }
+  &__card-title {
+    margin: 0 0 12px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: $brand;
+  }
+
+  &__dl {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    div { display: flex; justify-content: space-between; gap: 16px; }
+    dt { margin: 0; font-size: 12px; color: $muted; }
+    dd { margin: 0; font-size: 12.5px; font-weight: 600; text-align: right; }
+  }
+
+  &__tax { background: $soft; display: flex; flex-direction: column; }
+  &__tax-list {
+    list-style: none;
+    margin: 0 0 10px;
+    padding: 0;
+    li {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 12.5px;
+      border-bottom: 1px dashed $line;
+      span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
+    }
+  }
+  &__grand {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: #fff;
+    background: linear-gradient(120deg, $brand 0%, $brand-2 100%);
+    font-weight: 800;
+    span:first-child { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    span:last-child { font-size: 16px; font-variant-numeric: tabular-nums; }
+  }
+
+  // ---- Terms ---------------------------------------------------------------
+  &__terms {
+    margin: 4px 32px 0;
+    padding: 16px 18px;
+    border: 1px solid $line;
+    border-radius: 12px;
+    background: $soft;
+    ol {
+      margin: 0;
+      padding-left: 20px;
+      li { margin-bottom: 6px; font-size: 11px; line-height: 1.5; color: #4b5163; text-align: justify; }
+      li:last-child { margin-bottom: 0; }
+    }
+  }
+
+  // ---- Promo + certification ----------------------------------------------
+  &__promo-row {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 16px;
+    margin: 18px 32px 0;
+  }
+  &__promo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px 22px;
+    text-align: center;
+    border-radius: 12px;
+    color: #fff;
+    background: linear-gradient(135deg, #1f2a63 0%, $brand 55%, $brand-2 100%);
+
+    p { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.25; letter-spacing: 0.01em; }
+    em { font-style: italic; color: #ffd873; }
+    &-sub { font-size: 14px !important; font-weight: 700 !important; opacity: 0.95; }
+  }
+  &__certify {
+    position: relative;
+    padding: 16px 18px;
+    border: 1px solid $line;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #4b5163;
+
+    p { margin: 0 0 6px; }
+    &-note { font-size: 11px; color: $muted; }
+    &-co { margin-top: 20px !important; color: $ink; }
+    &-sign { color: $muted; }
+  }
+  &__stamp {
+    position: absolute;
+    right: 14px;
+    bottom: 10px;
+    height: 92px;
+    width: auto;
+    opacity: 0.9;
+  }
+
+  // ---- Contact footer ------------------------------------------------------
+  &__contact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 14px;
+    font-size: 12.5px;
+    color: $muted;
+    background: $soft;
+    border-top: 1px solid $line;
+  }
+  &__contact-icon { font-size: 16px; height: 16px; width: 16px; color: $brand; }
+  &__contact-sep { color: $line; }
+
+  .ta-r { text-align: right; }
+  .ta-c { text-align: center; }
+}
+
+// ---------------------------------------------------------------------------
+// Print: undo the global visibility/absolute trick (position:absolute clips
+// content taller than one page), flatten the card chrome, keep colour fills,
+// and stop blocks from splitting awkwardly across page breaks.
+// ---------------------------------------------------------------------------
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  :host {
+    padding: 0;
+    background: #fff;
+  }
+  .no-print { display: none !important; }
+
+  #invoice {
+    position: static !important;
+    width: auto !important;
+  }
+  .invoice { max-width: none; }
+
+  .inv {
+    border-radius: 0;
+    box-shadow: none;
+    // Scale the whole invoice down (set from TS) so it fits one page.
+    zoom: var(--print-zoom, 1);
+
+    // Trim the generous screen padding so it fits one A4 page.
+    &__head { padding: 16px 22px; }
+    &__parties { padding: 14px 22px 2px; }
+    &__table-wrap { padding: 10px 22px 2px; }
+    &__pay { padding: 12px 22px; }
+    &__terms { margin: 2px 22px 0; }
+    &__promo-row { margin: 12px 22px 0; }
+  }
+
+  // Force background colours (header band, table header, grand-total, promo).
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  // Keep the screen font in print (browsers otherwise fall back to serif).
+  .inv,
+  .inv * { font-family: Arial, Helvetica, sans-serif; }
+
+  // Repeat the line-table header on each page; never split a row or a block.
+  .inv__table thead { display: table-header-group; }
+  .inv__table tr { break-inside: avoid; }
+  .inv__pay,
+  .inv__terms,
+  .inv__promo-row,
+  .inv__contact { break-inside: avoid; }
+
+  // Tighten the line table + stop numeric columns wrapping.
+  .inv__table { font-size: 11px; }
+  .inv__table th,
+  .inv__table td { padding: 5px 8px; white-space: nowrap; }
+  // Order No is the only long value — allow it to wrap if a column gets tight.
+  .inv__table td:nth-child(2) { white-space: normal; }
+}

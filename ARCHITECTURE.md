@@ -33,7 +33,7 @@ src/
     ├── core/                     # singletons — imported once, never feature-specific
     │   ├── constants/            # api-endpoints, navigation, app constants
     │   ├── enums/                # AppRole, role labels
-    │   ├── guards/               # authGuard, roleGuard, guestGuard
+    │   ├── guards/               # authGuard, menuAccessGuard (backend canAccess), guestGuard
     │   ├── interceptors/         # auth (JWT + refresh), error, loading + context tokens
     │   ├── models/               # API DTO interfaces mirroring the backend
     │   └── services/             # ApiService, AuthService (store), CrudService, Theme, Loading…
@@ -46,9 +46,11 @@ src/
     ├── features/                 # lazy-loaded feature areas (one folder per domain)
     │   ├── auth/ dashboard/ users/ roles/ cities/ tenors/ settings/
     │   ├── dealer-pad/ management-dashboard/ ticker/            # trading & analytics
-    │   ├── clients/ common-master/                             # masters (Client + Country Region/Country/State/City)
-    │   ├── ftp-order-entry/ generate-invoice/                  # transactions
-    │   └── (purchase, sales, inventory, reports → placeholders)
+    │   ├── clients/ common-master/ currency-master/            # masters
+    │   ├── bank-master/ company-master/                        #   (+ Head Office & Company Bank tabs)
+    │   ├── ftp-order-entry/ generate-invoice/                  # transactions (+ invoice-print standalone page)
+    │   ├── reports/                                            # client-wise-revenue, report-uc (searchable grids + Excel export)
+    │   └── (purchase, sales, inventory → placeholders)
     ├── app.config.ts             # root providers (HTTP, interceptors, router, animations)
     └── app.routes.ts             # top-level route tree
 ```
@@ -134,19 +136,24 @@ A signed-in user changes their own password from **Settings → Security** via a
 
 ## 5. Authorization
 
-RouteForex issues **role** claims (no granular permissions on the API), so authorization is role-based throughout:
+Per-screen access is **backend-driven**. The menu API returns the screens a user may open, each carrying a `canAccess` flag (the `AccessDenied` flag on `RF_UserScreen`); route access is decided from that flag, not from hard-coded roles in the frontend.
 
 - **`authGuard`** — blocks unauthenticated access, preserves `returnUrl`.
-- **`roleGuard`** — reads `route.data.roles` and grants if the user holds any.
+- **`menuAccessGuard`** — applied as `canActivateChild` on the app shell: loads the user's menu (cached) and redirects to `/forbidden` when the matching screen's `canAccess` is `false`. Screens absent from the menu are treated as not permission-managed (allowed). **This is the single source of truth for screen access.**
 - **`guestGuard`** — keeps signed-in users off the login page.
-- **`*appHasRole`** — template-level structural directive for showing/hiding controls.
-- **Dynamic sidebar** — `NAVIGATION` config is filtered by the user's roles, so only authorized menu items render.
+- **`*appHasRole`** / `AuthService.hasRole` / `hasAnyRole` — still available for in-component UI decisions (showing/hiding controls), but no longer gate any route.
+- **Dynamic sidebar** — the sidebar renders from the backend menu, so only permitted screens appear.
 
 ```ts
-{ path: 'users', canActivate: [authGuard, roleGuard], data: { roles: ['Admin'] } }
+{
+  path: '',
+  canActivate: [authGuard],
+  canActivateChild: [menuAccessGuard],   // per-screen canAccess from the backend
+  children: [ /* … */ ],
+}
 ```
 
-> The model generalizes cleanly to permission strings later: change `roleGuard`/`hasAnyRole` to read a `permissions` claim and keep every call site identical.
+> The former static `roleGuard` (`data.roles = ['Admin', …]`) and `role.guard.ts` were **removed** so grants/revokes happen entirely from the backend permission table with no code change per user. `AppRole` and the role helpers remain for UI-level checks only.
 
 ---
 
@@ -229,6 +236,10 @@ Point the proxy/`apiBaseUrl` at the deployed API for other environments.
 
 ## 11. Backend coverage
 
-Implemented against live endpoints: **Auth (login, refresh, logout, forgot/reset/change password), Users (CRUD + role assignment), Roles (CRUD), Cities (CRUD), Tenors (CRUD)**, plus **Client Master**, **Common Master** (Country Region / Country / State / City), **Currency Master**, **Bank Master** (with RM contacts + Head Office tab), **Company Master**, **Dealer Pad**, **Management Dashboard**, **Ticker Live Rate** (time-metered), **FTP Order Entry** (+ order recordings/documents), **Generate Invoice**, and a backend-driven **menu / screen-permission** system.
+Implemented against live endpoints: **Auth (login, refresh, logout, forgot/reset/change password), Users (CRUD + role assignment), Roles (CRUD), Cities (CRUD), Tenors (CRUD)**, plus **Client Master** (client + banks + contracts, where each selected charge is stored as its own row), **Common Master** (Country Region / Country / State / City), **Currency Master**, **Bank Master** (with RM contacts + Head Office tab), **Company Master** (with a **Company Bank** tab), **Dealer Pad**, **Management Dashboard**, **Ticker Live Rate** (time-metered), **FTP Order Entry** (+ order recordings/documents), **Generate Invoice**, **Reports** (Client Wise Revenue, Report UC), and a backend-driven **menu / screen-permission** system.
 
-Modules whose API controllers are not yet available — Items, Brands, UOM, Parties, Purchase, Sales, Inventory, Reports — are scaffolded as guarded, lazy **placeholder** routes. Each becomes a full master by adding a `CrudService` subclass + a list/form pair, exactly like Cities and Tenors (the canonical template).
+**Generate Invoice** is an end-to-end flow: pick a client + date range to bill their booked orders, choose a **GST number** (from Company Master), enter an **invoice number** and **date**, then persist a header + one detail row per order. Tax is computed **server-side** — CGST + SGST (intra-state) or IGST (inter-state), decided by the client vs. company GST state code, rates from `TFTPO_Mast_TaxValue`. A **Generated Invoices** tab searches saved invoices (Client-Master-style grid with per-column filters, totals and paging); each row can **Print** (opens a standalone printable invoice in a new tab) or **e-mail** the invoice to the client's contact address. The standalone print page (`invoice-print`) renders a **From** block (invoicing company address / contact / CIN / GSTIN) and a consignee **Bill To** block (client address / state / GSTIN / state code), shows **only the applicable tax line** (IGST for inter-state, else CGST + SGST), and auto-scales via a `--print-zoom` factor so the invoice fits a single A4 page for both the Print button and Ctrl+P.
+
+**Reports** is a live feature area (`reports/`): **Client Wise Revenue** and **Report UC** each render a filter form over a results grid with column totals, a **global + per-column free-text search** (filtering also drives the footer totals), and one-click **Excel (.xls) export** of the currently filtered rows.
+
+Modules whose API controllers are not yet available — Items, Brands, UOM, Parties, Purchase, Sales, Inventory — are scaffolded as guarded, lazy **placeholder** routes. Each becomes a full master by adding a `CrudService` subclass + a list/form pair, exactly like Cities and Tenors (the canonical template).

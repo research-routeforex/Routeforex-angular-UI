@@ -4,7 +4,7 @@ import { API } from '../../core/constants/api-endpoints';
 import { ApiResponse } from '../../core/models/api-response.model';
 import { PagedResult, PaginationRequest } from '../../core/models/pagination.model';
 import { ApiService } from '../../core/services/api.service';
-import { FtpOrderDetail, FtpOrderListFilter, FtpOrderListItem } from './ftp-order.model';
+import { ForwardDeal, FtpOrderDetail, FtpOrderListFilter, FtpOrderListItem } from './ftp-order.model';
 
 /** FTP Order Entry — list orders + book a new order into TFTPO_Txn_OrderBooking. */
 @Injectable({ providedIn: 'root' })
@@ -34,6 +34,16 @@ export class FtpOrderService {
 
   getById(recordId: number): Observable<FtpOrderDetail> {
     return this.api.get<FtpOrderDetail>(`${API.transaction.ftpOrders}/${recordId}`);
+  }
+
+  /**
+   * Parent Forward deals available to cancel/utilize for a client. `recordId` is
+   * passed in edit mode so the already-linked deal still appears in the list.
+   */
+  getForwardDeals(clientId: number, recordId?: number): Observable<ForwardDeal[]> {
+    return this.api.get<ForwardDeal[]>(API.transaction.ftpForwardDeals, {
+      params: { clientId, recordId: recordId || undefined },
+    });
   }
 
   delete(recordId: number): Observable<unknown> {

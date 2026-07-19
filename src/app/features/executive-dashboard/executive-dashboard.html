@@ -1,0 +1,241 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Executive Dashboard"
+    subtitle="Deal-level Import / Export positions for a client — live, refreshed every 2 seconds"
+    [breadcrumbs]="[{ label: 'Home', link: '/dashboard' }, { label: 'Executive Dashboard' }]"
+  >
+    <div class="hero__actions">
+      @if (hasClient() && svc.lastUpdated(); as updated) {
+        <span class="live">
+          <span class="live__dot"></span>
+          Live · {{ updated | date: 'HH:mm:ss' }}
+        </span>
+      }
+      <button
+        mat-flat-button
+        color="primary"
+        class="addnew"
+        [routerLink]="['/executive-dashboard/new']"
+        [queryParams]="{ clientId: selectedClient(), type: section() }"
+      >
+        <mat-icon>add</mat-icon> Add New
+      </button>
+    </div>
+  </app-page-header>
+</div>
+
+<!-- Controls: client picker + Import / Export section switch -->
+<div class="controls">
+  <div class="client">
+    <label class="client__label" for="ed-client">
+      <mat-icon>apartment</mat-icon> Client
+    </label>
+    <app-select
+      class="client__select"
+      [options]="clientOptions()"
+      [ngModel]="selectedClient()"
+      (ngModelChange)="selectClient($event)"
+      placeholder="Select client…"
+      searchPlaceholder="Search client…"
+    />
+  </div>
+
+  <span class="controls__spacer"></span>
+
+  <div class="seg" role="tablist">
+    @for (s of sections; track s) {
+      <button
+        type="button"
+        role="tab"
+        class="seg__btn"
+        [class.seg__btn--active]="section() === s"
+        [attr.aria-selected]="section() === s"
+        (click)="selectSection(s)"
+      >
+        <mat-icon>{{ s === 'Import' ? 'south_west' : 'north_east' }}</mat-icon>
+        {{ s }}
+      </button>
+    }
+  </div>
+</div>
+
+@if (!hasClient()) {
+  <div class="state">
+    <mat-icon>apartment</mat-icon>
+    <p class="state__title">Select a client to begin</p>
+    <p class="state__hint">Choose a client above to load their Import / Export deals.</p>
+  </div>
+} @else if (svc.loading()) {
+  <div class="state">
+    <mat-icon class="state__spin">progress_activity</mat-icon>
+    <p class="state__title">Loading deals…</p>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <mat-icon>inbox</mat-icon>
+    <p class="state__title">No {{ section() }} deals</p>
+    <p class="state__hint">This client has no {{ section() }} positions to show.</p>
+  </div>
+} @else {
+
+  <!-- Summary strip -->
+  <div class="cards">
+    <div class="card">
+      <div class="card__icon"><mat-icon>account_balance_wallet</mat-icon></div>
+      <div class="card__body">
+        <span class="card__label">Total Amount Due</span>
+        <span class="card__value">{{ totals().totalAmountDue | number: '1.0-0' }}</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card__icon"><mat-icon>verified_user</mat-icon></div>
+      <div class="card__body">
+        <span class="card__label">Forward Cover</span>
+        <span class="card__value">{{ totals().forwardContractAmount | number: '1.0-0' }}</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card__icon"><mat-icon>pending_actions</mat-icon></div>
+      <div class="card__body">
+        <span class="card__label">Amount Outstanding</span>
+        <span class="card__value">{{ totals().amountOutstanding | number: '1.0-0' }}</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card__icon"><mat-icon>receipt_long</mat-icon></div>
+      <div class="card__body">
+        <span class="card__label">{{ section() }} Deals</span>
+        <span class="card__value">{{ totals().deals }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deal grid (columns adapt to Import vs Export) -->
+  <div class="rf-card tablewrap">
+    <table class="grid">
+      <thead>
+        <tr>
+          <th class="num">#</th>
+          <th>Bank</th>
+          <th>Party</th>
+          <th>{{ isImport() ? 'BL / Bill of Entry' : 'Shipping / BL / Invoice' }} Date</th>
+          <th class="num">Interest Rate</th>
+          <th>{{ isImport() ? 'Buyers Credit Taken' : 'DrawDown' }} Date</th>
+          <th>Due Date</th>
+          <th>CY</th>
+          @if (isImport()) {
+            <th class="num">Invoice Amount</th>
+            <th class="num">Interest on Buyers Credit</th>
+            <th class="num">Bank Swift Charges</th>
+          } @else {
+            <th class="num">DrawDown Amount</th>
+            <th class="num">DrawDown Rate</th>
+            <th class="num">Invoice Amount</th>
+            <th class="num">Interest</th>
+          }
+          <th class="num">Total Amount Due</th>
+          <th class="num">Forward Contract Amt</th>
+          <th class="num">Fwd Rate Booked</th>
+          <th>Fwd Booking Date</th>
+          <th>Fwd Booking No.</th>
+          <th class="num">RBI Ref Rate</th>
+          @if (isImport()) {
+            <th class="num">Effective Hedge Cost</th>
+          } @else {
+            <th class="num">Subvention</th>
+          }
+          <th class="num">Working Capital Cost</th>
+          <th class="actions-col">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of rows(); track r.recordID; let i = $index) {
+          <tr>
+            <td class="num">{{ i + 1 }}</td>
+            <td class="strong">{{ r.bankName }}</td>
+            <td>{{ r.partyName }}</td>
+            <td>{{ r.bankLcDate || '—' }}</td>
+            <td class="num">{{ r.interstRate | number: '1.2-2' }}%</td>
+            <td>{{ r.buyersCreditTakenDate || '—' }}</td>
+            <td>{{ r.dueDate || '—' }}</td>
+            <td>{{ r.currencyFrom }}</td>
+            @if (isImport()) {
+              <td class="num">{{ r.invoiceAmount | number: '1.0-2' }}</td>
+              <td class="num">{{ r.interestBuyersCredit | number: '1.0-2' }}</td>
+              <td class="num">{{ r.bankSwiftCharges | number: '1.0-2' }}</td>
+            } @else {
+              <td class="num">{{ r.drawDownAmount | number: '1.0-2' }}</td>
+              <td class="num">{{ r.drawDownRate | number: '1.4-4' }}</td>
+              <td class="num">{{ r.invoiceAmount | number: '1.0-2' }}</td>
+              <td class="num">{{ r.interestBuyersCredit | number: '1.0-2' }}</td>
+            }
+            <td class="num strong">{{ r.totalAmountDue | number: '1.0-2' }}</td>
+            <td class="num">{{ r.forwardContractAmount | number: '1.0-2' }}</td>
+            <td class="num">{{ r.forwardContractRateBooked | number: '1.4-4' }}</td>
+            <td>{{ r.forwardContractBookingDate || '—' }}</td>
+            <td>{{ r.forwardContractBookingNo || '—' }}</td>
+            <td class="num">{{ r.rbiReferenceRate | number: '1.4-4' }}</td>
+            @if (isImport()) {
+              <td class="num">{{ r.effectiveHedgeCost | number: '1.2-2' }}%</td>
+            } @else {
+              <td class="num">{{ r.subvention | number: '1.2-2' }}</td>
+            }
+            <td class="num">{{ r.workingCapitalCost | number: '1.2-2' }}%</td>
+            <td class="actions-col">
+              <div class="rowactions">
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="rowactions__btn"
+                  title="View"
+                  aria-label="View"
+                  [routerLink]="['/executive-dashboard', r.recordID, 'view']"
+                >
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="rowactions__btn"
+                  title="Edit"
+                  aria-label="Edit"
+                  [routerLink]="['/executive-dashboard', r.recordID, 'edit']"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="rowactions__btn"
+                  title="Utilization"
+                  aria-label="Utilization"
+                  (click)="openUc('Utilization', r)"
+                >
+                  <mat-icon>call_split</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="rowactions__btn rowactions__btn--warn"
+                  title="Cancellation"
+                  aria-label="Cancellation"
+                  (click)="openUc('Cancellation', r)"
+                >
+                  <mat-icon>copyright</mat-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <p class="footnote rf-muted">
+    Deal-level {{ section() }} positions for the selected client. Amounts are in the deal's
+    foreign currency; Interest / Hedge / Working-capital costs are % p.a. Forward &amp; RBI rates
+    are INR per unit. Refreshed live every 2 seconds.
+  </p>
+}

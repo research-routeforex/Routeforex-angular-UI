@@ -1,0 +1,95 @@
+:host {
+  display: block;
+}
+
+mat-dialog-content {
+  min-width: min(880px, 86vw);
+  max-height: 62vh;
+}
+
+// Loading / empty placeholder.
+.fdp-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 16px;
+  color: var(--rf-muted-fg);
+  font-size: 13.5px;
+  text-align: center;
+
+  mat-icon {
+    font-size: 30px;
+    width: 30px;
+    height: 30px;
+  }
+
+  &__spin {
+    animation: fdp-spin 1s linear infinite;
+  }
+}
+
+@keyframes fdp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fdp-tablewrap {
+  overflow-x: auto;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm);
+}
+
+.fdp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th,
+  td {
+    padding: 10px 12px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--rf-border);
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--rf-surface-2);
+    color: var(--rf-muted-fg);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  tbody tr {
+    cursor: pointer;
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: var(--rf-surface-muted);
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  .fdp-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fdp-order {
+    font-weight: 600;
+    color: var(--rf-text);
+  }
+
+  .fdp-bal {
+    font-weight: 600;
+    color: var(--rf-primary);
+  }
+}

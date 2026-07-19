@@ -3,7 +3,7 @@ export const STORAGE_KEYS = {
   session: 'rf.session',
   theme: 'rf.theme',
   sidebarCollapsed: 'rf.sidebar.collapsed',
-  collapsedSections: 'rf.sidebar.sections',
+  expandedSection: 'rf.sidebar.expanded',
 } as const;
 
 /** HTTP header the backend uses for request correlation. */

@@ -70,6 +70,23 @@
         }
       }
     </nav>
+
+    <!-- Settings: common to every user, pinned at the bottom (not menu-managed). -->
+    <div class="nav__footer">
+      <a
+        class="nav__item"
+        routerLink="/settings"
+        routerLinkActive="nav__item--active"
+        [matTooltip]="railCollapsed() ? 'Settings' : ''"
+        matTooltipPosition="right"
+        (click)="onNavigated()"
+      >
+        <mat-icon>settings</mat-icon>
+        @if (!railCollapsed()) {
+          <span class="nav__label">Settings</span>
+        }
+      </a>
+    </div>
   </mat-sidenav>
 
   <mat-sidenav-content class="shell__content">

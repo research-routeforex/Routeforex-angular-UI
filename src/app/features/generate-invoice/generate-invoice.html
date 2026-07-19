@@ -6,7 +6,7 @@
     subtitle="Pick a client and date range to bill their booked orders."
     [breadcrumbs]="[{ label: 'Transactions' }, { label: 'Generate Invoice' }]"
   >
-    @if (searched() && lines().length) {
+    @if (active() === 'generate' && searched() && lines().length) {
       <button
         mat-flat-button
         color="primary"
@@ -21,6 +21,24 @@
   </app-page-header>
 </div>
 
+<!-- Section tabs -->
+<div class="tabs" role="tablist">
+  @for (t of tabs; track t.key) {
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [class.tab--active]="active() === t.key"
+      [attr.aria-selected]="active() === t.key"
+      (click)="select(t.key)"
+    >
+      <mat-icon>{{ t.icon }}</mat-icon>
+      {{ t.label }}
+    </button>
+  }
+</div>
+
+@if (active() === 'generate') {
 <!-- Filters -->
 <form [formGroup]="form" class="rf-card filters" (ngSubmit)="search()">
   <app-field label="Client" required [control]="form.controls.client" error="Select a client.">
@@ -77,6 +95,30 @@
         <span class="card__value">{{ lines().length }}</span>
       </div>
     </div>
+
+    <!-- Invoice header inputs (required before Generate) -->
+    <form [formGroup]="invForm" class="rf-card invinputs">
+      <app-field label="GST Number" required [control]="invForm.controls.gstNumber" error="Select a GST number.">
+        <app-select
+          formControlName="gstNumber"
+          [options]="gstnOptions()"
+          placeholder="Select GSTN"
+          searchPlaceholder="Search GSTN…"
+        />
+      </app-field>
+
+      <app-field label="Invoice Number" required [control]="invForm.controls.invoiceNumber" error="Enter invoice number.">
+        <input class="rf-input" formControlName="invoiceNumber" placeholder="e.g. RF/INV/2026/0001" maxlength="25" />
+      </app-field>
+
+      <app-field label="Invoice Date" required [control]="invForm.controls.invoiceDate" error="Required.">
+        <div class="rf-datewrap" (click)="invPk.open()">
+          <input class="rf-input" [matDatepicker]="invPk" formControlName="invoiceDate" placeholder="dd-MMM-yyyy" readonly />
+          <mat-datepicker-toggle class="rf-date-toggle" [for]="invPk" />
+        </div>
+        <mat-datepicker #invPk panelClass="rf-datepicker" />
+      </app-field>
+    </form>
 
     <div class="rf-card tablewrap">
       <table class="grid">
@@ -149,6 +191,7 @@
           <h1 class="inv__title">TAX INVOICE</h1>
           <p class="inv__no">{{ invoiceNo() }}</p>
           <p class="inv__date">Date: {{ invoiceDate() | date: 'dd-MMM-yyyy' }}</p>
+          <p class="inv__gst">GSTIN: {{ gstNumber() }}</p>
         </div>
       </header>
 
@@ -161,8 +204,8 @@
         <div class="inv__to">
           <span class="inv__lbl">Bill To</span>
           <strong>{{ clientName() }}</strong>
-          <span>Period: {{ form.controls.fromDate.value | date: 'dd-MMM-yyyy' }} —
-            {{ form.controls.toDate.value | date: 'dd-MMM-yyyy' }}</span>
+          <span>Period: {{ periodFrom() | date: 'dd-MMM-yyyy' }} —
+            {{ periodTo() | date: 'dd-MMM-yyyy' }}</span>
         </div>
       </div>
 
@@ -195,24 +238,256 @@
         </tbody>
       </table>
 
-      <div class="inv__summary">
-        <div class="inv__totals">
-          <div class="inv__row"><span>Total Value</span><span>{{ totalValue() | number: '1.2-2' }}</span></div>
-          <div class="inv__row"><span>Sub Total (Charges)</span><span>₹{{ totalCharges() | number: '1.2-2' }}</span></div>
-          <div class="inv__row"><span>CGST (9%)</span><span>₹{{ gst() / 2 | number: '1.2-2' }}</span></div>
-          <div class="inv__row"><span>SGST (9%)</span><span>₹{{ gst() / 2 | number: '1.2-2' }}</span></div>
-          <div class="inv__row inv__row--grand"><span>Grand Total</span><span>₹{{ grandTotal() | number: '1.2-2' }}</span></div>
+      <!-- Bank details (left) + tax summary (right) -->
+      <div class="inv__pay">
+        <table class="inv__bank">
+          <tbody>
+            <tr><th>Bank Name</th><td>{{ footer()?.bankName || '—' }}</td></tr>
+            <tr><th>A/c No.</th><td>{{ footer()?.accountNo || '—' }}</td></tr>
+            <tr><th>IFSC Code</th><td>{{ footer()?.ifscCode || '—' }}</td></tr>
+            <tr><th>Address</th><td>{{ footer()?.address || '—' }}</td></tr>
+          </tbody>
+        </table>
+
+        <table class="inv__tax">
+          <tbody>
+            <tr>
+              <th>Total Amount Before Tax</th>
+              <td class="ta-r">{{ (tax()?.charges ?? totalCharges()) | number: '1.2-2' }}</td>
+            </tr>
+            @if (taxMode() === 'split') {
+              <tr>
+                <th>Add: CGST&#64;{{ tax()?.cgstPer | number: '1.0-2' }}%</th>
+                <td class="ta-r">{{ tax()?.cgst | number: '1.2-2' }}</td>
+              </tr>
+              <tr>
+                <th>Add: SGST&#64;{{ tax()?.sgstPer | number: '1.0-2' }}%</th>
+                <td class="ta-r">{{ tax()?.sgst | number: '1.2-2' }}</td>
+              </tr>
+            } @else {
+              <tr>
+                <th>Add: IGST&#64;{{ tax()?.igstPer | number: '1.0-2' }}%</th>
+                <td class="ta-r">{{ tax()?.igst | number: '1.2-2' }}</td>
+              </tr>
+            }
+            <tr>
+              <th>Round Off</th>
+              <td class="ta-r">{{ roundOff() | number: '1.2-2' }}</td>
+            </tr>
+            <tr class="inv__tax-grand">
+              <th>Total Amount After Tax</th>
+              <td class="ta-r">{{ roundedTotal() | number: '1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Terms & Conditions -->
+      <div class="inv__terms">
+        <span class="inv__terms-lbl">Terms &amp; Conditions</span>
+        <ol>
+          <li>
+            The information provided as billed in this invoice is for the use of the above mentioned
+            company only; copying or transmitting of any part or all of the contents of any material
+            provided by us for sharing with or transmission in any manner to any other entity or
+            person not employed by the above mentioned company is not permitted without express prior
+            consent from us. The information is provided on a best efforts basis and we here by
+            expressly disclaim any liability for any loss howsoever arising from any use of the
+            information, provided by us.
+          </li>
+          <li>No cenvat credit can be claimed by the client/prospect on the strength of the proforma invoice.</li>
+          <li>
+            Final invoice would be sent on the confirmation received from the client of the
+            need/renewal of services and subject to the receipt of the payment.
+          </li>
+          <li>No Refund of any amount would be made by the company on discontinuation of any of our services subscribed for.</li>
+        </ol>
+      </div>
+
+      <!-- Promo banner (left) + certification (right) -->
+      <div class="inv__promo-row">
+        <div class="inv__promo">
+          <p>GET <strong><em>BEST FOREX RATES</em></strong> WITH US FOR YOUR UPCOMING TRAVEL</p>
+          <p>BUY FOREX &amp; GET IT DELIVERED AT YOUR DOOR STEP!</p>
+        </div>
+        <div class="inv__certify">
+          <p>Certified that the particulars given above are true and correct</p>
+          <p>(Computerized Invoice, No Signature is required)</p>
+          <p class="inv__certify-co"><strong>For {{ company.name }}</strong></p>
+          <p>Authorised Signatory</p>
+          <img class="inv__stamp" [src]="company.stamp" alt="Seal" />
         </div>
       </div>
 
-      <footer class="inv__foot">
-        <p class="inv__note">This is a computer-generated invoice.</p>
-        <div class="inv__sign">
-          <img class="inv__stamp" [src]="company.stamp" alt="Seal" />
-          <span>For {{ company.name }}</span>
-          <span class="inv__signlbl">Authorized Signatory</span>
-        </div>
-      </footer>
+      <!-- Contact -->
+      <div class="inv__contact">
+        For more details please contact us: {{ footer()?.contactUsEmail || '—' }} | mobile no.: {{ footer()?.contactUsMobile || '—' }}
+      </div>
     </div>
   </div>
+}
+}
+
+@if (active() === 'history') {
+  <!-- History search -->
+  <form [formGroup]="histForm" class="rf-card filters" (ngSubmit)="searchHistory()">
+    <app-field label="Client" [control]="histForm.controls.client">
+      <app-select
+        formControlName="client"
+        [options]="clientOptions()"
+        placeholder="All clients"
+        searchPlaceholder="Search client…"
+      />
+    </app-field>
+
+    <app-field label="From Date" required [control]="histForm.controls.fromDate" error="Required.">
+      <div class="rf-datewrap" (click)="hFromPk.open()">
+        <input class="rf-input" [matDatepicker]="hFromPk" formControlName="fromDate" placeholder="dd-MMM-yyyy" readonly />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="hFromPk" />
+      </div>
+      <mat-datepicker #hFromPk panelClass="rf-datepicker" />
+    </app-field>
+
+    <app-field label="To Date" required [control]="histForm.controls.toDate" error="Required.">
+      <div class="rf-datewrap" (click)="hToPk.open()">
+        <input class="rf-input" [matDatepicker]="hToPk" formControlName="toDate" placeholder="dd-MMM-yyyy" readonly />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="hToPk" />
+      </div>
+      <mat-datepicker #hToPk panelClass="rf-datepicker" />
+    </app-field>
+
+    <button mat-flat-button color="primary" type="submit" class="filters__btn" [disabled]="historyLoading()">
+      <mat-icon>search</mat-icon>
+      {{ historyLoading() ? 'Searching…' : 'Search' }}
+    </button>
+  </form>
+
+  @if (historySearched()) {
+    @if (history().length === 0) {
+      <div class="state">
+        <mat-icon>history</mat-icon>
+        <p class="state__title">No invoices found</p>
+        <p class="state__hint">No generated invoices match the selected filters.</p>
+      </div>
+    } @else {
+      <div class="rf-card tablewrap">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>
+                <span class="th__name">Invoice No</span>
+                <input class="colfilter" placeholder="Search…" (input)="setHistFilter('invoiceNumber', $any($event.target).value)" />
+              </th>
+              <th>
+                <span class="th__name">Invoice Date</span>
+                <input class="colfilter" placeholder="Search…" (input)="setHistFilter('invoiceDate', $any($event.target).value)" />
+              </th>
+              <th>
+                <span class="th__name">Client</span>
+                <input class="colfilter" placeholder="Search…" (input)="setHistFilter('clientName', $any($event.target).value)" />
+              </th>
+              <th>
+                <span class="th__name">Total Amount</span>
+                <input class="colfilter" placeholder="Search…" (input)="setHistFilter('totalAmount', $any($event.target).value)" />
+              </th>
+              <th>
+                <span class="th__name">Charges</span>
+                <input class="colfilter" placeholder="Search…" (input)="setHistFilter('charges', $any($event.target).value)" />
+              </th>
+              <th>
+                <span class="th__name">SGST</span>
+                <input class="colfilter" placeholder="Search…" (input)="setHistFilter('sgst', $any($event.target).value)" />
+              </th>
+              <th>
+                <span class="th__name">CGST</span>
+                <input class="colfilter" placeholder="Search…" (input)="setHistFilter('cgst', $any($event.target).value)" />
+              </th>
+              <th>
+                <span class="th__name">IGST</span>
+                <input class="colfilter" placeholder="Search…" (input)="setHistFilter('igst', $any($event.target).value)" />
+              </th>
+              <th class="ta-c"><span class="th__name">Action</span></th>
+              <th class="ta-c"><span class="th__name">Payment</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of histPaged(); track r.invoiceHdrId) {
+              <tr>
+                <td class="name">{{ r.invoiceNumber || '—' }}</td>
+                <td>{{ r.invoiceGeneratedDate ? (r.invoiceGeneratedDate | date: 'dd-MMM-yyyy') : '—' }}</td>
+                <td>{{ r.clientName || '—' }}</td>
+                <td class="ta-r">{{ r.totalAmount | number: '1.2-2' }}</td>
+                <td class="ta-r">{{ r.charges | number: '1.2-2' }}</td>
+                <td class="ta-r">{{ r.sgst | number: '1.2-2' }}</td>
+                <td class="ta-r">{{ r.cgst | number: '1.2-2' }}</td>
+                <td class="ta-r">{{ r.igst | number: '1.2-2' }}</td>
+                <td class="ta-c actions">
+                  <button type="button" class="rf-iconbtn rf-iconbtn--mail" (click)="emailInvoice(r)" matTooltip="Email invoice">
+                    <mat-icon>mail</mat-icon>
+                  </button>
+                  <button type="button" class="rf-iconbtn rf-iconbtn--print" (click)="printInvoice(r)" matTooltip="Print invoice">
+                    <mat-icon>print</mat-icon>
+                  </button>
+                </td>
+                <td class="ta-c">
+                  <span class="paychip" [class.paychip--paid]="r.paymentStatus" [matTooltip]="r.paymentStatus ? 'Paid' : 'Unpaid'">
+                    <mat-icon>{{ r.paymentStatus ? 'check' : 'schedule' }}</mat-icon>
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="10" class="empty rf-muted">No invoices match the filters.</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="ta-r total-lbl">Totals</td>
+              <td class="ta-r total">{{ histTotalAmount() | number: '1.2-2' }}</td>
+              <td class="ta-r total">{{ histTotalCharges() | number: '1.2-2' }}</td>
+              <td class="ta-r total">{{ histTotalSgst() | number: '1.2-2' }}</td>
+              <td class="ta-r total">{{ histTotalCgst() | number: '1.2-2' }}</td>
+              <td class="ta-r total">{{ histTotalIgst() | number: '1.2-2' }}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="pager">
+        <div class="pager__size">
+          <span class="rf-muted">Rows per page</span>
+          <select class="rf-select pager__select" (change)="onHistPageSize($any($event.target).value)">
+            @for (n of histPageSizeOptions; track n) {
+              <option [value]="n" [selected]="n === histPageSize()">{{ n }}</option>
+            }
+          </select>
+        </div>
+        <span class="rf-spacer"></span>
+        <span class="pager__info rf-muted">{{ histFromRow() }}–{{ histToRow() }} of {{ histTotal() }}</span>
+        <div class="pager__nav">
+          <button mat-icon-button [disabled]="histPageNumber() <= 1" (click)="histFirst()" matTooltip="First page">
+            <mat-icon>first_page</mat-icon>
+          </button>
+          <button mat-icon-button [disabled]="histPageNumber() <= 1" (click)="histPrev()" matTooltip="Previous page">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="pager__page">{{ histPageNumber() }} / {{ histTotalPages() }}</span>
+          <button mat-icon-button [disabled]="histPageNumber() >= histTotalPages()" (click)="histNext()" matTooltip="Next page">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+          <button mat-icon-button [disabled]="histPageNumber() >= histTotalPages()" (click)="histLast()" matTooltip="Last page">
+            <mat-icon>last_page</mat-icon>
+          </button>
+        </div>
+      </div>
+    }
+  } @else {
+    <div class="state">
+      <mat-icon>history</mat-icon>
+      <p class="state__title">Find generated invoices</p>
+      <p class="state__hint">Pick a date range (and optionally a client), then click Search.</p>
+    </div>
+  }
 }

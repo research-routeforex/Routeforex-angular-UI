@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -10,6 +10,15 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { Company } from './company-master.model';
 import { CompanyMasterService } from './company-master.service';
+import { CompBankListComponent } from './comp-bank-list/comp-bank-list';
+
+type CompanyTab = 'company' | 'comp-bank';
+
+interface TabDef {
+  key: CompanyTab;
+  label: string;
+  icon: string;
+}
 
 interface ColumnFilters {
   companyName: string;
@@ -26,6 +35,7 @@ interface ColumnFilters {
   imports: [
     RouterLink,
     PageHeaderComponent,
+    CompBankListComponent,
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
@@ -38,6 +48,16 @@ export class CompanyMasterComponent implements OnInit {
   private readonly service = inject(CompanyMasterService);
   private readonly notify = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
+  private readonly route = inject(ActivatedRoute);
+
+  protected readonly tabs: TabDef[] = [
+    { key: 'company', label: 'Company Master', icon: 'domain' },
+    { key: 'comp-bank', label: 'Company Bank', icon: 'account_balance' },
+  ];
+  protected readonly active = signal<CompanyTab>('company');
+  protected select(key: CompanyTab): void {
+    this.active.set(key);
+  }
 
   protected readonly loading = signal(false);
   private readonly allRows = signal<Company[]>([]);
@@ -84,6 +104,10 @@ export class CompanyMasterComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    // Return to the right tab after a routed form save (?tab=comp-bank).
+    if (this.route.snapshot.queryParamMap.get('tab') === 'comp-bank') {
+      this.active.set('comp-bank');
+    }
     this.load();
   }
 

@@ -14,9 +14,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { DateAdapter, provideNativeDateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { finalize } from 'rxjs';
 import { DMY_DATE_FORMATS, DmyDateAdapter } from '../../shared/date/dmy-date-adapter';
+import { ForwardDealPickerComponent } from './forward-deal-picker/forward-deal-picker';
+import { ForwardDeal } from './ftp-order.model';
 import { OrderDocumentsComponent } from './order-documents/order-documents';
 import { NotificationService } from '../../core/services/notification.service';
 import { FieldComponent } from '../../shared/components/field/field';
@@ -55,8 +58,22 @@ export class FtpOrderEntryComponent implements OnInit {
   private readonly service = inject(FtpOrderService);
   private readonly notify = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
+  private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+
+  /** Transaction types that consume a parent Forward (open the deal picker). */
+  private static readonly TXN_FORWARD_CANCELLATION = 5;
+  private static readonly TXN_UTILIZATION = 8;
+  /** EEFC Conversion (6), Bill Discount (7), PCFC Disbursement (9) — show the extra pair. */
+  private static readonly TXN_CONVERSION_TYPES: readonly number[] = [6, 7, 9];
+
+  /** Parent Forward's OrderNumber, stored as RefOrderNumber on save (consuming types). */
+  protected readonly refOrderNumber = signal<string | null>(null);
+  /** Remaining balance of the picked Forward — caps the Amount field. */
+  private readonly balanceLimit = signal<number | null>(null);
+  /** Suppresses auto-opening the picker while an existing order loads in edit mode. */
+  private suppressPicker = false;
 
   protected readonly saving = signal(false);
   protected readonly recordId = signal(0);
@@ -70,6 +87,8 @@ export class FtpOrderEntryComponent implements OnInit {
   protected readonly bankOptions = signal<SelectOption[]>([]);
   protected readonly txnOptions = signal<SelectOption[]>([]);
   protected readonly currencyOptions = signal<SelectOption[]>([]);
+  protected readonly transactionDetailOptions = signal<SelectOption[]>([]);
+  protected readonly currency2Options = signal<SelectOption[]>([]);
   protected readonly impExpOptions: SelectOption[] = [
     { value: 'Import', label: 'Import' },
     { value: 'Export', label: 'Export' },
@@ -95,25 +114,108 @@ export class FtpOrderEntryComponent implements OnInit {
     whatToDo: this.fb.control<string | null>(null),
     maturityDate: this.fb.control<Date | null>(null),
     windowFix: this.fb.control<string | null>(null),
+    fromDate: this.fb.control<Date | null>(null),
+    toDate: this.fb.control<Date | null>(null),
     bookingRate: this.fb.control<number | null>(null),
     forwardContactNo: [''],
     outstandingAmount: this.fb.control<number | null>(null),
+    // EEFC Conversion / Bill Discount / PCFC Disbursement extras.
+    transactionDetail: this.fb.control<string | null>(null),
+    currency2: this.fb.control<string | null>(null),
   });
 
   /** The currently-selected transaction type as a signal (for the conditional block). */
   private readonly txnTypeValue = signal<number | null>(null);
+  /** Window vs Fix selection as a signal (drives the forward date fields). */
+  private readonly windowFixValue = signal<string | null>(null);
+  /** Transaction Detail (Cash/Tom/Forward/Spot) — the sub-type for conversion types. */
+  private readonly txnDetailValue = signal<string | null>(null);
 
-  /** True when the selected transaction type is a Forward Cancellation. */
-  protected readonly isForwardCancellation = computed(() => {
+  /** Lower-cased label of the selected transaction type. */
+  private readonly txnLabel = computed(() => {
     const id = this.txnTypeValue();
     const opt = this.txnOptions().find((o) => o.value === id);
-    return !!opt && /cancel/i.test(opt.label);
+    return (opt?.label ?? '').toLowerCase();
   });
+
+  /** Forward Cancellation (id 5) — also shows Forward Contact No. / Outstanding Amount. */
+  protected readonly isForwardCancellation = computed(
+    () => this.txnTypeValue() === FtpOrderEntryComponent.TXN_FORWARD_CANCELLATION,
+  );
+  /** Utilization (id 8). */
+  protected readonly isUtilization = computed(
+    () => this.txnTypeValue() === FtpOrderEntryComponent.TXN_UTILIZATION,
+  );
+  /** Cancellation or Utilization — both consume a parent Forward via the picker. */
+  protected readonly consumesForward = computed(
+    () => this.isForwardCancellation() || this.isUtilization(),
+  );
+
+  /**
+   * EEFC Conversion (6) / Bill Discount (7) / PCFC Disbursement (9) — show the
+   * extra Transaction Detail + Currency2 dropdowns.
+   */
+  protected readonly showConversionFields = computed(() => {
+    const id = this.txnTypeValue();
+    return id != null && FtpOrderEntryComponent.TXN_CONVERSION_TYPES.includes(id);
+  });
+
+  /**
+   * The effective sub-type that drives date/rate visibility. For conversion types
+   * it's the picked Transaction Detail (Cash/Tom/Forward/Spot); otherwise it's the
+   * transaction-type label itself.
+   */
+  private readonly effectiveLabel = computed(() =>
+    this.showConversionFields() ? (this.txnDetailValue() ?? '').toLowerCase() : this.txnLabel(),
+  );
+
+  /** Cash / TOM / SPOT family: show Maturity Date, hide Booking Rate + Window/Fix. */
+  protected readonly isSpotFamily = computed(() => {
+    const l = this.effectiveLabel();
+    return l.includes('cash') || l.includes('tom') || l.includes('spot');
+  });
+  /** Forward: Window/Fix drives the date fields (base Forward, or Forward detail). */
+  protected readonly isForward = computed(() => this.effectiveLabel().includes('forward'));
+
+  /**
+   * A date/rate context exists: a transaction type is chosen, and for conversion
+   * types a Transaction Detail has been picked too (nothing shows before that).
+   */
+  private readonly hasDateContext = computed(() =>
+    this.showConversionFields() ? !!this.txnDetailValue() : this.txnTypeValue() != null,
+  );
+
+  /** Date-selection (Window/Fix + dates) applies to a Forward or a consuming type. */
+  private readonly usesForwardDates = computed(() => this.isForward() || this.consumesForward());
+
+  // ---- Transaction-type-driven field visibility ---------------------------
+  /** Window/Fix picker — Forward (or a conversion with Forward detail) + consuming types. */
+  protected readonly showWindowFix = computed(() => this.usesForwardDates());
+  /** From/To dates — date-selection type + Window. */
+  protected readonly showFromTo = computed(
+    () => this.usesForwardDates() && this.windowFixValue() === 'Window',
+  );
+  /** Maturity Date — a date context exists and it's not (date-selection + Window). */
+  protected readonly showMaturity = computed(
+    () => this.hasDateContext() && !(this.usesForwardDates() && this.windowFixValue() === 'Window'),
+  );
+  /**
+   * Booking Rate — hidden for the Cash/TOM/SPOT family and for a base Forward
+   * (rate is set at execution). Shown for consuming types (carried from the parent).
+   */
+  protected readonly showBookingRate = computed(
+    () =>
+      this.hasDateContext() &&
+      !this.isSpotFamily() &&
+      (this.consumesForward() || !this.isForward()),
+  );
 
   ngOnInit(): void {
     this.dropdowns.get('Client').subscribe((o) => this.clientOptions.set(o));
     this.dropdowns.get('TransactionType').subscribe((o) => this.txnOptions.set(o));
     this.dropdowns.get('Currency').subscribe((o) => this.currencyOptions.set(o));
+    this.dropdowns.get('TransactionDetail').subscribe((o) => this.transactionDetailOptions.set(o));
+    this.dropdowns.get('CURRENCY2').subscribe((o) => this.currency2Options.set(o));
 
     // Client → Client Bank cascade. (DestroyRef passed explicitly because
     // takeUntilDestroyed() needs an injection context, which ngOnInit is not.)
@@ -126,9 +228,68 @@ export class FtpOrderEntryComponent implements OnInit {
           this.dropdowns.get('ClientBank', clientId).subscribe((o) => this.bankOptions.set(o));
       });
 
+    // Amount must not exceed the picked Forward's remaining balance (consuming types).
+    this.form.controls.amount.addValidators((c) => {
+      const limit = this.balanceLimit();
+      if (limit == null) return null;
+      const val = c.value as number | null;
+      return val != null && val > limit ? { exceedsBalance: true } : null;
+    });
+
     this.form.controls.transactionType.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((v) => this.txnTypeValue.set(v));
+      .subscribe((v) => {
+        this.txnTypeValue.set(v);
+
+        // Leaving the conversion types drops any stale Transaction Detail / Currency2.
+        if (!this.showConversionFields()) {
+          this.form.patchValue({ transactionDetail: null, currency2: null }, { emitEvent: false });
+          this.txnDetailValue.set(null);
+        }
+
+        this.applyDateFieldRules();
+
+        // Leaving a consuming type clears the parent-Forward link and its balance cap.
+        if (!this.consumesForward()) {
+          this.clearForwardLink();
+        } else if (!this.suppressPicker) {
+          // Cancellation / Utilization chosen by the user → pick the parent Forward.
+          this.openForwardPicker();
+        }
+      });
+
+    // Conversion types: the Transaction Detail sub-type drives the date/rate fields.
+    this.form.controls.transactionDetail.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((v) => {
+        this.txnDetailValue.set(v);
+        this.applyDateFieldRules();
+      });
+
+    // Import → Buy, Export → Sell (auto-set "What To Do").
+    this.form.controls.importExport.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((v) => {
+        if (v === 'Import') this.form.controls.whatToDo.setValue('Buy');
+        else if (v === 'Export') this.form.controls.whatToDo.setValue('Sell');
+      });
+
+    // Track Window/Fix and clear whichever date fields it hides.
+    this.form.controls.windowFix.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((v) => {
+        this.windowFixValue.set(v);
+        if (v === 'Window') {
+          this.form.controls.maturityDate.setValue(null, { emitEvent: false });
+        } else if (v === 'Fix') {
+          this.form.patchValue({ fromDate: null, toDate: null }, { emitEvent: false });
+        }
+      });
+
+    // Outstanding Amount = remaining balance − the amount being cancelled/utilized.
+    this.form.controls.amount.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.syncOutstanding());
 
     const idParam = this.route.snapshot.paramMap.get('id');
     const id = idParam ? Number(idParam) : 0;
@@ -140,6 +301,8 @@ export class FtpOrderEntryComponent implements OnInit {
 
   private loadOrder(id: number): void {
     this.service.getById(id).subscribe((o) => {
+      // Don't pop the Forward picker while an existing order populates the form.
+      this.suppressPicker = true;
       this.form.patchValue({
         transactionType: o.transactionTypeID ?? null,
         orderNumber: o.orderNumber ?? '',
@@ -149,11 +312,21 @@ export class FtpOrderEntryComponent implements OnInit {
         whatToDo: o.buySell ?? null,
         maturityDate: o.maturityDate ? new Date(o.maturityDate) : null,
         windowFix: o.dateSelectionType ?? null,
+        fromDate: o.fromDate ? new Date(o.fromDate) : null,
+        toDate: o.toDate ? new Date(o.toDate) : null,
         bookingRate: o.bookingRate ?? null,
         forwardContactNo: o.forwardContactNo ?? '',
         outstandingAmount: o.outstandingAmount ?? null,
+        transactionDetail: o.transactionDetail ?? null,
+        currency2: o.billDiscount ?? null,
       });
       this.txnTypeValue.set(o.transactionTypeID ?? null);
+      this.windowFixValue.set(o.dateSelectionType ?? null);
+      this.txnDetailValue.set(o.transactionDetail ?? null);
+      this.refOrderNumber.set(o.refOrderNumber ?? null);
+      this.suppressPicker = false;
+      // A saved Cancellation/Utilization keeps its deal-owned fields locked.
+      if (this.consumesForward()) this.setConsumedFieldsDisabled(true);
 
       // Restore client + bank without firing the cascade reset.
       this.form.controls.client.setValue(o.clientID ?? null, { emitEvent: false });
@@ -164,6 +337,127 @@ export class FtpOrderEntryComponent implements OnInit {
         });
       }
     });
+  }
+
+  /** Opens the parent-Forward picker for the current client. */
+  protected openForwardPicker(): void {
+    const clientId = this.form.controls.client.value;
+    if (!clientId) {
+      this.notify.error('Select a client first to choose a Forward deal.');
+      return;
+    }
+    this.dialog
+      .open(ForwardDealPickerComponent, {
+        width: '920px',
+        maxWidth: '92vw',
+        autoFocus: false,
+        data: {
+          clientId,
+          recordId: this.recordId() || undefined,
+          action: this.isForwardCancellation() ? 'cancel' : 'utilize',
+        },
+      })
+      .afterClosed()
+      .subscribe((deal?: ForwardDeal) => {
+        if (deal) this.applyForwardDeal(deal);
+      });
+  }
+
+  /** Copies the picked Forward's details into the form and caps Amount at its balance. */
+  private applyForwardDeal(deal: ForwardDeal): void {
+    this.refOrderNumber.set(deal.orderNumber ?? null);
+    const balance = deal.balance ?? 0;
+    this.balanceLimit.set(balance);
+
+    const fix = deal.dateSelectionType === 'Fix';
+    const buySell =
+      deal.impExp === 'Import' ? 'Buy' : deal.impExp === 'Export' ? 'Sell' : null;
+
+    // Patch without emitting so the Window/Fix & Import/Export subscriptions don't
+    // fight the values we're setting here; sync the driving signals manually instead.
+    this.form.patchValue(
+      {
+        importExport: deal.impExp ?? null,
+        currency: deal.currencyCode ?? null,
+        amount: balance,
+        whatToDo: buySell,
+        bookingRate: deal.bookingRate ?? null,
+        windowFix: deal.dateSelectionType ?? null,
+        forwardContactNo: deal.forwardContactNo ?? '',
+        maturityDate: fix && deal.maturityDate ? new Date(deal.maturityDate) : null,
+        fromDate: !fix && deal.fromDate ? new Date(deal.fromDate) : null,
+        toDate: !fix && deal.toDate ? new Date(deal.toDate) : null,
+      },
+      { emitEvent: false },
+    );
+    this.windowFixValue.set(deal.dateSelectionType ?? null);
+    this.form.controls.amount.updateValueAndValidity({ emitEvent: false });
+
+    // The picked deal owns Import/Export, Currency and What To Do — lock them.
+    this.setConsumedFieldsDisabled(true);
+    this.syncOutstanding();
+  }
+
+  /** Drops the parent-Forward link and its balance cap (leaving a consuming type). */
+  private clearForwardLink(): void {
+    this.refOrderNumber.set(null);
+    this.balanceLimit.set(null);
+    this.setConsumedFieldsDisabled(false);
+    this.form.controls.amount.updateValueAndValidity({ emitEvent: false });
+  }
+
+  /**
+   * Re-applies the Window/Fix requirement and clears the date/rate fields that no
+   * longer apply, based on the effective sub-type (transaction type, or the
+   * Transaction Detail for conversion types). Shared by the type + detail changes.
+   */
+  private applyDateFieldRules(): void {
+    const wf = this.form.controls.windowFix;
+    if (this.usesForwardDates()) {
+      wf.addValidators(Validators.required);
+    } else {
+      wf.removeValidators(Validators.required);
+      if (wf.value !== null) wf.setValue(null, { emitEvent: false });
+      this.windowFixValue.set(null);
+      this.form.patchValue({ fromDate: null, toDate: null }, { emitEvent: false });
+    }
+    wf.updateValueAndValidity({ emitEvent: false });
+
+    // Cash / TOM / SPOT: no Booking Rate or Window/Fix dates.
+    if (this.isSpotFamily()) {
+      this.form.patchValue({ bookingRate: null, fromDate: null, toDate: null }, { emitEvent: false });
+    }
+  }
+
+  /** Outstanding Amount = remaining balance − the amount being cancelled/utilized. */
+  private syncOutstanding(): void {
+    const limit = this.balanceLimit();
+    if (limit == null) return;
+    const amt = Number(this.form.controls.amount.value ?? 0);
+    const outstanding = Math.max(limit - (Number.isNaN(amt) ? 0 : amt), 0);
+    this.form.controls.outstandingAmount.setValue(outstanding, { emitEvent: false });
+  }
+
+  /** Locks/unlocks the deal-owned fields (Import/Export, Currency, What To Do). */
+  private setConsumedFieldsDisabled(disabled: boolean): void {
+    const opts = { emitEvent: false };
+    const { importExport, currency, whatToDo } = this.form.controls;
+    if (disabled) {
+      importExport.disable(opts);
+      currency.disable(opts);
+      whatToDo.disable(opts);
+    } else {
+      importExport.enable(opts);
+      currency.enable(opts);
+      whatToDo.enable(opts);
+    }
+  }
+
+  /** Error text for the Amount field (balance cap message takes precedence). */
+  protected amountError(): string {
+    return this.form.controls.amount.hasError('exceedsBalance')
+      ? `Amount cannot exceed the remaining balance (${this.balanceLimit()}).`
+      : 'Enter an amount.';
   }
 
   protected submit(): void {
@@ -198,11 +492,19 @@ export class FtpOrderEntryComponent implements OnInit {
       CurrencyCode: v.currency,
       Amount: numStr(v.amount),
       BuySell: v.whatToDo,
-      MaturityDate: toDmy(v.maturityDate),
-      DateSelectionType: v.windowFix,
-      BookingRate: numStr(v.bookingRate),
+      // Only persist the date/rate fields the current transaction type actually shows.
+      MaturityDate: this.showMaturity() ? toDmy(v.maturityDate) : null,
+      DateSelectionType: this.showWindowFix() ? v.windowFix : null,
+      FromDate: this.showFromTo() ? toDmy(v.fromDate) : null,
+      ToDate: this.showFromTo() ? toDmy(v.toDate) : null,
+      BookingRate: this.showBookingRate() ? numStr(v.bookingRate) : null,
       ForwardContactNo: this.isForwardCancellation() ? v.forwardContactNo || null : null,
       OutstandingAmount: this.isForwardCancellation() ? numStr(v.outstandingAmount) : null,
+      // Link a Cancellation / Utilization back to the parent Forward's OrderNumber.
+      RefOrderNumber: this.consumesForward() ? this.refOrderNumber() : null,
+      // EEFC Conversion / Bill Discount / PCFC Disbursement extras.
+      TransactionDetail: this.showConversionFields() ? v.transactionDetail : null,
+      BillDiscount: this.showConversionFields() ? v.currency2 : null,
       ActiveStatus: 'New',
     };
 
@@ -223,6 +525,9 @@ export class FtpOrderEntryComponent implements OnInit {
     this.form.reset();
     this.bankOptions.set([]);
     this.txnTypeValue.set(null);
+    this.windowFixValue.set(null);
+    this.txnDetailValue.set(null);
+    this.clearForwardLink();
   }
 
   protected cancel(): void {

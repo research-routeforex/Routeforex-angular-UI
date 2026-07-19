@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -32,6 +32,7 @@ import {
   TransactionType,
 } from './dealer-pad.models';
 import { computeNetRate, DealerPadService } from './dealer-pad.service';
+import { ClientsService } from '../clients/clients.service';
 
 /**
  * Explicit DB-column → form-control mappings where the proc's column name does
@@ -51,6 +52,7 @@ const COLUMN_TO_CONTROL: Record<string, string> = {
   transactiontypeid: 'transactionType', // Transaction Type    ← TransactionTypeID (value)
   currencycode: 'currencyPair', // Currency            ← CurrencyCode
   ordernumber: 'orderNo', // Order No            ← OrderNumber
+  dateselectiontype: 'windowFix', // Window / Fix        ← DateSelectionType
   fromdate: 'fromDate', // From Date           ← FromDate
   todate: 'toDate', // To Date             ← ToDate
   maturitydate: 'maturityDate', // Maturity Date       ← MaturityDate
@@ -91,7 +93,12 @@ export class DealerPadComponent implements OnInit {
   private readonly dropdowns = inject(DropdownService);
   private readonly auth = inject(AuthService);
   private readonly confirm = inject(ConfirmService);
+  private readonly clients = inject(ClientsService);
   protected readonly svc = inject(DealerPadService);
+
+  /** Client document filenames (null = not on file) — power the download buttons. */
+  protected readonly slaDoc = signal<string | null>(null);
+  protected readonly authDoc = signal<string | null>(null);
 
   protected readonly directions: DealDirection[] = ['Import', 'Export'];
 
@@ -165,22 +172,28 @@ export class DealerPadComponent implements OnInit {
     dealerHome: [0],
     spot: [0, [Validators.required]],
     premium: [0],
-    margin: [0.05],
+    // Blank on load — the dealer enters the margin manually (0 is assumed until then).
+    margin: new FormControl<number | null>(null),
   });
 
   private readonly formValue = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
   });
 
-  /** Dealer net rate derived from the (editable) form values. */
+  /** Dealer net rate derived from the (editable) form values (legacy CalNetRate). */
   protected readonly netRate = computed(() => {
     const v = this.formValue();
-    return computeNetRate(
-      Number(v.spot) || 0,
-      Number(v.premium) || 0,
-      Number(v.margin) || 0,
-      (v.direction as DealDirection) ?? 'Export',
-    );
+    return computeNetRate({
+      spot: Number(v.spot) || 0,
+      premium: Number(v.premium) || 0,
+      margin: Number(v.margin) || 0,
+      direction: (v.direction as DealDirection) ?? 'Export',
+      transactionType: String(v.transactionType ?? ''),
+      windowMode: v.windowFix ?? 'Window',
+      maturityDate: v.maturityDate ?? null,
+      // Type 7 keys off the transaction type's Cash/Forward description (TransactionDetail).
+      transactionDetail: this.txnLabel(),
+    });
   });
 
   // --- Rate bands ----------------------------------------------------------
@@ -493,7 +506,7 @@ export class DealerPadComponent implements OnInit {
       dealerName: d.dealerName,
       spot: d.spot,
       premium: d.premium,
-      margin: d.margin,
+      // Margin is intentionally NOT populated — the dealer always enters it manually.
       remarks: d.remarks,
     });
 
@@ -539,6 +552,64 @@ export class DealerPadComponent implements OnInit {
         dealingRoomLandline: first.landlineNo,
       });
     }
+
+    // Load the client's SLA / Authorized-Letter status for the download buttons
+    // and to drive "Documents complete?".
+    const clientId = Number(this.form.controls.clientId.value);
+    if (Number.isFinite(clientId) && clientId > 0) this.loadClientDocuments(clientId);
+  }
+
+  /**
+   * Fetch the client's document status: enables the SLA / Authorized-Letter
+   * downloads and sets "Documents complete?" to Yes only when BOTH are on file.
+   */
+  private loadClientDocuments(clientId: number): void {
+    this.slaDoc.set(null);
+    this.authDoc.set(null);
+    this.clients.getById(clientId).subscribe({
+      next: (c) => {
+        this.slaDoc.set(c.hasSla ? (c.slaFileName ?? 'SLA document') : null);
+        this.authDoc.set(c.hasAuthLetter ? (c.authLetterFileName ?? 'Authorized letter') : null);
+        this.form.controls.documentsComplete.setValue(c.hasSla && c.hasAuthLetter);
+      },
+      error: () => {},
+    });
+  }
+
+  /** Open a stored client document (SLA / Authorized Letter): preview inline, else download. */
+  protected downloadDoc(which: 'sla' | 'auth'): void {
+    const clientId = Number(this.form.controls.clientId.value);
+    if (!Number.isFinite(clientId) || clientId <= 0) return;
+    const name = which === 'sla' ? this.slaDoc() : this.authDoc();
+    if (!name) return;
+    const filename = this.docName(name, which);
+    const ext = (filename.split('.').pop() ?? '').toLowerCase();
+    const viewable = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'txt'].includes(ext);
+
+    this.clients.getDocument(clientId, which).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        if (viewable) {
+          window.open(url, '_blank');
+        } else {
+          // Non-previewable (e.g. .docx/.xlsx) — download with the real name + extension.
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.click();
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      },
+      error: () => this.notify.error('Document not available.'),
+    });
+  }
+
+  /** Recover the original file name (strip folder + the stored GUID prefix). */
+  private docName(path: string | null, which: string): string {
+    if (!path) return `${which}-document`;
+    const file = path.split(/[\\/]/).pop() ?? path; // "{guid}_original.ext"
+    const us = file.indexOf('_');
+    return us >= 0 && us < file.length - 1 ? file.substring(us + 1) : file;
   }
 
   /** "Mr. Shyamal Gupta - 931284538" — the dropdown value for a contact. */
@@ -560,6 +631,8 @@ export class DealerPadComponent implements OnInit {
       const k = norm(key);
       // Explicit alias takes precedence, then fall back to name matching.
       const control = COLUMN_TO_CONTROL[k] ?? byNorm.get(k);
+      // Margin is never auto-filled — the dealer enters it manually every time.
+      if (control === 'margin') continue;
       if (control && this.form.get(control) && value !== null && value !== undefined) {
         this.form.get(control)!.setValue(value);
       }
@@ -676,7 +749,7 @@ export class DealerPadComponent implements OnInit {
       transactionType: '',
       windowFix: 'Window',
       bankMargin: 0.05,
-      margin: 0.05,
+      margin: null,
       amount: 0,
       bookingRate: 0,
       outstandingAmount: 0,
@@ -687,6 +760,8 @@ export class DealerPadComponent implements OnInit {
     this.editingSource.set(null);
     this.liveBandActive.set(false);
     this.liveBand.set(null);
+    this.slaDoc.set(null);
+    this.authDoc.set(null);
   }
 
   togglePause(): void {

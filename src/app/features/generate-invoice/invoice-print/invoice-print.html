@@ -1,0 +1,180 @@
+@if (loading()) {
+  <div class="loading">Loading invoice…</div>
+} @else if (!header()) {
+  <div class="loading">Invoice not found.</div>
+} @else {
+  <div class="invoice" id="invoice">
+    <div class="invoice__actions no-print">
+      <button mat-flat-button color="primary" type="button" (click)="print()">
+        <mat-icon>print</mat-icon> Print / Save PDF
+      </button>
+    </div>
+
+    <article class="inv">
+      <!-- Brand header band -->
+      <header class="inv__head">
+        <div class="inv__brand">
+          <img class="inv__logo" [src]="company.logo" alt="RouteForex" />
+          <div class="inv__brand-txt">
+            <span class="inv__brand-name">{{ company.name }}</span>
+            <span class="inv__brand-tag">{{ company.tagline }}</span>
+          </div>
+        </div>
+        <div class="inv__head-right">
+          <h1 class="inv__title">Tax Invoice</h1>
+          <div class="inv__meta">
+            <span class="inv__pill">{{ header()?.invoiceNumber }}</span>
+            <span class="inv__pill inv__pill--ghost">{{ header()?.invoiceGeneratedDate | date: 'dd MMM yyyy' }}</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Parties -->
+      <section class="inv__parties">
+        <div class="inv__party">
+          <span class="inv__party-lbl">From</span>
+          <strong class="inv__party-name">{{ company.name }}</strong>
+          @if (companyInfo()?.address) {
+            <span class="inv__party-sub">{{ companyInfo()?.address }}</span>
+          }
+          @if (companyInfo()?.contact1) {
+            <span class="inv__party-sub">Contact: {{ companyInfo()?.contact1 }}</span>
+          }
+          @if (companyInfo()?.cin) {
+            <span class="inv__party-sub">CIN: {{ companyInfo()?.cin }}</span>
+          }
+          @if (header()?.gstNumber) {
+            <span class="inv__party-sub">GSTIN: {{ header()?.gstNumber }}</span>
+          }
+        </div>
+        <div class="inv__party inv__party--to">
+          <span class="inv__party-lbl">Bill To</span>
+          <strong class="inv__party-name">{{ header()?.clientName }}</strong>
+          @if (header()?.clientAddress) {
+            <span class="inv__party-sub">{{ header()?.clientAddress }}</span>
+          }
+          @if (header()?.clientStateName) {
+            <span class="inv__party-sub">State: {{ header()?.clientStateName }}</span>
+          }
+          @if (header()?.clientGstin) {
+            <span class="inv__party-sub">GSTIN: {{ header()?.clientGstin }}</span>
+          }
+          @if (header()?.clientStateCode) {
+            <span class="inv__party-sub">St. Code: {{ header()?.clientStateCode }}</span>
+          }
+          <span class="inv__party-sub">
+            {{ header()?.periodFrom | date: 'dd MMM yyyy' }} &ndash;
+            {{ header()?.periodTo | date: 'dd MMM yyyy' }}
+          </span>
+        </div>
+      </section>
+
+      <!-- Line items -->
+      <div class="inv__table-wrap">
+        <table class="inv__table">
+          <thead>
+            <tr>
+              <th class="ta-c">#</th>
+              <th>Order No</th>
+              <th>Date</th>
+              <th>Transaction</th>
+              <th>Ccy</th>
+              <th class="ta-r">Value</th>
+              <th class="ta-r">Charge (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of lines(); track l.recordId; let i = $index) {
+              <tr>
+                <td class="ta-c">{{ i + 1 }}</td>
+                <td>{{ l.orderNumber || '#' + l.recordId }}</td>
+                <td>{{ l.createdDatetime ? (l.createdDatetime | date: 'dd MMM yyyy') : '—' }}</td>
+                <td>{{ l.transactionType || '—' }}</td>
+                <td>{{ l.currencyCode || '—' }}</td>
+                <td class="ta-r">{{ l.amount != null ? (l.amount | number: '1.2-2') : '—' }}</td>
+                <td class="ta-r inv__charge">{{ l.charge | number: '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Bank details (left) + tax summary (right) -->
+      <section class="inv__pay">
+        <div class="inv__card inv__bank">
+          <h3 class="inv__card-title">Bank Details</h3>
+          <dl class="inv__dl">
+            <div><dt>Bank Name</dt><dd>{{ footer()?.bankName || '—' }}</dd></div>
+            <div><dt>A/c No.</dt><dd>{{ footer()?.accountNo || '—' }}</dd></div>
+            <div><dt>IFSC Code</dt><dd>{{ footer()?.ifscCode || '—' }}</dd></div>
+            <div><dt>Address</dt><dd>{{ footer()?.address || '—' }}</dd></div>
+          </dl>
+        </div>
+
+        <div class="inv__card inv__tax">
+          <h3 class="inv__card-title">Tax Summary</h3>
+          <ul class="inv__tax-list">
+            <li><span>Total Before Tax</span><span>{{ header()?.charges | number: '1.2-2' }}</span></li>
+            @if (taxMode() === 'split') {
+              <li><span>CGST&nbsp;&#64;&nbsp;{{ header()?.cgstPer | number: '1.0-2' }}%</span><span>{{ header()?.cgst | number: '1.2-2' }}</span></li>
+              <li><span>SGST&nbsp;&#64;&nbsp;{{ header()?.sgstPer | number: '1.0-2' }}%</span><span>{{ header()?.sgst | number: '1.2-2' }}</span></li>
+            } @else {
+              <li><span>IGST&nbsp;&#64;&nbsp;{{ header()?.igstPer | number: '1.0-2' }}%</span><span>{{ header()?.igst | number: '1.2-2' }}</span></li>
+            }
+            <li><span>Round Off</span><span>{{ roundOff() | number: '1.2-2' }}</span></li>
+          </ul>
+          <div class="inv__grand">
+            <span>Total After Tax</span>
+            <span>₹ {{ roundedTotal() | number: '1.2-2' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Terms & Conditions -->
+      <section class="inv__terms">
+        <h3 class="inv__card-title">Terms &amp; Conditions</h3>
+        <ol>
+          <li>
+            The information provided as billed in this invoice is for the use of the above mentioned
+            company only; copying or transmitting of any part or all of the contents of any material
+            provided by us for sharing with or transmission in any manner to any other entity or
+            person not employed by the above mentioned company is not permitted without express prior
+            consent from us. The information is provided on a best efforts basis and we here by
+            expressly disclaim any liability for any loss howsoever arising from any use of the
+            information, provided by us.
+          </li>
+          <li>No cenvat credit can be claimed by the client/prospect on the strength of the proforma invoice.</li>
+          <li>
+            Final invoice would be sent on the confirmation received from the client of the
+            need/renewal of services and subject to the receipt of the payment.
+          </li>
+          <li>No Refund of any amount would be made by the company on discontinuation of any of our services subscribed for.</li>
+        </ol>
+      </section>
+
+      <!-- Promo banner (left) + certification (right) -->
+      <section class="inv__promo-row">
+        <div class="inv__promo">
+          <p>GET <em>BEST FOREX RATES</em> WITH US FOR YOUR UPCOMING TRAVEL</p>
+          <p class="inv__promo-sub">BUY FOREX &amp; GET IT DELIVERED AT YOUR DOOR STEP!</p>
+        </div>
+        <div class="inv__certify">
+          <p>Certified that the particulars given above are true and correct.</p>
+          <p class="inv__certify-note">(Computerized Invoice, No Signature is required)</p>
+          <p class="inv__certify-co"><strong>For {{ company.name }}</strong></p>
+          <p class="inv__certify-sign">Authorised Signatory</p>
+          <img class="inv__stamp" [src]="company.stamp" alt="Seal" />
+        </div>
+      </section>
+
+      <!-- Contact -->
+      <footer class="inv__contact">
+        <mat-icon class="inv__contact-icon">mail</mat-icon>
+        {{ footer()?.contactUsEmail || '—' }}
+        <span class="inv__contact-sep">&bull;</span>
+        <mat-icon class="inv__contact-icon">call</mat-icon>
+        {{ footer()?.contactUsMobile || '—' }}
+      </footer>
+    </article>
+  </div>
+}

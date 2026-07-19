@@ -1,0 +1,453 @@
+:host {
+  display: block;
+}
+
+// ---- Hero band ------------------------------------------------------------
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, var(--rf-info) 12%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero :where(app-page-header) {
+  position: relative;
+  z-index: 1;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.hero__glow--a {
+  top: -120px;
+  right: 8%;
+  background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+  animation: blob-a 9s ease-in-out infinite;
+}
+.hero__glow--b {
+  bottom: -150px;
+  left: 12%;
+  background: radial-gradient(circle, var(--rf-info), transparent 70%);
+  animation: blob-b 11s ease-in-out infinite;
+}
+@keyframes blob-a {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-26px, 18px); }
+}
+@keyframes blob-b {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(22px, -16px); }
+}
+
+// ---- Header actions -------------------------------------------------------
+.hero__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.addnew {
+  font-weight: 600;
+}
+
+// ---- Live indicator -------------------------------------------------------
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--rf-muted-fg);
+}
+.live__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rf-success);
+  animation: live-pulse 2s ease-out infinite;
+}
+@keyframes live-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--rf-success) 55%, transparent); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+// ---- Controls row ---------------------------------------------------------
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--rf-gap);
+  flex-wrap: wrap;
+  margin-bottom: var(--rf-gap);
+}
+.controls__spacer {
+  flex: 1 1 auto;
+}
+.controls .seg {
+  margin-bottom: 0;
+}
+.client {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 25%, var(--rf-border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--mat-sys-primary) 10%, var(--rf-surface-2)),
+    var(--rf-surface-2)
+  );
+  box-shadow: var(--rf-shadow);
+}
+.client__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mat-sys-primary);
+  white-space: nowrap;
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+.client__select {
+  display: block;
+  min-width: 260px;
+}
+
+// ---- Section switch -------------------------------------------------------
+.seg {
+  display: inline-flex;
+  padding: 5px;
+  gap: 4px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--mat-sys-primary) 8%, var(--rf-surface-2)),
+    var(--rf-surface-2)
+  );
+  border: 1px solid var(--rf-border);
+  border-radius: 999px;
+  box-shadow: var(--rf-shadow);
+}
+.seg__btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rf-muted-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+.seg__btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+.seg__btn:hover {
+  color: var(--mat-sys-on-surface);
+}
+.seg__btn--active {
+  color: var(--mat-sys-on-primary);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--mat-sys-primary) 92%, white) 0%,
+    color-mix(in oklab, var(--mat-sys-primary) 78%, var(--rf-info)) 100%
+  );
+  box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--mat-sys-primary) 75%, transparent);
+}
+.seg__btn--active mat-icon {
+  animation: arrow-bob 1.8s ease-in-out infinite;
+}
+@keyframes arrow-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+// ---- Summary cards --------------------------------------------------------
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--rf-gap);
+  margin-bottom: var(--rf-gap);
+}
+.card {
+  --accent: var(--mat-sys-primary);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, var(--rf-border));
+  border-left: 4px solid var(--accent);
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--accent) 16%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 62%
+  );
+  box-shadow: var(--rf-shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -12px color-mix(in oklab, var(--accent) 55%, transparent);
+}
+.card:nth-child(1) { --accent: var(--mat-sys-primary); }
+.card:nth-child(2) { --accent: var(--rf-success); }
+.card:nth-child(3) { --accent: var(--rf-warn); }
+.card:nth-child(4) { --accent: var(--rf-info); }
+.card__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 20%, transparent);
+}
+.card__icon mat-icon {
+  font-size: 26px;
+  width: 26px;
+  height: 26px;
+}
+.card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.card__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rf-muted-fg);
+}
+.card__value {
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__glow,
+  .live__dot,
+  .seg__btn--active mat-icon,
+  .tablewrap::before {
+    animation: none;
+  }
+}
+
+// ---- Deal grid ------------------------------------------------------------
+.tablewrap {
+  position: relative;
+  overflow-x: auto;
+  padding: 4px;
+}
+.tablewrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--rf-radius) var(--rf-radius) 0 0;
+  background: linear-gradient(90deg, var(--mat-sys-primary), var(--rf-info), var(--rf-success), var(--rf-warn));
+  background-size: 300% 100%;
+  animation: strip-slide 8s linear infinite;
+}
+@keyframes strip-slide {
+  0% { background-position: 0% 0; }
+  100% { background-position: 300% 0; }
+}
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 1400px;
+}
+.grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--mat-sys-primary) 96%, white) 0%,
+    color-mix(in oklab, var(--mat-sys-primary) 82%, black) 100%
+  );
+  color: var(--mat-sys-on-primary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 12px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 2px solid color-mix(in oklab, var(--mat-sys-primary) 60%, black);
+}
+.grid thead th + th {
+  border-left: 1px solid color-mix(in oklab, white 16%, transparent);
+}
+.grid thead th:first-child {
+  border-top-left-radius: var(--rf-radius);
+}
+.grid thead th:last-child {
+  border-top-right-radius: var(--rf-radius);
+}
+.grid th.num,
+.grid td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.grid tbody td {
+  padding: 0px 8px;
+  border-bottom: 1px solid var(--rf-border);
+  white-space: nowrap;
+}
+.grid tbody tr:hover td {
+  background: color-mix(in oklab, var(--mat-sys-primary) 8%, transparent);
+}
+.grid tbody tr:nth-child(even) td {
+  background: color-mix(in oklab, var(--mat-sys-on-surface) 3%, transparent);
+}
+.grid tbody tr:nth-child(even):hover td {
+  background: color-mix(in oklab, var(--mat-sys-primary) 8%, transparent);
+}
+.grid .strong {
+  font-weight: 700;
+  color: var(--rf-text);
+}
+
+// Sticky Action column, pinned to the right edge of the scrollable grid.
+// Backgrounds MUST be fully opaque so scrolled cell text can't show through.
+.grid th.actions-col,
+.grid td.actions-col {
+  position: sticky;
+  right: 0;
+  text-align: center;
+  border-left: 1px solid var(--rf-border);
+  box-shadow: -7px 0 8px -7px rgba(0, 0, 0, 0.18);
+}
+// Header cell keeps the header gradient; just sits above the body cells.
+.grid thead th.actions-col {
+  z-index: 3;
+}
+// Body cells: opaque surface (odd) + opaque zebra (even), overriding the
+// translucent zebra rule above via higher specificity. Must be fully opaque
+// (var(--rf-surface-2) is the solid card surface) so scrolled text can't bleed through.
+.grid tbody td.actions-col {
+  z-index: 2;
+  background: var(--rf-surface-2);
+}
+.grid tbody tr:nth-child(even) td.actions-col {
+  background: color-mix(in oklab, var(--mat-sys-on-surface) 3%, var(--rf-surface-2));
+}
+.grid tbody tr:hover td.actions-col {
+  background: color-mix(in oklab, var(--mat-sys-primary) 8%, var(--rf-surface-2));
+}
+.rowactions {
+  display: inline-flex;
+  gap: 2px;
+  white-space: nowrap;
+}
+.rowactions__btn.mat-mdc-icon-button {
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  line-height: 28px;
+  color: var(--mat-sys-primary);
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+  .mat-mdc-button-touch-target {
+    width: 28px;
+    height: 28px;
+  }
+}
+.rowactions__btn--warn.mat-mdc-icon-button {
+  color: var(--rf-danger);
+}
+
+.footnote {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+// ---- Empty / loading states ----------------------------------------------
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 280px;
+  padding: 40px 20px;
+  text-align: center;
+  border: 1px dashed var(--rf-border);
+  border-radius: var(--rf-radius);
+  background: var(--rf-surface-2);
+
+  mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    color: var(--rf-muted-fg);
+    opacity: 0.7;
+  }
+  &__title {
+    margin: 6px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--rf-text);
+  }
+  &__hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--rf-muted-fg);
+  }
+  &__spin {
+    animation: ed-state-spin 0.9s linear infinite;
+  }
+}
+@keyframes ed-state-spin {
+  to { transform: rotate(360deg); }
+}

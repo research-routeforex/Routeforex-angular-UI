@@ -54,7 +54,8 @@
 
 <ng-template #formTpl>
 <form [formGroup]="form" class="rf-card entry" (ngSubmit)="submit()">
-  <div class="fieldgrid">
+  <!-- Row 1: identity fields -->
+  <div class="fieldrow fieldrow--1">
     <app-field label="Order Number" hint="Auto-generated on save.">
       <input class="rf-input" formControlName="orderNumber" placeholder="Auto-generated" />
     </app-field>
@@ -67,47 +68,125 @@
     <app-field label="Transactions Type" required [control]="form.controls.transactionType" error="Select a type.">
       <app-select formControlName="transactionType" [options]="txnOptions()" placeholder="Select" searchPlaceholder="Search type…" />
     </app-field>
+    <app-field label="Currency" required [control]="form.controls.currency" error="Select a currency.">
+      <app-select formControlName="currency" [options]="currencyOptions()" placeholder="Select" searchPlaceholder="Search currency…" />
+    </app-field>
+  </div>
+
+  <!-- Cancellation / Utilization: link to the parent Forward deal. -->
+  @if (consumesForward()) {
+    <div class="fwdlink" [class.fwdlink--set]="refOrderNumber()">
+      <mat-icon>{{ refOrderNumber() ? 'link' : 'search' }}</mat-icon>
+      @if (refOrderNumber()) {
+        <span class="fwdlink__label">Linked Forward</span>
+        <span class="fwdlink__ref">{{ refOrderNumber() }}</span>
+      } @else {
+        <span class="fwdlink__label">
+          Pick the Forward deal to {{ isForwardCancellation() ? 'cancel' : 'utilize' }}.
+        </span>
+      }
+      <span class="rf-spacer"></span>
+      <button mat-stroked-button type="button" (click)="openForwardPicker()">
+        <mat-icon>{{ refOrderNumber() ? 'sync_alt' : 'add' }}</mat-icon>
+        {{ refOrderNumber() ? 'Change deal' : 'Choose Forward deal' }}
+      </button>
+    </div>
+  }
+
+  <!-- Row 2: deal fields (rate/date fields appear once a transaction type is chosen) -->
+  <div class="fieldrow fieldrow--2">
+    <!-- EEFC Conversion / Bill Discount / PCFC Disbursement extras -->
+    @if (showConversionFields()) {
+      <app-field label="Transaction Detail">
+        <app-select formControlName="transactionDetail" [options]="transactionDetailOptions()" placeholder="Select" searchPlaceholder="Search detail…" />
+      </app-field>
+      <app-field label="Currency 2">
+        <app-select formControlName="currency2" [options]="currency2Options()" placeholder="Select" searchPlaceholder="Search currency…" />
+      </app-field>
+    }
 
     <app-field label="Import / Export">
       <app-select formControlName="importExport" [options]="impExpOptions" placeholder="Select" [searchable]="false" />
     </app-field>
-    <app-field label="Currency" required [control]="form.controls.currency" error="Select a currency.">
-      <app-select formControlName="currency" [options]="currencyOptions()" placeholder="Select" searchPlaceholder="Search currency…" />
-    </app-field>
-    <app-field label="Amount" required [control]="form.controls.amount" error="Enter an amount.">
+    <app-field label="Amount" required [control]="form.controls.amount" [error]="amountError()">
       <input class="rf-input" type="number" step="0.01" formControlName="amount" placeholder="0.00" />
     </app-field>
     <app-field label="What To Do">
       <app-select formControlName="whatToDo" [options]="whatToDoOptions" placeholder="Select" [searchable]="false" />
     </app-field>
 
-    <app-field label="Maturity Date">
-      <div class="rf-datewrap" (click)="md.open()">
-        <input
-          class="rf-input"
-          [matDatepicker]="md"
-          formControlName="maturityDate"
-          placeholder="dd-MMM-yyyy"
-          readonly
-        />
-        <mat-datepicker-toggle class="rf-date-toggle" [for]="md" />
-      </div>
-      <mat-datepicker #md panelClass="rf-datepicker" />
-    </app-field>
-    <app-field label="Booking Rate">
-      <input class="rf-input" type="number" step="0.0001" formControlName="bookingRate" placeholder="0.0000" />
-    </app-field>
-    <app-field label="Window / Fix">
-      <app-select formControlName="windowFix" [options]="windowFixOptions" placeholder="Select" [searchable]="false" />
-    </app-field>
+    <!-- Window / Fix comes first for a Forward; the date fields follow it. -->
+    @if (showWindowFix()) {
+      <app-field label="Window / Fix" required [control]="form.controls.windowFix" error="Select Window or Fix.">
+        <app-select formControlName="windowFix" [options]="windowFixOptions" placeholder="Select" [searchable]="false" />
+      </app-field>
+    }
+
+    @if (showMaturity()) {
+      <app-field label="Maturity Date">
+        <div class="rf-datewrap" (click)="md.open()">
+          <input
+            class="rf-input"
+            [matDatepicker]="md"
+            formControlName="maturityDate"
+            placeholder="dd-MMM-yyyy"
+            readonly
+          />
+          <mat-datepicker-toggle class="rf-date-toggle" [for]="md" />
+        </div>
+        <mat-datepicker #md panelClass="rf-datepicker" />
+      </app-field>
+    }
+
+    @if (showBookingRate()) {
+      <app-field label="Booking Rate">
+        <input class="rf-input" type="number" step="0.0001" formControlName="bookingRate" placeholder="0.0000" />
+      </app-field>
+    }
+
+    @if (showFromTo()) {
+      <app-field label="From Date">
+        <div class="rf-datewrap" (click)="fd.open()">
+          <input
+            class="rf-input"
+            [matDatepicker]="fd"
+            formControlName="fromDate"
+            placeholder="dd-MMM-yyyy"
+            readonly
+          />
+          <mat-datepicker-toggle class="rf-date-toggle" [for]="fd" />
+        </div>
+        <mat-datepicker #fd panelClass="rf-datepicker" />
+      </app-field>
+      <app-field label="To Date">
+        <div class="rf-datewrap" (click)="tdp.open()">
+          <input
+            class="rf-input"
+            [matDatepicker]="tdp"
+            formControlName="toDate"
+            placeholder="dd-MMM-yyyy"
+            readonly
+          />
+          <mat-datepicker-toggle class="rf-date-toggle" [for]="tdp" />
+        </div>
+        <mat-datepicker #tdp panelClass="rf-datepicker" />
+      </app-field>
+    }
 
     <!-- Forward Cancellation extras -->
     @if (isForwardCancellation()) {
       <app-field label="Forward Contact No.">
         <input class="rf-input" formControlName="forwardContactNo" placeholder="Contact no." />
       </app-field>
-      <app-field label="Outstanding Amount">
-        <input class="rf-input" type="number" step="0.01" formControlName="outstandingAmount" placeholder="0.00" />
+      <app-field label="Outstanding Amount" hint="Remaining balance after this cancellation.">
+        <input
+          class="rf-input"
+          type="number"
+          step="0.01"
+          formControlName="outstandingAmount"
+          placeholder="0.00"
+          readonly
+        />
       </app-field>
     }
   </div>
@@ -115,6 +194,8 @@
   <div class="entry__actions">
     @if (isForwardCancellation()) {
       <span class="rf-chip rf-chip--warn">Forward Cancellation</span>
+    } @else if (isUtilization()) {
+      <span class="rf-chip">Utilization</span>
     }
     <span class="rf-spacer"></span>
     <button mat-button type="button" (click)="clear()">Clear</button>

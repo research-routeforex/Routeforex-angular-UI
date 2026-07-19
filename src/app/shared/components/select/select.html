@@ -28,11 +28,11 @@
       @for (opt of filtered(); track opt.value) {
         <li
           class="sel__opt"
-          [class.sel__opt--active]="opt.value === value()"
+          [class.sel__opt--active]="isSelected(opt.value)"
           (click)="selectOption(opt)"
         >
           <span>{{ opt.label }}</span>
-          @if (opt.value === value()) {
+          @if (isSelected(opt.value)) {
             <mat-icon>check</mat-icon>
           }
         </li>

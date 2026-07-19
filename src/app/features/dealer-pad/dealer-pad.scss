@@ -8,7 +8,7 @@
 .dp__main {
   display: flex;
   flex-direction: column;
-  gap: var(--rf-gap);
+  gap: 12px;
   min-width: 0;
 }
 
@@ -22,16 +22,16 @@
 
 // ---- Live rate board -------------------------------------------------------
 .board {
-  padding: 16px 18px;
+  padding: 10px 14px;
 
   &__head {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     h3 {
       margin: 0;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
     }
   }
@@ -44,11 +44,11 @@
   }
   &__scroll {
     overflow: auto;
-    // Show 5 rows; the rest scrolls under the sticky header.
-    max-height: 165px;
+    // Show ~4 rows; the rest scrolls under the sticky header.
+    max-height: 140px;
   }
   &__hint {
-    margin: 10px 0 0;
+    margin: 8px 0 0;
     font-size: 12px;
   }
 }
@@ -159,6 +159,25 @@
   &__pair {
     font-weight: 600;
   }
+
+  // Distinct, subtle background per column so each section (Currency / Spot /
+  // Cash Spot / Tom Spot / Cash Rate) reads as its own coloured band. Tints are
+  // mixed with `transparent` so they adapt to both the light and dark surface.
+  tbody td:nth-child(1) {
+    background: color-mix(in oklab, #f43f5e 9%, transparent); // Currency — rose
+  }
+  tbody td:nth-child(2) {
+    background: color-mix(in oklab, #2f6df6 13%, transparent); // Spot — blue
+  }
+  tbody td:nth-child(3) {
+    background: color-mix(in oklab, #0ea5a5 9%, transparent); // Cash Spot — teal
+  }
+  tbody td:nth-child(4) {
+    background: color-mix(in oklab, #f59e0b 11%, transparent); // Tom Spot — amber
+  }
+  tbody td:nth-child(5) {
+    background: color-mix(in oklab, var(--rf-primary) 15%, transparent); // Cash Rate — brand violet
+  }
 }
 
 // Spot price with directional arrow (green up / red down).
@@ -202,13 +221,14 @@
   text-align: center !important;
 }
 .mono {
-  font-family: var(--rf-mono);
-  font-variant-numeric: tabular-nums;
+  // Prefer fonts with an unambiguous (slashed) zero so "0" never reads as "8".
+  font-family: 'Consolas', 'Cascadia Mono', 'SFMono-Regular', 'Roboto Mono', var(--rf-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
 }
 
 // ---- Deal form -------------------------------------------------------------
 .dealform {
-  padding: 18px 20px;
+  padding: 12px 16px;
   position: relative;
 
   &__overlay {
@@ -240,34 +260,41 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 0 0 14px;
-    font-size: 15px;
+    margin: 0 0 9px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--rf-primary);
     mat-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
+      font-size: 19px;
+      width: 19px;
+      height: 19px;
     }
   }
   .rf-field {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
   &__actions {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 16px;
-    padding-top: 16px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid var(--rf-border);
   }
 }
 
 // Stacked sections: Client Information first, then Deal Details.
 .dform-section + .dform-section {
-  margin-top: 6px;
-  padding-top: 16px;
+  margin-top: 4px;
+  padding-top: 10px;
   border-top: 1px solid var(--rf-border);
+}
+
+// The two 2-row textareas (Dealing Room Landline, Remarks) default to a tall
+// 96px box — shrink them so the rate bands aren't pushed far down the page.
+.dealform textarea.rf-textarea {
+  min-height: 50px;
+  padding: 7px 12px;
 }
 
 // Three-column field layout (matches the legacy deal form density).
@@ -297,6 +324,56 @@
 }
 
 // Documents complete? — read-only YES / NO display.
+// Client-document download row (SLA + Authorized Letter).
+.doc-downloads {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+
+  &__label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--rf-text-muted, var(--rf-text));
+  }
+}
+.doc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--rf-border);
+  background: var(--rf-surface, transparent);
+  color: var(--rf-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+  &:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--rf-primary) 10%, transparent);
+    border-color: color-mix(in oklab, var(--rf-primary) 40%, var(--rf-border));
+  }
+  &:disabled {
+    color: var(--rf-text-muted, var(--rf-text));
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  &__na {
+    font-weight: 400;
+    font-style: italic;
+    opacity: 0.75;
+  }
+}
+
 .docs {
   display: flex;
   align-items: center;
@@ -322,8 +399,8 @@
   display: flex;
   align-items: stretch;
   gap: 14px;
-  margin-top: 14px;
-  padding: 12px 14px;
+  margin-top: 10px;
+  padding: 9px 12px;
   border: 1px solid var(--rf-border);
   border-radius: var(--rf-radius-sm);
   background: var(--rf-surface-muted);
@@ -471,8 +548,17 @@
     padding: 6px;
     max-height: 320px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  // Keep the Pending Deals panel a comfortable height even when the queue is
+  // empty, so it doesn't collapse to just the "No pending deals." line.
+  &--pending &__list {
+    min-height: 300px;
   }
   &__empty {
+    // `margin: auto` centres the empty message within the tall flex list.
+    margin: auto;
     padding: 22px 12px;
     text-align: center;
     font-size: 13px;

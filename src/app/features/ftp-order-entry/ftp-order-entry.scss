@@ -69,15 +69,55 @@
 .entry {
   padding: 18px 20px;
 }
-.fieldgrid {
+.fieldrow {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 0 18px;
 
   > * {
     min-width: 0;
   }
 }
+// Row 1: five identity fields. Row 2: up to seven deal fields.
+.fieldrow--1 {
+  grid-template-columns: repeat(5, 1fr);
+}
+.fieldrow--2 {
+  grid-template-columns: repeat(7, 1fr);
+}
+// Cancellation / Utilization → parent-Forward link strip.
+.fwdlink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 16px;
+  padding: 10px 14px;
+  border: 1px dashed color-mix(in oklab, var(--mat-sys-primary) 45%, var(--rf-border));
+  border-radius: var(--rf-radius-sm);
+  background: color-mix(in oklab, var(--mat-sys-primary) 8%, var(--rf-surface-2));
+
+  > mat-icon {
+    color: var(--rf-primary);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &__label {
+    font-size: 13px;
+    color: var(--rf-muted-fg);
+  }
+
+  &__ref {
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--rf-text);
+  }
+
+  &--set {
+    border-style: solid;
+  }
+}
+
 .entry__actions {
   display: flex;
   align-items: center;
@@ -92,18 +132,23 @@
   font-weight: 600;
 }
 
-@media (max-width: 1100px) {
-  .fieldgrid {
+@media (max-width: 1200px) {
+  .fieldrow--1 {
     grid-template-columns: repeat(3, 1fr);
+  }
+  .fieldrow--2 {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 @media (max-width: 760px) {
-  .fieldgrid {
+  .fieldrow--1,
+  .fieldrow--2 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 @media (max-width: 520px) {
-  .fieldgrid {
+  .fieldrow--1,
+  .fieldrow--2 {
     grid-template-columns: 1fr;
   }
 }

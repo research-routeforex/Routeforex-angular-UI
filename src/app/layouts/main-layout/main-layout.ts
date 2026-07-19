@@ -1,7 +1,7 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -48,6 +48,7 @@ export class MainLayoutComponent {
   private readonly breakpoints = inject(BreakpointObserver);
   private readonly confirm = inject(ConfirmService);
   private readonly menuService = inject(MenuService);
+  private readonly router = inject(Router);
   protected readonly auth = inject(AuthService);
   protected readonly theme = inject(ThemeService);
   protected readonly loading = inject(LoadingService);
@@ -78,25 +79,43 @@ export class MainLayoutComponent {
   /** Whether the overlay drawer is open (handset only). */
   protected readonly navOpen = signal(false);
 
-  /** Collapsed module sections (by title), persisted across sessions. */
-  private readonly collapsedSections = signal<ReadonlySet<string>>(
-    new Set(JSON.parse(localStorage.getItem(STORAGE_KEYS.collapsedSections) ?? '[]')),
+  /**
+   * The user's accordion choice: a section title = open, `''` = user collapsed all,
+   * `null` = no choice yet (fall back to the route-based default below). Persisted.
+   */
+  private readonly expandedChoice = signal<string | null>(
+    localStorage.getItem(STORAGE_KEYS.expandedSection),
   );
 
+  /** Which single section is open — the user's choice, or the active-route section. */
+  private readonly expandedSection = computed<string>(() => {
+    const choice = this.expandedChoice();
+    if (choice !== null) return choice; // '' means "all collapsed"
+
+    // Default: open the section holding the active route, else the first one.
+    const secs = this.sections();
+    if (!secs.length) return '';
+    const url = this.router.url;
+    const active = secs.find((s) =>
+      s.items.some((i) => {
+        if (!i.route) return false;
+        const r = i.route.startsWith('/') ? i.route : `/${i.route}`;
+        return url.startsWith(r);
+      }),
+    );
+    return (active ?? secs[0]).title ?? '';
+  });
+
   protected isSectionCollapsed(title: string | undefined): boolean {
-    return !!title && this.collapsedSections().has(title);
+    return !title || this.expandedSection() !== title;
   }
 
-  /** Collapse/expand a module section and remember it. */
+  /** Expand a module section (collapsing any other), or collapse it if already open. */
   protected toggleSection(title: string | undefined): void {
     if (!title) return;
-    this.collapsedSections.update((set) => {
-      const next = new Set(set);
-      if (next.has(title)) next.delete(title);
-      else next.add(title);
-      localStorage.setItem(STORAGE_KEYS.collapsedSections, JSON.stringify([...next]));
-      return next;
-    });
+    const next = this.expandedSection() === title ? '' : title;
+    this.expandedChoice.set(next);
+    localStorage.setItem(STORAGE_KEYS.expandedSection, next);
   }
 
   protected readonly year = new Date().getFullYear();
@@ -175,9 +194,19 @@ export class MainLayoutComponent {
     });
   }
 
-  /** Close the overlay drawer after navigating on mobile. */
+  /**
+   * After navigating: close the overlay drawer on mobile, or auto-minimise the
+   * sidebar to the rail on desktop.
+   */
   onNavigated(): void {
-    if (this.isHandset()) this.navOpen.set(false);
+    if (this.isHandset()) {
+      this.navOpen.set(false);
+      return;
+    }
+    if (!this.collapsed()) {
+      this.collapsed.set(true);
+      localStorage.setItem(STORAGE_KEYS.sidebarCollapsed, 'true');
+    }
   }
 
   logout(): void {

@@ -36,8 +36,34 @@ export interface FtpOrderDetail {
   buySell?: string | null;
   maturityDate?: string | null;
   dateSelectionType?: string | null;
+  fromDate?: string | null;
+  toDate?: string | null;
   bookingRate?: number | null;
   forwardContactNo?: string | null;
   outstandingAmount?: number | null;
+  refOrderNumber?: string | null;
+  // EEFC Conversion / Bill Discount / PCFC Disbursement extras.
+  transactionDetail?: string | null;
+  billDiscount?: string | null;
   activeStatus?: string | null;
+}
+
+/**
+ * A parent Forward deal offered in the Cancellation / Utilization picker.
+ * `balance` is the remaining (un-consumed) value available to cancel/utilize.
+ */
+export interface ForwardDeal {
+  clientID: number;
+  orderNumber?: string | null;
+  refOrderNumber?: string | null;
+  impExp?: string | null;
+  currencyCode?: string | null;
+  orderValue?: number | null;
+  balance?: number | null;
+  fromDate?: string | null;
+  toDate?: string | null;
+  maturityDate?: string | null;
+  bookingRate?: number | null;
+  forwardContactNo?: string | null;
+  dateSelectionType?: string | null;
 }

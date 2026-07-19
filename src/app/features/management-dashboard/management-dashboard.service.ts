@@ -53,14 +53,14 @@ export class ManagementDashboardService {
    * 2-second background poll: it skips the loading state and, on error, keeps the
    * data already on screen rather than blanking it.
    */
-  load(clientId: number, type: Section, silent = false): void {
+  load(clientId: number, type: Section, bankId: number | null = null, silent = false): void {
     if (!silent) {
       this._loading.set(true);
       this._loaded.set(false);
     }
     this.api
       .get<DashboardRowApi[]>(API.managementDashboard.transactions, {
-        params: { clientId, type },
+        params: { clientId, type, clientBank: bankId ?? undefined },
         context: silent ? silentContext() : undefined,
       })
       .subscribe({
