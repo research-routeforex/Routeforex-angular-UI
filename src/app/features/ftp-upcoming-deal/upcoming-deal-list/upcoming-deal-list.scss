@@ -1,0 +1,39 @@
+// Upcoming Deal list — most styling is reused from the FTP Order Entry list scss
+// (grid / searchpanel / pager / hero). Only the search-box tweaks live here.
+.searchfield--grow {
+  flex: 1 1 320px;
+}
+
+.rf-input {
+  width: 100%;
+}
+
+// Standard dd-MMM-yyyy date field (matches ftp-order-entry / generate-invoice).
+.rf-datewrap {
+  position: relative;
+  display: block;
+
+  .rf-input {
+    width: 100%;
+    padding-right: 38px;
+    cursor: pointer;
+  }
+
+  .rf-date-toggle {
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    transform: translateY(-50%);
+    color: var(--rf-muted-fg);
+
+    :is(button, .mat-mdc-icon-button) {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+    }
+    .mat-mdc-button-touch-target {
+      width: 34px;
+      height: 34px;
+    }
+  }
+}

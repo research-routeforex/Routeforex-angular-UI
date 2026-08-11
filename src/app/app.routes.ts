@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { firstLoginGuard } from './core/guards/first-login.guard';
 import { menuAccessGuard } from './core/guards/menu-access.guard';
 import { MainLayoutComponent } from './layouts/main-layout/main-layout';
 
@@ -37,9 +38,11 @@ export const routes: Routes = [
     path: '',
     component: MainLayoutComponent,
     canActivate: [authGuard],
-    // Backend-driven per-screen access: blocks any child whose menu screen has
-    // CanAccess = false (the AccessDenied flag), redirecting to /forbidden.
-    canActivateChild: [menuAccessGuard],
+    // firstLoginGuard: force a password change before any app route is reachable
+    // when the session is flagged mustChangePassword (seeded LastLoginDate = null).
+    // menuAccessGuard: backend-driven per-screen access — blocks any child whose
+    // menu screen has CanAccess = false (the AccessDenied flag), → /forbidden.
+    canActivateChild: [firstLoginGuard, menuAccessGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       {
@@ -84,6 +87,34 @@ export const routes: Routes = [
         loadChildren: () => import('./features/clients/clients.routes').then((m) => m.CLIENTS_ROUTES),
       },
       {
+        path: 'client-contract',
+        loadChildren: () =>
+          import('./features/client-contract/client-contract.routes').then(
+            (m) => m.CLIENT_CONTRACT_ROUTES,
+          ),
+      },
+      {
+        path: 'other-services',
+        loadChildren: () =>
+          import('./features/other-services/other-services.routes').then(
+            (m) => m.OTHER_SERVICES_ROUTES,
+          ),
+      },
+      {
+        path: 'service-offered',
+        loadChildren: () =>
+          import('./features/service-offered/service-offered.routes').then(
+            (m) => m.SERVICE_OFFERED_ROUTES,
+          ),
+      },
+      {
+        path: 'user-company-mapping',
+        loadChildren: () =>
+          import('./features/user-company-mapping/user-company-mapping.routes').then(
+            (m) => m.USER_COMPANY_MAPPING_ROUTES,
+          ),
+      },
+      {
         path: 'common-master',
         loadChildren: () =>
           import('./features/common-master/common-master.routes').then((m) => m.COMMON_MASTER_ROUTES),
@@ -99,6 +130,34 @@ export const routes: Routes = [
         path: 'bank-master',
         loadChildren: () =>
           import('./features/bank-master/bank-master.routes').then((m) => m.BANK_MASTER_ROUTES),
+      },
+      {
+        path: 'rbi-rate-master',
+        loadChildren: () =>
+          import('./features/rbi-rate-master/rbi-rate-master.routes').then(
+            (m) => m.RBI_RATE_MASTER_ROUTES,
+          ),
+      },
+      {
+        path: 'broadcast-group-master',
+        loadChildren: () =>
+          import('./features/broadcast-group-master/broadcast-group-master.routes').then(
+            (m) => m.BROADCAST_GROUP_MASTER_ROUTES,
+          ),
+      },
+      {
+        path: 'broadcast-message',
+        loadChildren: () =>
+          import('./features/broadcast-message/broadcast-message.routes').then(
+            (m) => m.BROADCAST_MESSAGE_ROUTES,
+          ),
+      },
+      {
+        path: 'template-creator',
+        loadChildren: () =>
+          import('./features/template-creator/template-creator.routes').then(
+            (m) => m.TEMPLATE_CREATOR_ROUTES,
+          ),
       },
       {
         path: 'company-master',
@@ -131,6 +190,36 @@ export const routes: Routes = [
             (m) => m.GENERATE_INVOICE_ROUTES,
           ),
       },
+      {
+        path: 'deal-coverage',
+        title: 'Deal Coverage — RouteForex',
+        loadComponent: () =>
+          import('./features/deal-coverage/deal-coverage').then((m) => m.DealCoverageComponent),
+      },
+      {
+        path: 'rate-alert',
+        loadChildren: () =>
+          import('./features/rate-alert/rate-alert.routes').then((m) => m.RATE_ALERT_ROUTES),
+      },
+      {
+        path: 'ftp-upcoming-deal',
+        loadChildren: () =>
+          import('./features/ftp-upcoming-deal/ftp-upcoming-deal.routes').then(
+            (m) => m.FTP_UPCOMING_DEAL_ROUTES,
+          ),
+      },
+      {
+        path: 'client-order',
+        loadChildren: () =>
+          import('./features/client-order/client-order.routes').then((m) => m.CLIENT_ORDER_ROUTES),
+      },
+      {
+        path: 'trial-transaction',
+        loadChildren: () =>
+          import('./features/trial-transaction/trial-transaction.routes').then(
+            (m) => m.TRIAL_TRANSACTION_ROUTES,
+          ),
+      },
       placeholder('purchase', {
         title: 'Purchase',
         description: 'Purchase orders, entries and reports.',
@@ -158,6 +247,20 @@ export const routes: Routes = [
       {
         path: 'roles',
         loadChildren: () => import('./features/roles/roles.routes').then((m) => m.ROLES_ROUTES),
+      },
+      {
+        path: 'role-permissions',
+        loadChildren: () =>
+          import('./features/role-permissions/role-permissions.routes').then(
+            (m) => m.ROLE_PERMISSIONS_ROUTES,
+          ),
+      },
+      {
+        path: 'ticker-live-screen-right',
+        loadChildren: () =>
+          import('./features/ticker-live-screen-right/ticker-live-screen-right.routes').then(
+            (m) => m.TICKER_LIVE_SCREEN_RIGHT_ROUTES,
+          ),
       },
       {
         path: 'reports',

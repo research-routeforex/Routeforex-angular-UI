@@ -10,15 +10,21 @@ export const API = {
     forgotPassword: 'Auth/forgot-password',
     resetPassword: 'Auth/reset-password',
     changePassword: 'Auth/change-password',
+    profileImage: 'Auth/profile-image',
   },
   users: {
     base: 'Users',
     byId: (id: number) => `Users/${id}`,
-    roles: (id: number) => `Users/${id}/roles`,
   },
   roles: {
     base: 'Roles',
     byId: (id: number) => `Roles/${id}`,
+  },
+  rolePermission: {
+    // GET /tree — modules + screens; GET /{roleId} — granted screen ids; POST — save
+    base: 'RolePermission',
+    tree: 'RolePermission/tree',
+    byRole: (roleId: number) => `RolePermission/${roleId}`,
   },
   cities: {
     base: 'Cities',
@@ -40,6 +46,55 @@ export const API = {
     base: 'Bank',
     byId: (id: number) => `Bank/${id}`,
   },
+  rbiRate: {
+    // GET ?date=&rate= — search; POST — insert/update a rate
+    base: 'RbiRate',
+  },
+  tickerLiveScreenRight: {
+    // GET ?clientId=&validityFrom=&validityTo= — search (admin); POST — insert/update (admin)
+    base: 'TickerLiveScreen',
+    // GET — the signed-in user's effective Ticker access (mode + free budget)
+    access: 'TickerLiveScreen/access',
+    // POST { seconds } — accumulate free-trial seconds
+    heartbeat: 'TickerLiveScreen/access/heartbeat',
+  },
+  otherServices: {
+    // GET ?clientId=&date= — list; POST — insert/update; DELETE {id}
+    base: 'OtherServices',
+    // GET — service dropdown options (add form)
+    services: 'OtherServices/services',
+    byId: (id: number) => `OtherServices/${id}`,
+  },
+  serviceOffered: {
+    // GET ?serviceName=&serviceDescription=&status= — list; POST — insert/update
+    base: 'ServiceOffered',
+  },
+  userCompanyMapping: {
+    // GET ?userId=&clientId= — list; POST — save (replace user's client set)
+    base: 'UserCompanyMapping',
+    users: 'UserCompanyMapping/users',
+    clients: 'UserCompanyMapping/clients',
+    mappedClients: (userId: string) => `UserCompanyMapping/${encodeURIComponent(userId)}/clients`,
+  },
+  rateAlert: {
+    // GET ?search=&status= — list; POST — insert/update
+    base: 'RateAlert',
+    currencies: 'RateAlert/currencies',
+    validities: 'RateAlert/validities',
+  },
+  broadcastGroup: {
+    // GET — all groups; POST — insert/update a group (clientIDs = CSV)
+    base: 'BroadcastGroup',
+  },
+  broadcastMessage: {
+    // GET ?search= — sent broadcasts (newest first); POST — send a broadcast
+    base: 'BroadcastMessage',
+  },
+  template: {
+    // GET — all templates; GET {id} — one template + HTML body; POST — insert/update
+    base: 'Template',
+    byId: (id: number) => `Template/${id}`,
+  },
   headOffice: {
     base: 'HeadOffice',
     byId: (id: number) => `HeadOffice/${id}`,
@@ -58,6 +113,13 @@ export const API = {
   },
   forex: {
     liveRates: 'LiveRates',
+    // Ticker Live Rate screen feeds (usp_RF_Mast_ForexLiveScreen).
+    // GET ?description= — spot-rate board / forward premium / currency futures.
+    tickerForex: 'LiveRates/forex',
+    tickerPremium: 'LiveRates/premium',
+    tickerCurrencyFuture: 'LiveRates/currency-future',
+    // Forex News for the signed-in user (@Action='selectNEWS', @CreatedBy=login name).
+    tickerNews: 'LiveRates/news',
     dealerPadOrders: 'DealerPadOrders',
     dropdowns: 'Dropdowns',
   },
@@ -66,6 +128,10 @@ export const API = {
     ftpOrderBooking: 'FtpOrderEntry/booking',
     // GET ?clientId=&recordId= — parent Forward deals for the Cancellation/Utilization picker
     ftpForwardDeals: 'FtpOrderEntry/forward-deals',
+    // GET ?clientId= — all live orders for a client (Deal Coverage order dropdown)
+    ftpOrdersByClient: 'FtpOrderEntry/orders-by-client',
+    // GET ?date= — next working day (skips weekends + holidays); defaults to today. ISO yyyy-MM-dd.
+    ftpWorkingDate: 'FtpOrderEntry/working-date',
     // Order recordings/documents (Voice / Screenshot)
     orderRecordings: 'OrderRecordings',
     orderRecordingFile: 'OrderRecordings/file',
@@ -91,6 +157,8 @@ export const API = {
     executiveDashboardUc: 'Reports/executive-dashboard-uc',
     // GET ?toDate=YYYY-MM-DD — PNL MIS zone report (As-on / MTD / YTD)
     pnlMis: 'Reports/pnl-zone',
+    // GET ?fromDate=&toDate=&clientId= — MIS / Deal-Coverage report (@TYPE=2)
+    mis: 'Reports/mis',
   },
   managementDashboard: {
     // GET ?clientId=&type=Import|Export
@@ -115,5 +183,9 @@ export const API = {
     base: 'ScreenAccess',
     // POST { route, seconds } — accumulate usage
     heartbeat: 'ScreenAccess/heartbeat',
+  },
+  favourites: {
+    // GET — the user's favourite screens; POST { route } — star; DELETE ?route= — un-star
+    base: 'Favourites',
   },
 } as const;

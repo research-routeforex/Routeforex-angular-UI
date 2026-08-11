@@ -1,0 +1,92 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Role Permissions"
+    subtitle="Assign module and screen access for each role."
+    [breadcrumbs]="[{ label: 'Administration' }, { label: 'Role Permissions' }]"
+  >
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="!hasRole() || saving()"
+      (click)="save()"
+    >
+      <mat-icon>save</mat-icon> {{ saving() ? 'Saving…' : 'Save' }}
+    </button>
+  </app-page-header>
+</div>
+
+<div class="perm">
+  <!-- Card 1: Role -->
+  <section class="rf-card perm__card">
+    <h3 class="perm__title"><span class="perm__step">1</span> Role</h3>
+    <app-select
+      [options]="roleOptions()"
+      placeholder="Select a role…"
+      searchPlaceholder="Search role…"
+      [ngModel]="selectedRole()"
+      (ngModelChange)="selectRole($event)"
+    />
+    <p class="perm__hint rf-muted">Pick a role to configure its access.</p>
+  </section>
+
+  <!-- Card 2: Modules -->
+  <section class="rf-card perm__card">
+    <h3 class="perm__title"><span class="perm__step">2</span> Modules</h3>
+    @if (!hasRole()) {
+      <p class="perm__empty rf-muted">Select a role first.</p>
+    } @else {
+      <ul class="perm__list">
+        @for (m of modules(); track m.moduleId) {
+          <li class="perm__row" [class.perm__row--active]="activeModuleId() === m.moduleId">
+            <input
+              type="checkbox"
+              class="perm__cb"
+              [checked]="moduleChecked(m.moduleId)"
+              [indeterminate]="moduleIndeterminate(m.moduleId)"
+              (change)="toggleModule(m, $any($event.target).checked)"
+            />
+            <button type="button" class="perm__name" (click)="selectModule(m)">
+              {{ m.moduleName }}
+              <span class="perm__count rf-muted">{{ screensOf(m.moduleId).length }}</span>
+              <mat-icon class="perm__chev">chevron_right</mat-icon>
+            </button>
+          </li>
+        } @empty {
+          <li class="perm__empty rf-muted">No modules found.</li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- Card 3: Screens of the active module -->
+  <section class="rf-card perm__card">
+    <h3 class="perm__title">
+      <span class="perm__step">3</span> Screens
+      @if (activeModuleName()) { <span class="perm__subtitle">— {{ activeModuleName() }}</span> }
+    </h3>
+    @if (!hasRole()) {
+      <p class="perm__empty rf-muted">Select a role first.</p>
+    } @else if (activeModuleId() == null) {
+      <p class="perm__empty rf-muted">Select a module to see its screens.</p>
+    } @else {
+      <ul class="perm__list">
+        @for (s of activeScreens(); track s.screenId) {
+          <li class="perm__row">
+            <input
+              type="checkbox"
+              class="perm__cb"
+              [checked]="isScreenGranted(s.screenId)"
+              (change)="toggleScreen(s.screenId, $any($event.target).checked)"
+            />
+            <span class="perm__name perm__name--static">{{ s.screenName }}</span>
+          </li>
+        } @empty {
+          <li class="perm__empty rf-muted">This module has no screens.</li>
+        }
+      </ul>
+    }
+  </section>
+</div>

@@ -12,8 +12,12 @@ export interface ConfirmDialogData {
   message: string;
   confirmText?: string;
   cancelText?: string;
-  /** Use warn styling for destructive actions. */
+  /** Use warn (red) styling for destructive actions. */
   destructive?: boolean;
+  /** Use warning (amber) styling for cautionary / alert messages. */
+  warning?: boolean;
+  /** Hide the Cancel button — single-action acknowledgement (alert) mode. */
+  hideCancel?: boolean;
   icon?: string;
 }
 
@@ -24,18 +28,27 @@ export interface ConfirmDialogData {
   imports: [MatDialogModule, MatButtonModule, MatIconModule],
   template: `
     <div class="confirm">
-      <div class="confirm__head" [class.confirm__head--warn]="data.destructive">
-        <mat-icon>{{ data.icon || (data.destructive ? 'warning' : 'help_outline') }}</mat-icon>
+      <div
+        class="confirm__head"
+        [class.confirm__head--warn]="data.destructive"
+        [class.confirm__head--warning]="data.warning"
+      >
+        <mat-icon>{{
+          data.icon || (data.destructive || data.warning ? 'warning' : 'help_outline')
+        }}</mat-icon>
         <h2 mat-dialog-title>{{ data.title }}</h2>
       </div>
       <mat-dialog-content>
         <p class="confirm__msg">{{ data.message }}</p>
       </mat-dialog-content>
       <mat-dialog-actions align="end">
-        <button mat-button (click)="close(false)">{{ data.cancelText || 'Cancel' }}</button>
+        @if (!data.hideCancel) {
+          <button mat-button (click)="close(false)">{{ data.cancelText || 'Cancel' }}</button>
+        }
         <button
           mat-flat-button
-          [color]="data.destructive ? 'warn' : 'primary'"
+          [color]="data.destructive ? 'warn' : data.warning ? undefined : 'primary'"
+          [class.confirm__ok--warning]="data.warning"
           (click)="close(true)"
         >
           {{ data.confirmText || 'Confirm' }}
@@ -53,15 +66,38 @@ export interface ConfirmDialogData {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 4px 0;
+        padding: 19px 0px 0px 23px;
         color: var(--mat-sys-primary);
+      }
+      .confirm__head mat-icon {
+        flex: none;
+        width: 26px;
+        height: 26px;
+        font-size: 26px;
+        line-height: 26px;
       }
       .confirm__head--warn {
         color: var(--rf-danger);
       }
+      .confirm__head--warning {
+        color: #e0a200; // amber warning
+      }
       .confirm__head h2 {
         margin: 0;
         padding: 0;
+        font-size: 20px;
+        line-height: 26px;
+      }
+      // Material adds a 40px-tall ::before spacer to the dialog title, which
+      // throws off vertical centring of the leading icon — remove it.
+      .confirm__head h2::before {
+        display: none;
+      }
+      // Amber (warning) confirm button — filled yellow with dark text.
+      .confirm__ok--warning {
+        --mdc-filled-button-container-color: #f5c518;
+        background-color: #e0a200;
+        --mdc-filled-button-label-text-color: #1b1b1b;
       }
       .confirm__msg {
         margin: 4px 0 0;

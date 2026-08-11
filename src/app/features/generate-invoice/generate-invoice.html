@@ -52,7 +52,7 @@
 
   <app-field label="From Date" required [control]="form.controls.fromDate" error="Required.">
     <div class="rf-datewrap" (click)="fromPk.open()">
-      <input class="rf-input" [matDatepicker]="fromPk" formControlName="fromDate" placeholder="dd-MMM-yyyy" readonly />
+      <input class="rf-input" [matDatepicker]="fromPk" [appOpenOnFocus]="fromPk" formControlName="fromDate" placeholder="dd-MMM-yyyy" readonly />
       <mat-datepicker-toggle class="rf-date-toggle" [for]="fromPk" />
     </div>
     <mat-datepicker #fromPk panelClass="rf-datepicker" />
@@ -60,7 +60,7 @@
 
   <app-field label="To Date" required [control]="form.controls.toDate" error="Required.">
     <div class="rf-datewrap" (click)="toPk.open()">
-      <input class="rf-input" [matDatepicker]="toPk" formControlName="toDate" placeholder="dd-MMM-yyyy" readonly />
+      <input class="rf-input" [matDatepicker]="toPk" [appOpenOnFocus]="toPk" formControlName="toDate" placeholder="dd-MMM-yyyy" readonly />
       <mat-datepicker-toggle class="rf-date-toggle" [for]="toPk" />
     </div>
     <mat-datepicker #toPk panelClass="rf-datepicker" />
@@ -113,7 +113,7 @@
 
       <app-field label="Invoice Date" required [control]="invForm.controls.invoiceDate" error="Required.">
         <div class="rf-datewrap" (click)="invPk.open()">
-          <input class="rf-input" [matDatepicker]="invPk" formControlName="invoiceDate" placeholder="dd-MMM-yyyy" readonly />
+          <input class="rf-input" [matDatepicker]="invPk" [appOpenOnFocus]="invPk" formControlName="invoiceDate" placeholder="dd-MMM-yyyy" readonly />
           <mat-datepicker-toggle class="rf-date-toggle" [for]="invPk" />
         </div>
         <mat-datepicker #invPk panelClass="rf-datepicker" />
@@ -127,11 +127,13 @@
             <th>Order No</th>
             <th>Date</th>
             <th>Transaction Type</th>
+            <th>Trans Detail</th>
             <th>Imp/Exp</th>
             <th>Currency</th>
+            <th>Bank</th>
             <th class="ta-r">Value</th>
             <th>Charge Type</th>
-            <th class="ta-r">Charge Rate</th>
+            <th class="ta-r">Rate</th>
             <th class="ta-r">Charge (₹)</th>
           </tr>
         </thead>
@@ -141,8 +143,10 @@
               <td class="name">{{ l.orderNumber || '#' + l.recordId }}</td>
               <td>{{ l.createdDatetime ? (l.createdDatetime | date: 'dd-MMM-yyyy') : '—' }}</td>
               <td>{{ l.transactionType || '—' }}</td>
+              <td>{{ l.transDetail || '—' }}</td>
               <td>{{ l.impExp || '—' }}</td>
               <td>{{ l.currencyCode || '—' }}</td>
+              <td>{{ l.bank || '—' }}</td>
               <td class="ta-r">{{ l.amount != null ? (l.amount | number: '1.2-2') : '—' }}</td>
               <td>
                 @if (l.clientContractID) {
@@ -158,7 +162,7 @@
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="5" class="ta-r total-lbl">Totals</td>
+            <td colspan="7" class="ta-r total-lbl">Totals</td>
             <td class="ta-r total">{{ totalValue() | number: '1.2-2' }}</td>
             <td colspan="2"></td>
             <td class="ta-r total">₹{{ totalCharges() | number: '1.2-2' }}</td>
@@ -172,158 +176,6 @@
     <mat-icon>receipt_long</mat-icon>
     <p class="state__title">Generate an invoice</p>
     <p class="state__hint">Choose a client and a date range, then click Search.</p>
-  </div>
-}
-
-<!-- Printable invoice (rendered after Generate) -->
-@if (generated()) {
-  <div class="invoice" id="invoice">
-    <div class="invoice__actions no-print">
-      <button mat-flat-button color="primary" type="button" (click)="print()">
-        <mat-icon>print</mat-icon> Print / Save PDF
-      </button>
-    </div>
-
-    <div class="inv">
-      <header class="inv__head">
-        <img class="inv__logo" [src]="company.logo" alt="RouteForex" />
-        <div class="inv__co">
-          <h1 class="inv__title">TAX INVOICE</h1>
-          <p class="inv__no">{{ invoiceNo() }}</p>
-          <p class="inv__date">Date: {{ invoiceDate() | date: 'dd-MMM-yyyy' }}</p>
-          <p class="inv__gst">GSTIN: {{ gstNumber() }}</p>
-        </div>
-      </header>
-
-      <div class="inv__parties">
-        <div class="inv__from">
-          <span class="inv__lbl">From</span>
-          <strong>{{ company.name }}</strong>
-          <span class="inv__tag">{{ company.tagline }}</span>
-        </div>
-        <div class="inv__to">
-          <span class="inv__lbl">Bill To</span>
-          <strong>{{ clientName() }}</strong>
-          <span>Period: {{ periodFrom() | date: 'dd-MMM-yyyy' }} —
-            {{ periodTo() | date: 'dd-MMM-yyyy' }}</span>
-        </div>
-      </div>
-
-      <table class="inv__table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Order No</th>
-            <th>Date</th>
-            <th>Transaction</th>
-            <th>Ccy</th>
-            <th class="ta-r">Value</th>
-            <th>Charge Type</th>
-            <th class="ta-r">Charge (₹)</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (l of lines(); track l.recordId; let i = $index) {
-            <tr>
-              <td>{{ i + 1 }}</td>
-              <td>{{ l.orderNumber || '#' + l.recordId }}</td>
-              <td>{{ l.createdDatetime ? (l.createdDatetime | date: 'dd-MMM-yyyy') : '—' }}</td>
-              <td>{{ l.transactionType || '—' }}</td>
-              <td>{{ l.currencyCode || '—' }}</td>
-              <td class="ta-r">{{ l.amount != null ? (l.amount | number: '1.2-2') : '—' }}</td>
-              <td>{{ l.clientContractID ? (l.chargesType || '—') : '—' }}</td>
-              <td class="ta-r">{{ l.charge | number: '1.2-2' }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-
-      <!-- Bank details (left) + tax summary (right) -->
-      <div class="inv__pay">
-        <table class="inv__bank">
-          <tbody>
-            <tr><th>Bank Name</th><td>{{ footer()?.bankName || '—' }}</td></tr>
-            <tr><th>A/c No.</th><td>{{ footer()?.accountNo || '—' }}</td></tr>
-            <tr><th>IFSC Code</th><td>{{ footer()?.ifscCode || '—' }}</td></tr>
-            <tr><th>Address</th><td>{{ footer()?.address || '—' }}</td></tr>
-          </tbody>
-        </table>
-
-        <table class="inv__tax">
-          <tbody>
-            <tr>
-              <th>Total Amount Before Tax</th>
-              <td class="ta-r">{{ (tax()?.charges ?? totalCharges()) | number: '1.2-2' }}</td>
-            </tr>
-            @if (taxMode() === 'split') {
-              <tr>
-                <th>Add: CGST&#64;{{ tax()?.cgstPer | number: '1.0-2' }}%</th>
-                <td class="ta-r">{{ tax()?.cgst | number: '1.2-2' }}</td>
-              </tr>
-              <tr>
-                <th>Add: SGST&#64;{{ tax()?.sgstPer | number: '1.0-2' }}%</th>
-                <td class="ta-r">{{ tax()?.sgst | number: '1.2-2' }}</td>
-              </tr>
-            } @else {
-              <tr>
-                <th>Add: IGST&#64;{{ tax()?.igstPer | number: '1.0-2' }}%</th>
-                <td class="ta-r">{{ tax()?.igst | number: '1.2-2' }}</td>
-              </tr>
-            }
-            <tr>
-              <th>Round Off</th>
-              <td class="ta-r">{{ roundOff() | number: '1.2-2' }}</td>
-            </tr>
-            <tr class="inv__tax-grand">
-              <th>Total Amount After Tax</th>
-              <td class="ta-r">{{ roundedTotal() | number: '1.2-2' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Terms & Conditions -->
-      <div class="inv__terms">
-        <span class="inv__terms-lbl">Terms &amp; Conditions</span>
-        <ol>
-          <li>
-            The information provided as billed in this invoice is for the use of the above mentioned
-            company only; copying or transmitting of any part or all of the contents of any material
-            provided by us for sharing with or transmission in any manner to any other entity or
-            person not employed by the above mentioned company is not permitted without express prior
-            consent from us. The information is provided on a best efforts basis and we here by
-            expressly disclaim any liability for any loss howsoever arising from any use of the
-            information, provided by us.
-          </li>
-          <li>No cenvat credit can be claimed by the client/prospect on the strength of the proforma invoice.</li>
-          <li>
-            Final invoice would be sent on the confirmation received from the client of the
-            need/renewal of services and subject to the receipt of the payment.
-          </li>
-          <li>No Refund of any amount would be made by the company on discontinuation of any of our services subscribed for.</li>
-        </ol>
-      </div>
-
-      <!-- Promo banner (left) + certification (right) -->
-      <div class="inv__promo-row">
-        <div class="inv__promo">
-          <p>GET <strong><em>BEST FOREX RATES</em></strong> WITH US FOR YOUR UPCOMING TRAVEL</p>
-          <p>BUY FOREX &amp; GET IT DELIVERED AT YOUR DOOR STEP!</p>
-        </div>
-        <div class="inv__certify">
-          <p>Certified that the particulars given above are true and correct</p>
-          <p>(Computerized Invoice, No Signature is required)</p>
-          <p class="inv__certify-co"><strong>For {{ company.name }}</strong></p>
-          <p>Authorised Signatory</p>
-          <img class="inv__stamp" [src]="company.stamp" alt="Seal" />
-        </div>
-      </div>
-
-      <!-- Contact -->
-      <div class="inv__contact">
-        For more details please contact us: {{ footer()?.contactUsEmail || '—' }} | mobile no.: {{ footer()?.contactUsMobile || '—' }}
-      </div>
-    </div>
   </div>
 }
 }
@@ -342,7 +194,7 @@
 
     <app-field label="From Date" required [control]="histForm.controls.fromDate" error="Required.">
       <div class="rf-datewrap" (click)="hFromPk.open()">
-        <input class="rf-input" [matDatepicker]="hFromPk" formControlName="fromDate" placeholder="dd-MMM-yyyy" readonly />
+        <input class="rf-input" [matDatepicker]="hFromPk" [appOpenOnFocus]="hFromPk" formControlName="fromDate" placeholder="dd-MMM-yyyy" readonly />
         <mat-datepicker-toggle class="rf-date-toggle" [for]="hFromPk" />
       </div>
       <mat-datepicker #hFromPk panelClass="rf-datepicker" />
@@ -350,7 +202,7 @@
 
     <app-field label="To Date" required [control]="histForm.controls.toDate" error="Required.">
       <div class="rf-datewrap" (click)="hToPk.open()">
-        <input class="rf-input" [matDatepicker]="hToPk" formControlName="toDate" placeholder="dd-MMM-yyyy" readonly />
+        <input class="rf-input" [matDatepicker]="hToPk" [appOpenOnFocus]="hToPk" formControlName="toDate" placeholder="dd-MMM-yyyy" readonly />
         <mat-datepicker-toggle class="rf-date-toggle" [for]="hToPk" />
       </div>
       <mat-datepicker #hToPk panelClass="rf-datepicker" />

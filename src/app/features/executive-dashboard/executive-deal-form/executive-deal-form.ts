@@ -20,6 +20,7 @@ import { NotificationService } from '../../../core/services/notification.service
 import { FieldComponent } from '../../../shared/components/field/field';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header';
 import { SelectComponent, SelectOption } from '../../../shared/components/select/select';
+import { OpenDatepickerOnFocusDirective } from '../../../shared/directives/open-datepicker-on-focus.directive';
 import { DropdownService } from '../../../shared/services/dropdown.service';
 import { ExecutiveDealDetail, ExecutiveDealRequest, Section } from '../executive-dashboard.models';
 import { ExecutiveDashboardService } from '../executive-dashboard.service';
@@ -43,6 +44,7 @@ type FormMode = 'new' | 'edit' | 'view';
     MatButtonModule,
     MatIconModule,
     MatDatepickerModule,
+    OpenDatepickerOnFocusDirective,
   ],
   providers: [
     provideNativeDateAdapter(DMY_DATE_FORMATS),

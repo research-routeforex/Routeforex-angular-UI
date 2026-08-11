@@ -6,7 +6,7 @@ import {
   GeneratedInvoice,
   InvoiceDocument,
   InvoiceFooter,
-  InvoiceLine,
+  InvoiceGenerateResult,
   SaveInvoice,
   SaveInvoiceResult,
 } from './invoice.model';
@@ -16,11 +16,11 @@ import {
 export class InvoiceService {
   private readonly api = inject(ApiService);
 
-  /** `fromDate` / `toDate` are yyyy-MM-dd. */
-  generate(clientId: number, fromDate: string, toDate: string): Observable<InvoiceLine[]> {
+  /** `fromDate` / `toDate` are yyyy-MM-dd. Returns the company (From) + billable lines. */
+  generate(clientId: number, fromDate: string, toDate: string): Observable<InvoiceGenerateResult> {
     return this.api
-      .get<InvoiceLine[]>(API.transaction.invoice, { params: { clientId, fromDate, toDate } })
-      .pipe(map((rows) => rows ?? []));
+      .get<InvoiceGenerateResult>(API.transaction.invoice, { params: { clientId, fromDate, toDate } })
+      .pipe(map((r) => ({ company: r?.company ?? null, lines: r?.lines ?? [] })));
   }
 
   /** Mark the range's orders as InvoiceGenerated; returns the number updated. */

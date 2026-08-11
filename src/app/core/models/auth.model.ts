@@ -33,6 +33,10 @@ export interface AuthUserInfo {
   email: string;
   fullName?: string | null;
   roles: string[];
+  /** True on a user's very first login (RF_Users.LastLoginDate was null) — force a password change. */
+  mustChangePassword: boolean;
+  /** Relative server path of the user's profile photo (null = none, show initials). */
+  profileImagePath?: string | null;
 }
 
 /**

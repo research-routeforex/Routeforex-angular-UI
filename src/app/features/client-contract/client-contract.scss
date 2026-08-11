@@ -1,0 +1,252 @@
+:host {
+  display: block;
+}
+
+// ---- Gradient hero band (same treatment as the other screens) --------------
+.hero {
+  position: relative;
+  z-index: 30;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, oklch(62% 0.24 290) 14%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a {
+    top: -120px;
+    right: 8%;
+    background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+  }
+  &--b {
+    bottom: -150px;
+    left: 12%;
+    background: radial-gradient(circle, oklch(62% 0.24 290), transparent 70%);
+  }
+}
+button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// ---- Client filter ---------------------------------------------------------
+.filter {
+  padding: 14px 16px;
+  margin-bottom: var(--rf-gap);
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 420px;
+  }
+  &__lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rf-muted-fg);
+  }
+}
+
+// ---- Add / edit form -------------------------------------------------------
+.child__add {
+  padding: 14px 16px;
+  margin-bottom: var(--rf-gap);
+}
+.child__addhead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.child__addtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+.child__form {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rf-border);
+}
+.child__row {
+  display: grid;
+  gap: 0 18px;
+
+  > * {
+    min-width: 0;
+  }
+
+  &--4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.child__formactions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+// Charges Details multi-select (checkbox grid)
+.multi {
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+.multi .rf-label {
+  display: block;
+  margin-bottom: 6px;
+}
+.multi__box {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 6px 16px;
+  max-height: 168px;
+  overflow-y: auto;
+  padding: 12px 14px;
+  border: 1px solid var(--rf-border);
+  border-radius: var(--rf-radius-sm);
+  background: var(--rf-surface-2);
+}
+.multi__opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+
+  input[type='checkbox'] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--mat-sys-primary);
+    flex: none;
+  }
+}
+.multi__empty {
+  grid-column: 1 / -1;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .child__row--4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .child__row--4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---- Contracts table -------------------------------------------------------
+// Tunable knobs — change these to adjust the whole table at once.
+//   --cc-cell-pad-y : row height (vertical cell padding)
+//   --cc-cell-pad-x : horizontal cell padding
+//   --cc-head-pad-y : header row height
+// Per-column widths live in the `.col-*` block below (one class per <col>).
+.child__tablewrap {
+  overflow-x: auto;
+
+  --cc-cell-pad-y: 3px;
+  --cc-cell-pad-x: 5px;
+  --cc-head-pad-y: 8px;
+}
+.child__table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; // honour the <colgroup> widths precisely
+  font-size: 13px;
+  min-width: 760px;
+
+  thead th {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--mat-sys-primary) 96%, white) 0%,
+      color-mix(in oklab, var(--mat-sys-primary) 82%, black) 100%
+    );
+    color: var(--mat-sys-on-primary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: var(--cc-head-pad-y) var(--cc-cell-pad-x);
+    text-align: left;
+    white-space: nowrap;
+  }
+  thead th:first-child {
+    border-top-left-radius: var(--rf-radius);
+  }
+  thead th:last-child {
+    border-top-right-radius: var(--rf-radius);
+  }
+  td {
+    padding: var(--cc-cell-pad-y) var(--cc-cell-pad-x);
+    border-bottom: 1px solid var(--rf-border);
+    vertical-align: middle;
+    // With table-layout:fixed, long text is clipped — wrap it instead.
+    overflow-wrap: anywhere;
+  }
+
+  // ---- Per-column widths (edit freely) ------------------------------------
+  .col-client { width: 200px; }
+  .col-service { width: 200px; }
+  .col-chargesType { width: 120px; }
+  .col-chargesDetail { width: 150px; }
+  .col-chargesValue { width: 110px; }
+  .col-effectiveFrom { width: 90px; }
+  .col-effectiveTo { width: 90px; }
+  .col-status { width: 90px; }
+  .col-actions { width: 75px; }
+
+  tbody tr:nth-child(even) td {
+    background: color-mix(in oklab, var(--mat-sys-primary) 3%, transparent);
+  }
+  tbody tr:hover td {
+    background: color-mix(in oklab, var(--mat-sys-primary) 8%, transparent);
+  }
+  .name {
+    font-weight: 600;
+    color: var(--mat-sys-primary);
+  }
+}
+.ta-r {
+  text-align: right;
+}
+.empty {
+  text-align: center;
+  padding: 22px;
+}
+

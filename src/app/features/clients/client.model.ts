@@ -174,6 +174,7 @@ export interface ContractLookups {
 export interface ClientContract {
   contractId: number;
   clientId: number;
+  clientName?: string | null; // Populated by the all-contracts list (standalone screen)
   serviceID?: number | null;
   serviceName?: string | null;
   chargesType?: string | null; // ChargesTypeID stored as text

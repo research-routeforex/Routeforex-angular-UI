@@ -9,6 +9,10 @@ export interface User {
   isLockedOut: boolean;
   lastLoginDate?: string | null;
   roles: string[];
+  /** Selected role id (RF_Users.UserCategoryID). */
+  roleId?: number | null;
+  /** Selected client id (RF_Users.ClientCode) — set for the Client role. */
+  clientId?: number | null;
 }
 
 export interface CreateUserRequest {
@@ -17,8 +21,9 @@ export interface CreateUserRequest {
   password: string;
   fullName?: string | null;
   phoneNumber?: string | null;
-  roleIds: number[];
-  /** Set only when the selected role is "Client". */
+  /** Selected role (category) → RF_Users.UserCategoryID. */
+  roleId?: number | null;
+  /** Set only when the selected role is "Client" → RF_Users.ClientCode. */
   clientId?: number | null;
 }
 
@@ -28,8 +33,8 @@ export interface UpdateUserRequest {
   phoneNumber?: string | null;
   isActive: boolean;
   isLockedOut: boolean;
-}
-
-export interface AssignRolesRequest {
-  roleIds: number[];
+  /** Selected role → RF_Users.UserCategoryID. */
+  roleId?: number | null;
+  /** Selected client (Client role only) → RF_Users.ClientCode. */
+  clientId?: number | null;
 }

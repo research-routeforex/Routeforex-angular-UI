@@ -36,6 +36,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         error.status === 401 && !!storage.refreshToken && !storage.isRefreshTokenExpired();
 
       if (!canRefresh) {
+        // A 401 we can't refresh away means the session is truly gone (no/expired
+        // refresh token). Clear it and redirect to login instead of leaving the
+        // user stranded on a blank page. Non-401 errors just propagate.
+        if (error.status === 401) {
+          auth.logout();
+        }
         return throwError(() => error);
       }
 

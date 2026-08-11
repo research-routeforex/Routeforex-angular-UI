@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, finalize, Observable, of, shareReplay, tap, throwError } from 'rxjs';
+import { catchError, finalize, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
 import { API } from '../constants/api-endpoints';
 import { HttpContext } from '@angular/common/http';
 import {
@@ -13,6 +13,8 @@ import {
   StoredSession,
 } from '../models/auth.model';
 import { SKIP_ERROR_TOAST } from '../interceptors/http-context.tokens';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { ApiService } from './api.service';
 import { TokenStorageService } from './token-storage.service';
 
@@ -29,8 +31,25 @@ export class AuthService {
   private readonly api = inject(ApiService);
   private readonly storage = inject(TokenStorageService);
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
 
   private readonly _session = signal<StoredSession | null>(this.storage.load());
+
+  /** Object URL of the current user's profile photo (null = none → initials avatar). */
+  private readonly _profileImageUrl = signal<string | null>(null);
+  readonly profileImageUrl = this._profileImageUrl.asReadonly();
+
+  constructor() {
+    // Restore the avatar image for an already-signed-in session (page refresh).
+    // Deferred to a microtask so this service finishes constructing first: firing
+    // the HTTP GET synchronously here would re-enter the interceptor chain, whose
+    // authInterceptor calls inject(AuthService) while AuthService is still being
+    // built — a circular-DI throw that leaves the global loading bar stuck on and
+    // the request never completing (so the avatar never loads on refresh).
+    if (this.user()?.profileImagePath) {
+      queueMicrotask(() => this.loadProfileImage());
+    }
+  }
 
   /** Reactive view of the current session. */
   readonly session = this._session.asReadonly();
@@ -91,6 +110,37 @@ export class AuthService {
     });
   }
 
+  /**
+   * Re-reads the authoritative `mustChangePassword` from the server so a stale
+   * cached flag can't trap the user on the first-login screen forever. Uses the
+   * refresh endpoint, which returns the fresh flag from the DB and (via
+   * `setSession`) updates the stored session — so once the server says the
+   * password has been changed, the cached flag self-heals. Falls back to the
+   * cached value if the server can't be reached, so behaviour is never worse
+   * than today.
+   */
+  reconcileMustChangePassword(): Observable<boolean> {
+    return this.refreshToken().pipe(
+      map((result) => result.user.mustChangePassword),
+      catchError(() => of(this.user()?.mustChangePassword ?? false)),
+    );
+  }
+
+  /**
+   * Clears the first-login "must change password" flag on the stored session,
+   * called after the forced change succeeds so the guard/redirect stops firing.
+   */
+  clearMustChangePassword(): void {
+    const current = this._session();
+    if (!current || !current.user.mustChangePassword) return;
+    const updated: StoredSession = {
+      ...current,
+      user: { ...current.user, mustChangePassword: false },
+    };
+    this.storage.save(updated);
+    this._session.set(updated);
+  }
+
   /** Revokes the refresh token server-side (best-effort) and clears local state. */
   logout(redirect = true): void {
     const refreshToken = this.storage.refreshToken;
@@ -117,10 +167,70 @@ export class AuthService {
     const session: StoredSession = { ...result };
     this.storage.save(session, persistent);
     this._session.set(session);
+    this.loadProfileImage();
   }
 
   private clearSession(): void {
     this.storage.clear();
     this._session.set(null);
+    this.setProfileImageUrl(null);
+  }
+
+  // ---- Profile photo -------------------------------------------------------
+
+  /**
+   * Fetches the current user's profile photo (authenticated blob) into an object
+   * URL exposed via `profileImageUrl`. No-ops to a null avatar when none is set.
+   */
+  loadProfileImage(): void {
+    if (!this.user()?.profileImagePath) {
+      this.setProfileImageUrl(null);
+      return;
+    }
+    const url = `${environment.apiBaseUrl}${environment.apiPrefix}/${API.auth.profileImage}`;
+    // SKIP_ERROR_TOAST: a missing/empty avatar must never surface a global error toast.
+    this.http
+      .get(url, {
+        responseType: 'blob',
+        context: new HttpContext().set(SKIP_ERROR_TOAST, true),
+      })
+      .subscribe({
+        // 204 No Content (no photo) yields an empty/absent blob — treat as no avatar.
+        next: (blob) =>
+          this.setProfileImageUrl(blob && blob.size > 0 ? URL.createObjectURL(blob) : null),
+        error: () => this.setProfileImageUrl(null),
+      });
+  }
+
+  /**
+   * Uploads a new profile photo (base64/data-URL), then updates the stored session
+   * and reloads the avatar. Returns the saved relative path.
+   */
+  uploadProfileImage(imageBase64: string, fileName: string): Observable<string> {
+    return this.api.post<string>(API.auth.profileImage, { imageBase64, fileName }).pipe(
+      tap((path) => {
+        this.setProfileImagePath(path);
+        this.loadProfileImage();
+      }),
+    );
+  }
+
+  /** Updates the stored session user's profileImagePath (persisted). */
+  private setProfileImagePath(path: string | null): void {
+    const current = this._session();
+    if (!current) return;
+    const updated: StoredSession = {
+      ...current,
+      user: { ...current.user, profileImagePath: path },
+    };
+    this.storage.save(updated);
+    this._session.set(updated);
+  }
+
+  /** Swaps the avatar object URL, revoking the previous one to avoid leaks. */
+  private setProfileImageUrl(url: string | null): void {
+    const prev = this._profileImageUrl();
+    if (prev) URL.revokeObjectURL(prev);
+    this._profileImageUrl.set(url);
   }
 }

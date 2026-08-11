@@ -1,5 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable, of, Subject } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { API } from '../../core/constants/api-endpoints';
 import { silentContext } from '../../core/interceptors/http-context.tokens';
 import { ApiResponse } from '../../core/models/api-response.model';
@@ -11,6 +13,13 @@ import {
   ExecutiveUcRequest,
   Section,
 } from './executive-dashboard.models';
+
+/** A single grid-load request pushed through the (latest-wins) fetch pipeline. */
+interface LoadRequest {
+  clientId: number;
+  type: Section;
+  silent: boolean;
+}
 
 /**
  * Backs the Executive Dashboard. Loads deal rows for a client + section from
@@ -34,32 +43,63 @@ export class ExecutiveDashboardService {
   readonly lastUpdated = this._lastUpdated.asReadonly();
 
   /**
+   * True while a fetch is in flight (silent polls included). Callers use this to
+   * avoid stacking a new poll on top of one that hasn't returned yet.
+   */
+  private readonly _fetching = signal(false);
+  readonly fetching = this._fetching.asReadonly();
+
+  /**
+   * All grid loads flow through this stream. `switchMap` cancels any in-flight
+   * request when a newer one arrives, so a slow response for a *previous* client
+   * or section can never overwrite the current selection's data (latest-wins).
+   */
+  private readonly _load$ = new Subject<LoadRequest>();
+
+  constructor() {
+    this._load$
+      .pipe(
+        tap((req) => {
+          this._fetching.set(true);
+          if (!req.silent) {
+            this._loading.set(true);
+            this._loaded.set(false);
+          }
+        }),
+        switchMap((req) =>
+          this.api
+            .get<ExecutiveDashboardRow[]>(API.executiveDashboard.transactions, {
+              params: { clientId: req.clientId, type: req.type },
+              context: req.silent ? silentContext() : undefined,
+            })
+            .pipe(
+              map((rows) => ({ req, rows: rows ?? [], ok: true })),
+              // Keep the pipeline alive on error so later polls still fire.
+              catchError(() => of({ req, rows: [] as ExecutiveDashboardRow[], ok: false })),
+            ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe(({ req, rows, ok }) => {
+        if (ok) {
+          this._rows.set(rows);
+          this._lastUpdated.set(new Date());
+        } else if (!req.silent) {
+          this._rows.set([]);
+        }
+        this._loaded.set(true);
+        this._loading.set(false);
+        this._fetching.set(false);
+      });
+  }
+
+  /**
    * Fetch deal rows for a client and section. Pass <c>silent</c> for background
    * polling: it skips the loading state and keeps the current data on error.
+   * Requests are serialized latest-wins — a newer load cancels an older in-flight one.
    */
   load(clientId: number, type: Section, silent = false): void {
-    if (!silent) {
-      this._loading.set(true);
-      this._loaded.set(false);
-    }
-    this.api
-      .get<ExecutiveDashboardRow[]>(API.executiveDashboard.transactions, {
-        params: { clientId, type },
-        context: silent ? silentContext() : undefined,
-      })
-      .subscribe({
-        next: (rows) => {
-          this._rows.set(rows ?? []);
-          this._lastUpdated.set(new Date());
-          this._loaded.set(true);
-          this._loading.set(false);
-        },
-        error: () => {
-          if (!silent) this._rows.set([]);
-          this._loaded.set(true);
-          this._loading.set(false);
-        },
-      });
+    this._load$.next({ clientId, type, silent });
   }
 
   /** Loads one deal's editable fields for the View / Edit form. */
@@ -82,5 +122,7 @@ export class ExecutiveDashboardService {
     this._rows.set([]);
     this._loaded.set(false);
     this._lastUpdated.set(null);
+    this._loading.set(false);
+    this._fetching.set(false);
   }
 }

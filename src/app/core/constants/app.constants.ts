@@ -4,6 +4,7 @@ export const STORAGE_KEYS = {
   theme: 'rf.theme',
   sidebarCollapsed: 'rf.sidebar.collapsed',
   expandedSection: 'rf.sidebar.expanded',
+  favourites: 'rf.favourites',
 } as const;
 
 /** HTTP header the backend uses for request correlation. */

@@ -33,6 +33,7 @@
             "styles": [
               "node_modules/material-icons/iconfont/material-icons.css",
               "node_modules/material-icons/iconfont/outlined.css",
+              "node_modules/ckeditor5/dist/ckeditor5.css",
               "src/styles.scss"
             ]
           },

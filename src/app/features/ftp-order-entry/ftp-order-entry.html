@@ -6,7 +6,7 @@
     subtitle="Capture a forex order — client, bank, transaction and rate details."
     [breadcrumbs]="[
       { label: 'Transactions' },
-      { label: 'FTP Order Entry', link: '/ftp-order-entry' },
+      { label: config.title, link: config.basePath },
       { label: isEdit() ? 'Edit' : 'New Deal' }
     ]"
   >
@@ -50,6 +50,10 @@
   </div>
 } @else {
   <ng-container [ngTemplateOutlet]="formTpl" />
+
+  <!-- Add Deal: show the order list below the Add Details form. -->
+  <h3 class="listheading">Order List</h3>
+  <app-ftp-order-list [embedded]="true" />
 }
 
 <ng-template #formTpl>
@@ -68,9 +72,10 @@
     <app-field label="Transactions Type" required [control]="form.controls.transactionType" error="Select a type.">
       <app-select formControlName="transactionType" [options]="txnOptions()" placeholder="Select" searchPlaceholder="Search type…" />
     </app-field>
-    <app-field label="Currency" required [control]="form.controls.currency" error="Select a currency.">
-      <app-select formControlName="currency" [options]="currencyOptions()" placeholder="Select" searchPlaceholder="Search currency…" />
+    <app-field label="Import / Export">
+      <app-select formControlName="importExport" [options]="impExpOptions" placeholder="Select" [searchable]="false" />
     </app-field>
+   
   </div>
 
   <!-- Cancellation / Utilization: link to the parent Forward deal. -->
@@ -104,16 +109,23 @@
         <app-select formControlName="currency2" [options]="currency2Options()" placeholder="Select" searchPlaceholder="Search currency…" />
       </app-field>
     }
-
-    <app-field label="Import / Export">
-      <app-select formControlName="importExport" [options]="impExpOptions" placeholder="Select" [searchable]="false" />
+ <app-field label="Currency" required [control]="form.controls.currency" error="Select a currency.">
+      <app-select formControlName="currency" [options]="currencyOptions()" placeholder="Select" searchPlaceholder="Search currency…" />
     </app-field>
+
     <app-field label="Amount" required [control]="form.controls.amount" [error]="amountError()">
       <input class="rf-input" type="number" step="0.01" formControlName="amount" placeholder="0.00" />
     </app-field>
     <app-field label="What To Do">
       <app-select formControlName="whatToDo" [options]="whatToDoOptions" placeholder="Select" [searchable]="false" />
     </app-field>
+
+    <!-- Trial Transaction only: Bank Rate (persisted to the ClientRate column). -->
+    @if (showBankRate) {
+      <app-field label="Bank Rate">
+        <input class="rf-input" type="number" step="0.0001" formControlName="bankRate" placeholder="0.0000" />
+      </app-field>
+    }
 
     <!-- Window / Fix comes first for a Forward; the date fields follow it. -->
     @if (showWindowFix()) {
@@ -128,6 +140,7 @@
           <input
             class="rf-input"
             [matDatepicker]="md"
+            [appOpenOnFocus]="md"
             formControlName="maturityDate"
             placeholder="dd-MMM-yyyy"
             readonly
@@ -150,6 +163,7 @@
           <input
             class="rf-input"
             [matDatepicker]="fd"
+            [appOpenOnFocus]="fd"
             formControlName="fromDate"
             placeholder="dd-MMM-yyyy"
             readonly
@@ -163,6 +177,7 @@
           <input
             class="rf-input"
             [matDatepicker]="tdp"
+            [appOpenOnFocus]="tdp"
             formControlName="toDate"
             placeholder="dd-MMM-yyyy"
             readonly
@@ -190,6 +205,101 @@
       </app-field>
     }
   </div>
+
+  <!-- Upcoming: schedule this order for a future date (ActiveStatus = 'Upcoming'). -->
+  <div class="fieldrow fieldrow--upcoming">
+    <mat-checkbox formControlName="upcoming" color="primary">Upcoming</mat-checkbox>
+    @if (upcoming()) {
+      <app-field label="Upcoming Date">
+        <div class="rf-datewrap" (click)="ud.open()">
+          <input
+            class="rf-input"
+            [matDatepicker]="ud"
+            [appOpenOnFocus]="ud"
+            formControlName="upcomingDate"
+            placeholder="dd-MMM-yyyy"
+            readonly
+          />
+          <mat-datepicker-toggle class="rf-date-toggle" [for]="ud" />
+        </div>
+        <mat-datepicker #ud panelClass="rf-datepicker" />
+      </app-field>
+    }
+  </div>
+
+  <!-- Live Rate (read-only) + Dealer Rate (editable) — booked orders (Done/InvoiceGenerated). -->
+  @if (showRates()) {
+    <section class="ratesection">
+      <h3 class="ratesection__title">More Information</h3>
+      <div class="fieldrow fieldrow--more">
+        <!-- Editable -->
+        <app-field label="Dealer Name">
+          <input class="rf-input" formControlName="dealerName" placeholder="Dealer name" />
+        </app-field>
+        <app-field label="Remarks">
+          <input class="rf-input" formControlName="remarks" placeholder="Remarks" />
+        </app-field>
+        <!-- Read-only times -->
+        <app-field label="Dealer Spot Time">
+          <input class="rf-input" [value]="(loaded()?.dealerSpotTime | date: 'dd MMM yyyy, HH:mm:ss') ?? ''" readonly />
+        </app-field>
+        <app-field label="Dealer Base Currency Time">
+          <input class="rf-input" [value]="(loaded()?.dealerBaseCurrencyTime | date: 'dd MMM yyyy, HH:mm:ss') ?? ''" readonly />
+        </app-field>
+        <app-field label="Dealer Home Currency Time">
+          <input class="rf-input" [value]="(loaded()?.dealerHomeCurrencyTime | date: 'dd MMM yyyy, HH:mm:ss') ?? ''" readonly />
+        </app-field>
+      </div>
+    </section>
+
+    <section class="ratesection">
+      <h3 class="ratesection__title">Live Rate</h3>
+      <div class="fieldrow fieldrow--rates">
+        <app-field label="Base Currency">
+          <input class="rf-input" [value]="loaded()?.baseCurrency ?? 0" readonly />
+        </app-field>
+        <app-field label="Home Currency">
+          <input class="rf-input" [value]="loaded()?.homeCurrency ?? 0" readonly />
+        </app-field>
+        <app-field label="Spot">
+          <input class="rf-input" [value]="loaded()?.spot ?? 0" readonly />
+        </app-field>
+        <app-field label="Premium(+) / Discount(-)">
+          <input class="rf-input" [value]="loaded()?.premiumDiscount ?? 0" readonly />
+        </app-field>
+        <app-field label="Margin">
+          <input class="rf-input" [value]="loaded()?.margin ?? 0" readonly />
+        </app-field>
+        <app-field label="Net Rate">
+          <input class="rf-input" [value]="loaded()?.netRate ?? 0" readonly />
+        </app-field>
+      </div>
+    </section>
+
+    <section class="ratesection">
+      <h3 class="ratesection__title">Dealer Rate</h3>
+      <div class="fieldrow fieldrow--rates">
+        <app-field label="Base Currency">
+          <input class="rf-input" type="number" step="0.0001" formControlName="baseCurrencyD" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Home Currency">
+          <input class="rf-input" type="number" step="0.0001" formControlName="homeCurrencyD" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Spot">
+          <input class="rf-input" type="number" step="0.0001" formControlName="spotD" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Premium(+) / Discount(-)">
+          <input class="rf-input" type="number" step="0.0001" formControlName="premiumDiscountD" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Margin">
+          <input class="rf-input" type="number" step="0.0001" formControlName="marginD" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Net Rate">
+          <input class="rf-input" type="number" step="0.0001" formControlName="netRateD" placeholder="0.0000" />
+        </app-field>
+      </div>
+    </section>
+  }
 
   <div class="entry__actions">
     @if (isForwardCancellation()) {

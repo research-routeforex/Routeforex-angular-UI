@@ -1,0 +1,153 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Other Services"
+    subtitle="Record and review other-service payments (advisory, brokerage, retainers …) per client."
+    [breadcrumbs]="[{ label: 'Masters' }, { label: 'Other Services' }]"
+  >
+    <button mat-flat-button color="primary" type="button" (click)="toggleForm()">
+      <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+      {{ showForm() ? 'Cancel' : 'Add New Other Service' }}
+    </button>
+  </app-page-header>
+</div>
+
+<!-- Add / edit -->
+@if (showForm()) {
+  <div class="rf-card child__add">
+    <div class="child__addhead">
+      <h4 class="child__addtitle">
+        <mat-icon>add_business</mat-icon>
+        {{ editingId() ? 'Edit Other Service' : 'New Other Service' }}
+      </h4>
+    </div>
+
+    <form class="child__form" [formGroup]="form" (ngSubmit)="save()">
+      <div class="child__row child__row--4">
+        <app-field label="Service" required [control]="form.controls.productId" error="Select a service.">
+          <app-select formControlName="productId" [options]="serviceOptions()" placeholder="Select service" searchPlaceholder="Search service…" />
+        </app-field>
+        <app-field label="Client" required [control]="form.controls.clientId" error="Select a client.">
+          <app-select formControlName="clientId" [options]="clientOptions()" placeholder="Select client" searchPlaceholder="Search client…" />
+        </app-field>
+        <app-field label="Amount">
+          <input class="rf-input" type="number" step="0.01" formControlName="amount" placeholder="0.00" />
+        </app-field>
+        <app-field label="Date">
+          <div class="rf-datewrap" (click)="fdp.open()">
+            <input
+              class="rf-input"
+              [matDatepicker]="fdp"
+              [appOpenOnFocus]="fdp"
+              formControlName="transactionDate"
+              placeholder="dd-MMM-yyyy"
+              readonly
+            />
+            <mat-datepicker-toggle class="rf-date-toggle" [for]="fdp" />
+          </div>
+          <mat-datepicker #fdp panelClass="rf-datepicker" />
+        </app-field>
+      </div>
+
+      <div class="child__formactions">
+        <button mat-stroked-button type="button" (click)="closeForm()">Cancel</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+          <mat-icon>save</mat-icon>
+          {{ saving() ? 'Saving…' : editingId() ? 'Update' : 'Save' }}
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Filters -->
+<div class="rf-card filter">
+  <div class="filter__fields">
+    <label class="filter__field">
+      <span class="filter__lbl">Client Name</span>
+      <app-select
+        [options]="clientOptions()"
+        placeholder="All clients"
+        searchPlaceholder="Search client…"
+        [ngModel]="filterClientId()"
+        (ngModelChange)="onFilterClient($event)"
+      />
+    </label>
+    <label class="filter__field">
+      <span class="filter__lbl">Date</span>
+      <div class="rf-datewrap" (click)="fltd.open()">
+        <input
+          class="rf-input"
+          [matDatepicker]="fltd"
+          [appOpenOnFocus]="fltd"
+          [ngModel]="filterDate()"
+          (ngModelChange)="onFilterDate($event)"
+          placeholder="dd-MMM-yyyy"
+          readonly
+        />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="fltd" />
+      </div>
+      <mat-datepicker #fltd panelClass="rf-datepicker" />
+    </label>
+    <div class="filter__actions">
+      <button mat-flat-button color="primary" type="button" (click)="search()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-stroked-button type="button" (click)="export()" [disabled]="!total()">
+        <mat-icon>download</mat-icon> Export
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- List -->
+<div class="rf-card child__tablewrap">
+  <table class="child__table">
+    <!-- Per-column sizing: tweak each width in other-services.scss (.col-*). -->
+    <colgroup>
+      <col class="col-sno" />
+      <col class="col-product" />
+      <col class="col-client" />
+      <col class="col-date" />
+      <col class="col-amount" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>S.No.</th>
+        <th>Product</th>
+        <th>Client</th>
+        <th>Date</th>
+        <th>Amount</th>
+        <th class="ta-r">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of rows(); track r.otherServiceId; let i = $index) {
+        <tr>
+          <td>{{ i + 1 }}</td>
+          <td class="name">{{ r.productName || '—' }}</td>
+          <td>{{ r.clientName || '—' }}</td>
+          <td>{{ r.transactionDate ? (r.transactionDate | date: 'dd MMM yyyy') : '—' }}</td>
+          <td>{{ r.amount != null ? (r.amount | number: '1.2-2') : '—' }}</td>
+          <td class="ta-r">
+            <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(r)" matTooltip="Edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(r)" matTooltip="Remove">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No records found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

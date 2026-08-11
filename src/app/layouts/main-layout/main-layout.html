@@ -26,10 +26,18 @@
             type="button"
             class="nav__section"
             [class.nav__section--collapsed]="isSectionCollapsed(section.title)"
+            [class.nav__section--fav]="isFavouritesSection(section.title)"
             (click)="toggleSection(section.title)"
           >
-            <span>{{ section.title }}</span>
-            <mat-icon class="nav__section-chev">expand_more</mat-icon>
+            <span class="nav__section-title">
+              @if (isFavouritesSection(section.title)) {
+                <mat-icon class="nav__section-star">star</mat-icon>
+              }
+              {{ section.title }}
+            </span>
+            @if (!isFavouritesSection(section.title)) {
+              <mat-icon class="nav__section-chev">expand_more</mat-icon>
+            }
           </button>
         }
         @if (railCollapsed() || !isSectionCollapsed(section.title)) {
@@ -49,8 +57,10 @@
               }
             </div>
           } @else {
-            <a
-              class="nav__item"
+             <!-- add a height in a tag if is isFavouritesSection(section.title) is true,  -->
+       
+            <a [style.height.px]="isFavouritesSection(section.title) ? 30 : null"
+              class="nav__item" 
               [routerLink]="item.route"
               routerLinkActive="nav__item--active"
               [matTooltip]="railCollapsed() ? item.label : ''"
@@ -63,6 +73,16 @@
                 @if (item.badge) {
                   <span class="nav__badge nav__badge--{{ badgeClass(item.badge) }}">{{ item.badge }}</span>
                 }
+                <button
+                  type="button"
+                  class="nav__fav"
+                  [class.nav__fav--on]="isFavourite(item.route)"
+                  (click)="toggleFavourite(item, $event)"
+                  [matTooltip]="isFavourite(item.route) ? 'Remove from favourites' : 'Add to favourites'"
+                  matTooltipPosition="right"
+                >
+                  <mat-icon>{{ isFavourite(item.route) ? 'star' : 'star_border' }}</mat-icon>
+                </button>
               }
             </a>
           }
@@ -98,11 +118,21 @@
           }}</mat-icon>
         </button>
 
-        <div class="topbar__search rf-hide-xs">
-          <mat-icon>search</mat-icon>
-          <input type="search" placeholder="Search anything…" aria-label="Search" />
-          <span class="topbar__kbd">⌘K</span>
-        </div>
+        @if (isDealerPad()) {
+          <nav class="topshort" aria-label="Dealer Pad quick links">
+            @for (s of shortcuts; track s.route) {
+              <a
+                class="topshort__item"
+                [routerLink]="s.route"
+                [style.--sc]="s.color"
+                [matTooltip]="s.label"
+                [attr.aria-label]="s.label"
+              >
+                <mat-icon>{{ s.icon }}</mat-icon>
+              </a>
+            }
+          </nav>
+        }
 
         <span class="rf-spacer"></span>
 
@@ -125,26 +155,44 @@
           aria-label="Account menu"
           matTooltip="Account"
         >
-          <span class="avatar">{{ initials() }}</span>
+          <span class="avatar">
+            @if (auth.profileImageUrl(); as img) {
+              <img [src]="img" alt="Profile photo" />
+            } @else {
+              {{ initials() }}
+            }
+          </span>
         </button>
       </div>
 
-      <mat-menu #userMenu="matMenu" class="usermenu">
+      <mat-menu #userMenu="matMenu" class="usermenu" xPosition="before">
         <div class="usermenu__head">
-          <strong>{{ auth.displayName() }}</strong>
-          <small class="rf-muted">{{ auth.user()?.email }}</small>
+          <span class="usermenu__avatar">
+            @if (auth.profileImageUrl(); as img) {
+              <img [src]="img" alt="Profile photo" />
+            } @else {
+              {{ initials() }}
+            }
+          </span>
+          <div class="usermenu__id">
+            <strong class="usermenu__name">{{ auth.displayName() }}</strong>
+            <small class="usermenu__email">{{ auth.user()?.email }}</small>
+          </div>
         </div>
-        <mat-divider></mat-divider>
-        <a mat-menu-item routerLink="/settings">
+        <div class="usermenu__rolewrap">
+          <span class="usermenu__role"><mat-icon>verified_user</mat-icon>{{ primaryRole() }}</span>
+        </div>
+        <div class="usermenu__sep"></div>
+        <a mat-menu-item routerLink="/settings" class="usermenu__item">
           <mat-icon>settings</mat-icon><span>Settings</span>
         </a>
-        <a mat-menu-item routerLink="/settings">
+        <a mat-menu-item routerLink="/settings" class="usermenu__item">
           <mat-icon>notifications_none</mat-icon>
           <span>Notifications</span>
           <span class="usermenu__badge">{{ notificationCount }}</span>
         </a>
-        <mat-divider></mat-divider>
-        <button mat-menu-item (click)="logout()">
+        <div class="usermenu__sep"></div>
+        <button mat-menu-item (click)="logout()" class="usermenu__item usermenu__item--danger">
           <mat-icon>logout</mat-icon><span>Log out</span>
         </button>
       </mat-menu>

@@ -7,17 +7,40 @@
  * the service for the real feed later — the component reads only signals.
  */
 
-export type TickerSection = 'Forex' | 'Currency Future' | 'NEWS' | 'Online Support';
+export type TickerSection =
+  | 'Forex'
+  | 'Currency Future'
+  | 'NEWS'
+  | 'Economic Calendar'
+  | 'Online Support';
 
 export interface TickerTab {
   key: TickerSection;
   icon: string;
 }
 
+/** Access modes returned by the Ticker access endpoint (mirrors the API). */
+export type TickerAccessMode =
+  | 'Unrestricted' // Admin / non-Client role — never metered
+  | 'Subscribed' // Client with a live paid entry
+  | 'FreeTrial' // Client, never subscribed, within the 1-hour lifetime free budget
+  | 'FreeExpired' // Client, never subscribed, free budget used up
+  | 'Expired'; // Client whose paid subscription has lapsed
+
+/** Effective Ticker Live Rate access for the signed-in user. */
+export interface TickerAccess {
+  mode: TickerAccessMode;
+  /** Lifetime free budget (seconds); null = unlimited. */
+  allowedSeconds: number | null;
+  usedSeconds: number;
+  validityTo: string | null;
+}
+
 export const TICKER_TABS: TickerTab[] = [
   { key: 'Forex', icon: 'currency_exchange' },
   { key: 'Currency Future', icon: 'show_chart' },
   { key: 'NEWS', icon: 'newspaper' },
+  { key: 'Economic Calendar', icon: 'calendar_month' },
   { key: 'Online Support', icon: 'support_agent' },
 ];
 
@@ -76,6 +99,8 @@ export interface ForexNewsRow {
   time: string;
   subject: string;
   source: string;
+  /** Full article HTML/text (MailBody) — shown in the news detail dialog. */
+  body: string;
 }
 
 /** Result of the Broken Rate Calculator (quadrant 4). */
@@ -87,14 +112,6 @@ export interface BrokenRateResult {
   swapAsk: number;
   fwdBid: number;
   fwdAsk: number;
-}
-
-/** A news headline for the NEWS tab. */
-export interface NewsItem {
-  time: string;
-  source: string;
-  headline: string;
-  sentiment: 'Bullish' | 'Bearish' | 'Neutral';
 }
 
 export function netChange(q: CurrencyFutureQuote): number {
@@ -307,50 +324,7 @@ export function computeBrokenRate(currency: string, valueDateIso: string): Broke
   };
 }
 
-// ---- Forex News (quadrant 3) ----------------------------------------------
-export const FOREX_NEWS: ForexNewsRow[] = [
-  { date: '08-Jun-2026', time: '4:26am', subject: 'Market Opening Bell', source: 'News & Update' },
-  { date: '04-Jun-2026', time: '3:54am', subject: 'Market Opening Bell', source: 'News & Update' },
-  { date: '03-Jun-2026', time: '3:42am', subject: 'Market Opening Bell', source: 'News & Update' },
-  { date: '02-Jun-2026', time: '3:38am', subject: 'RBI Reference Rate Update', source: 'News & Update' },
-  { date: '01-Jun-2026', time: '3:30am', subject: 'Monthly FX Outlook', source: 'Research Desk' },
-];
-
-export const NEWS_ITEMS: NewsItem[] = [
-  {
-    time: '10:42',
-    source: 'Reuters',
-    headline: 'Rupee opens steady against the dollar as RBI seen smoothing volatility',
-    sentiment: 'Neutral',
-  },
-  {
-    time: '10:31',
-    source: 'Bloomberg',
-    headline: 'Dollar index eases ahead of US inflation print; Asian FX firms',
-    sentiment: 'Bullish',
-  },
-  {
-    time: '10:18',
-    source: 'ET Markets',
-    headline: 'Forward premiums inch up as importers cover near-month payables',
-    sentiment: 'Bullish',
-  },
-  {
-    time: '09:57',
-    source: 'Mint',
-    headline: 'Crude oil rises 1.2%; widening trade gap pressures the rupee',
-    sentiment: 'Bearish',
-  },
-  {
-    time: '09:40',
-    source: 'CNBC',
-    headline: 'Euro climbs after ECB official signals patience on rate cuts',
-    sentiment: 'Bullish',
-  },
-  {
-    time: '09:22',
-    source: 'Reuters',
-    headline: 'Exporters book forwards as USDINR nears upper end of recent range',
-    sentiment: 'Neutral',
-  },
-];
+// ---- Forex News -----------------------------------------------------------
+// Both the Forex-tab grid (quadrant 3) and the NEWS tab render live rows fed from
+// usp_RF_Mast_ForexLiveScreen (@Action='selectNEWS') via TickerService.loadNews();
+// see ForexNewsRow above.

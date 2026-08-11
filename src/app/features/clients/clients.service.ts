@@ -107,6 +107,12 @@ export class ClientsService {
   getContracts(clientId: number): Observable<ClientContract[]> {
     return this.api.get<ClientContract[]>(`${ClientsService.base}/${clientId}/contracts`);
   }
+  /** All contracts across every client; optional clientId narrows to one client. */
+  getAllContracts(clientId?: number | null): Observable<ClientContract[]> {
+    return this.api.get<ClientContract[]>(`${ClientsService.base}/contracts`, {
+      params: { clientId: clientId ?? undefined },
+    });
+  }
   saveContract(clientId: number, payload: SaveContractRequest): Observable<number> {
     return this.api.post<number>(`${ClientsService.base}/${clientId}/contracts`, payload);
   }

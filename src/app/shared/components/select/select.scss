@@ -78,6 +78,12 @@
     0 2px 8px oklch(20% 0.02 285 / 0.08);
   overflow: hidden;
 }
+// Opens above the trigger when there isn't room below (e.g. last field in a
+// scrollable dialog) so the options are never clipped.
+.sel__panel--up {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
 
 .sel__search {
   display: flex;
@@ -127,10 +133,20 @@
   &:hover {
     background: var(--rf-sidebar-accent);
   }
+  // Keyboard (arrow-key) highlight — mirrors the hover affordance.
+  &--highlighted {
+    background: var(--rf-sidebar-accent);
+    box-shadow: inset 2px 0 0 var(--rf-primary);
+  }
   &--active {
     color: var(--rf-primary);
     font-weight: 600;
     background: color-mix(in oklab, var(--rf-primary) 8%, transparent);
+  }
+  // The leading "Select" (clear) row — muted, reads as "no selection".
+  &--null {
+    color: var(--rf-muted-fg);
+    font-style: italic;
   }
   span {
     flex: 1 1 auto;

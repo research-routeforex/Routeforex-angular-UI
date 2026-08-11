@@ -1,23 +1,4 @@
 <div class="ticker" [class.ticker--fs]="fullscreen()" #root>
-  @if (locked()) {
-    <div class="paywall">
-      <div class="paywall__card">
-        <mat-icon class="paywall__icon">lock_clock</mat-icon>
-        <h2 class="paywall__title">Daily access used up</h2>
-        <p class="paywall__msg">
-          Your free <strong>{{ allowanceLabel() }}</strong> of daily access to Ticker Live
-          Rate is over. Pay to continue, or come back tomorrow — your time resets at midnight.
-        </p>
-        <button type="button" class="paywall__btn" (click)="requestPayment()">
-          <mat-icon>lock_open</mat-icon> Pay to unlock
-        </button>
-        @if (payRequested()) {
-          <p class="paywall__note">Payment integration is coming soon. Please contact your administrator.</p>
-        }
-      </div>
-    </div>
-  }
-
   @if (!fullscreen()) {
     <div class="hero">
       <span class="hero__glow hero__glow--a"></span>
@@ -27,11 +8,6 @@
         subtitle="Forex, currency futures, market news and support — live."
         [breadcrumbs]="[{ label: 'Trading' }, { label: 'Ticker Live Rate' }]"
       >
-        @if (metered() && !locked()) {
-          <span class="meter" title="Daily free access remaining">
-            <mat-icon>timer</mat-icon>{{ remainingLabel() }} left
-          </span>
-        }
         <span class="live">
           <span class="live__dot"></span>
           Live · {{ svc.lastUpdated() | date: 'HH:mm:ss' }}
@@ -60,9 +36,17 @@
 
     <span class="rf-spacer"></span>
 
-    @if (metered() && !locked()) {
-      <span class="meter" title="Daily free access remaining">
-        <mat-icon>timer</mat-icon>{{ remainingLabel() }} left
+    @if (remaining() !== null && !locked()) {
+      <span class="trial-chip" [class.trial-chip--low]="(remaining() ?? 0) <= 60" title="Free preview time remaining">
+        <mat-icon>hourglass_bottom</mat-icon>
+        Free preview · {{ remainingLabel() }}
+      </span>
+    }
+
+    @if (access()?.mode === 'Subscribed' && access()?.validityTo; as vt) {
+      <span class="valid-chip" title="Your paid access validity">
+        <mat-icon>verified</mat-icon>
+        Valid till {{ vt | date: 'dd-MMM-yyyy' }}
       </span>
     }
 
@@ -138,7 +122,7 @@
 @if (active() === 'Forex') {
   <div class="forex-grid">
     <!-- Q1: Live rates board -->
-    <section class="quad rf-card">
+    <section class="quad quad--board rf-card">
       <header class="quad__bar">
         <div class="quad__search">
           <mat-icon>search</mat-icon>
@@ -204,7 +188,7 @@
     </section>
 
     <!-- Q2: Forward Premium -->
-    <section class="quad rf-card">
+    <section class="quad quad--premium rf-card">
       <header class="quad__bar">
         <select
           class="rf-select quad__ccy"
@@ -253,28 +237,30 @@
     </section>
 
     <!-- Q3: Forex News -->
-    <section class="quad rf-card">
+    <section class="quad quad--news rf-card">
       <header class="quad__bar quad__bar--center">
         <span class="quad__title">Forex News</span>
       </header>
       <div class="quad__scroll">
-        <table class="quotes quotes--sm">
+        <table class="quotes quotes--sm news-grid">
           <thead>
             <tr>
-              <th class="name">Date</th>
-              <th class="name">Time</th>
-              <th class="name">Subject</th>
-              <th class="name">Source</th>
+              <th class="name col-date">Date</th>
+              <th class="name col-time">Time</th>
+              <th class="name col-subject">Subject</th>
+              <th class="name col-source">Source</th>
             </tr>
           </thead>
           <tbody>
-            @for (n of forexNews; track n.date + n.time) {
-              <tr>
-                <td class="name">{{ n.date }}</td>
-                <td class="name">{{ n.time }}</td>
-                <td class="name">{{ n.subject }}</td>
-                <td class="name rf-muted">{{ n.source }}</td>
+            @for (n of forexNews(); track $index) {
+              <tr class="news-row" (click)="openNews(n)" title="Read full story">
+                <td class="name col-date">{{ n.date }}</td>
+                <td class="name col-time">{{ n.time }}</td>
+                <td class="name col-subject">{{ n.subject }}</td>
+                <td class="name rf-muted col-source">{{ n.source }}</td>
               </tr>
+            } @empty {
+              <tr><td colspan="4" class="quad__empty rf-muted">No news.</td></tr>
             }
           </tbody>
         </table>
@@ -282,7 +268,7 @@
     </section>
 
     <!-- Q4: Broken Rate Calculator -->
-    <section class="quad rf-card">
+    <section class="quad quad--brc rf-card">
       <header class="quad__bar quad__bar--center">
         <span class="quad__title">Broken Rate Calculator</span>
       </header>
@@ -329,16 +315,37 @@
 <!-- ===== NEWS ===== -->
 @if (active() === 'NEWS') {
   <div class="news">
-    @for (n of news; track n.headline) {
-      <article class="news__item rf-card">
+    @for (n of forexNews(); track $index) {
+      <article class="news__item rf-card" (click)="openNews(n)" title="Read full story">
         <div class="news__top">
           <span class="news__source">{{ n.source }}</span>
-          <span class="news__time rf-muted">{{ n.time }}</span>
-          <span class="news__tag news__tag--{{ n.sentiment | lowercase }}">{{ n.sentiment }}</span>
+          <span class="news__time rf-muted">{{ n.date }} · {{ n.time }}</span>
+          <mat-icon class="news__go">chevron_right</mat-icon>
         </div>
-        <p class="news__headline">{{ n.headline }}</p>
+        <p class="news__headline">{{ n.subject }}</p>
       </article>
+    } @empty {
+      <p class="news__empty rf-muted">No news right now.</p>
     }
+  </div>
+}
+
+<!-- ===== Economic Calendar ===== -->
+@if (active() === 'Economic Calendar') {
+  <div class="rf-card eco-cal">
+    <iframe
+      class="eco-cal__frame"
+      title="Real Time Economic Calendar"
+      src="https://sslecal2.forexprostools.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&importance=3&features=datepicker&countries=14,17,72,37,4,5&calType=week&timeZone=23&lang=56"
+      frameborder="0"
+      allowtransparency="true"
+      loading="lazy"
+    ></iframe>
+    <p class="eco-cal__by">
+      Real Time Economic Calendar provided by
+      <a href="https://www.routeforex.com/" rel="nofollow noopener" target="_blank">
+        RouteForex Solutions Private Limited India</a>.
+    </p>
   </div>
 }
 
@@ -366,11 +373,63 @@
         <span class="support__label">Market Hours</span>
         <span class="support__value">Mon–Fri · 09:00–17:00 IST</span>
       </div>
-      <div class="support__card">
-        <mat-icon>chat</mat-icon>
-        <span class="support__label">Live Chat</span>
-        <span class="support__value support__online">● Online now</span>
+    </div>
+  </div>
+}
+
+<!-- ===== Forex News detail dialog ===== -->
+@if (selectedNews(); as n) {
+  <div class="news-modal" (click)="closeNews()">
+    <div
+      class="news-modal__card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="news-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="news-modal__bar">
+        <span class="news-modal__source">{{ n.source }}</span>
+        <button type="button" class="news-modal__close" (click)="closeNews()" aria-label="Close">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+      <div class="news-modal__body">
+        <h2 id="news-modal-title" class="news-modal__title">{{ n.subject }}</h2>
+        <p class="news-modal__meta">{{ n.date }} {{ n.time }}</p>
+        @if (n.body) {
+          <div class="news-modal__content" [innerHTML]="n.body"></div>
+        } @else {
+          <p class="news-modal__content rf-muted">No further details available.</p>
+        }
       </div>
+      <footer class="news-modal__footer">
+        <mat-icon class="news-modal__footer-icon">verified_user</mat-icon>
+        <div class="news-modal__footer-text">
+          <span class="news-modal__footer-src">Source: {{ n.source }}</span>
+          <span class="news-modal__disclaimer">
+            &copy; RouteForex Solutions Pvt. Ltd. All rights reserved. News content received
+            through this service is the intellectual property of the company. Republication or
+            redistribution of the content provided by us is expressly prohibited without the
+            prior written consent of RouteForex Solutions Pvt. Ltd. The company shall not be
+            liable for any errors, omissions or delays in the content, or for any action taken
+            in reliance thereon.
+          </span>
+        </div>
+      </footer>
+    </div>
+  </div>
+}
+
+<!-- ===== Paywall overlay (metered clients only) ===== -->
+@if (locked()) {
+  <div class="paywall" role="alertdialog" aria-modal="true" aria-labelledby="paywall-title">
+    <div class="paywall__card">
+      <mat-icon class="paywall__icon">lock</mat-icon>
+      <h2 id="paywall-title" class="paywall__title">{{ lockTitle() }}</h2>
+      <p class="paywall__msg">{{ lockMessage() }}</p>
+      @if (access()?.validityTo; as vt) {
+        <p class="paywall__meta">Valid till {{ vt | date: 'dd-MMM-yyyy' }}</p>
+      }
     </div>
   </div>
 }

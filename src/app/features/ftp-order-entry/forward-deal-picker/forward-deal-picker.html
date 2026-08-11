@@ -24,7 +24,6 @@
             <th class="fdp-num">Rate</th>
             <th>Window / Fix</th>
             <th>Maturity / From–To</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -44,11 +43,6 @@
                   {{ d.fromDate ? (d.fromDate | date: 'dd-MMM-yyyy') : '—' }} –
                   {{ d.toDate ? (d.toDate | date: 'dd-MMM-yyyy') : '—' }}
                 }
-              </td>
-              <td>
-                <button mat-flat-button color="primary" type="button" (click)="select(d); $event.stopPropagation()">
-                  Select
-                </button>
               </td>
             </tr>
           }

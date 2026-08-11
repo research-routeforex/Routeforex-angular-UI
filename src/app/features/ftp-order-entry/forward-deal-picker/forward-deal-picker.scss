@@ -3,8 +3,9 @@
 }
 
 mat-dialog-content {
-  min-width: min(880px, 86vw);
+  width: 100%;
   max-height: 62vh;
+  overflow-y: auto;
 }
 
 // Loading / empty placeholder.
@@ -36,7 +37,8 @@ mat-dialog-content {
 }
 
 .fdp-tablewrap {
-  overflow-x: auto;
+  // Full-window dialog: the table fits the width, so no left/right scrolling.
+  overflow-x: hidden;
   border: 1px solid var(--rf-border);
   border-radius: var(--rf-radius-sm);
 }
@@ -50,7 +52,6 @@ mat-dialog-content {
   td {
     padding: 10px 12px;
     text-align: left;
-    white-space: nowrap;
     border-bottom: 1px solid var(--rf-border);
   }
 

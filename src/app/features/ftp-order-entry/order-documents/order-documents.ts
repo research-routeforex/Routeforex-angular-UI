@@ -158,7 +158,8 @@ export class OrderDocumentsComponent implements OnDestroy {
   }
 
   protected isVoice(rec: OrderRecording): boolean {
-    return (rec.documentType ?? '').toLowerCase().startsWith('voice');
+    // Stored as 'Voice' or truncated to 'V' (legacy VARCHAR(1) column) — match first letter.
+    return (rec.documentType ?? '').trim().toLowerCase().startsWith('v');
   }
 
   protected iconFor(rec: OrderRecording): string {

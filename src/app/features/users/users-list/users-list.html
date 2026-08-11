@@ -6,11 +6,129 @@
     subtitle="Create users, manage status and assign roles."
     [breadcrumbs]="[{ label: 'Administration' }, { label: 'Users' }]"
   >
-    <button mat-flat-button color="primary" (click)="openForm('create')">
-      <mat-icon>person_add</mat-icon> Add User
-    </button>
+    @if (editingId() === null) {
+      <button mat-flat-button color="primary" (click)="startAdd()">
+        <mat-icon>person_add</mat-icon> Add User
+      </button>
+    }
   </app-page-header>
 </div>
+
+<!-- Inline add/edit form -->
+@if (editingId() !== null) {
+  <form [formGroup]="form" class="rf-card editform" (ngSubmit)="save()">
+    <h3 class="editform__title">{{ isEditing() ? 'Edit User' : 'New User' }}</h3>
+    <div class="form-grid">
+      <app-field label="Username" required [control]="form.controls.userName" error="Username is required.">
+        <input class="rf-input" formControlName="userName" autocomplete="off" placeholder="e.g. jdoe" />
+      </app-field>
+
+      <app-field
+        label="Email"
+        required
+        [control]="form.controls.email"
+        [error]="form.controls.email.hasError('email') ? 'Enter a valid email.' : 'Email is required.'"
+      >
+        <input class="rf-input" type="email" formControlName="email" autocomplete="off" placeholder="name@company.com" />
+      </app-field>
+
+      <app-field label="Full Name">
+        <input class="rf-input" formControlName="fullName" placeholder="e.g. John Doe" />
+      </app-field>
+
+      <app-field label="Phone">
+        <input class="rf-input" formControlName="phoneNumber" placeholder="e.g. +1 555 0100" />
+      </app-field>
+
+      <app-field
+        label="Role"
+        required
+        [control]="form.controls.roleId"
+        error="Select a role."
+        [class.span-2]="!showClient()"
+      >
+        <app-select formControlName="roleId" [options]="roleOptions()" placeholder="Select role" searchPlaceholder="Search role…" />
+      </app-field>
+
+      @if (showClient()) {
+        <app-field label="Client" required [control]="form.controls.clientId" error="Select a client.">
+          <app-select formControlName="clientId" [options]="clientOptions()" placeholder="Select client" searchPlaceholder="Search client…" />
+        </app-field>
+      }
+
+      @if (!isEditing()) {
+        <app-field
+          label="Password"
+          required
+          [control]="form.controls.password"
+          [error]="form.controls.password.hasError('strongPassword') ? 'Password is not strong enough.' : 'Password is required.'"
+        >
+          <input
+            class="rf-input rf-input--affix"
+            [class.rf-input--ok]="passwordStrong()"
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="password"
+            autocomplete="new-password"
+            placeholder="Create a password"
+          />
+          @if (passwordStrong()) { <mat-icon class="pw-ok">check_circle</mat-icon> }
+          <button mat-icon-button type="button" class="rf-control__affix" (click)="hidePassword.set(!hidePassword())">
+            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </app-field>
+
+        <app-field
+          label="Confirm Password"
+          required
+          [control]="form.controls.confirmPassword"
+          [error]="form.controls.confirmPassword.hasError('mismatch') ? 'Passwords do not match.' : 'Please confirm the password.'"
+        >
+          <input
+            class="rf-input rf-input--affix"
+            [class.rf-input--ok]="confirmMatches()"
+            [type]="hideConfirm() ? 'password' : 'text'"
+            formControlName="confirmPassword"
+            autocomplete="new-password"
+            placeholder="Re-enter the password"
+          />
+          @if (confirmMatches()) { <mat-icon class="pw-ok">check_circle</mat-icon> }
+          <button mat-icon-button type="button" class="rf-control__affix" (click)="hideConfirm.set(!hideConfirm())">
+            <mat-icon>{{ hideConfirm() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </app-field>
+
+        <ul class="pwrules span-2">
+          <li [class.pwrules__item--ok]="ruleLen()">
+            <mat-icon>{{ ruleLen() ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon> At least 8 characters
+          </li>
+          <li [class.pwrules__item--ok]="ruleUpper()">
+            <mat-icon>{{ ruleUpper() ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon> An uppercase letter
+          </li>
+          <li [class.pwrules__item--ok]="ruleLower()">
+            <mat-icon>{{ ruleLower() ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon> A lowercase letter
+          </li>
+          <li [class.pwrules__item--ok]="ruleDigit()">
+            <mat-icon>{{ ruleDigit() ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon> A number
+          </li>
+        </ul>
+      }
+    </div>
+
+    @if (isEditing()) {
+      <div class="rf-flex rf-gap rf-mt">
+        <mat-slide-toggle formControlName="isActive" color="primary">Active</mat-slide-toggle>
+        <mat-slide-toggle formControlName="isLockedOut" color="warn">Locked out</mat-slide-toggle>
+      </div>
+    }
+
+    <div class="editform__actions">
+      <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : isEditing() ? 'Save changes' : 'Create user' }}
+      </button>
+    </div>
+  </form>
+}
 
 <div class="rf-card tablewrap">
   <table class="grid">
@@ -64,7 +182,7 @@
           </td>
           <td>{{ u.lastLoginDate ? (u.lastLoginDate | date: 'dd-MMM-yyyy HH:mm') : '—' }}</td>
           <td class="ta-r actions">
-            <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="openForm('edit', u)" matTooltip="Edit">
+            <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="startEdit(u)" matTooltip="Edit">
               <mat-icon>edit</mat-icon>
             </button>
             <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(u)" matTooltip="Delete">

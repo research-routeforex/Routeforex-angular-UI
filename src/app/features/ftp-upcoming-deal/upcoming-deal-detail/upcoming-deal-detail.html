@@ -1,0 +1,68 @@
+<div class="hero">
+  <app-page-header
+    title="FTP Upcoming Deal"
+    subtitle="Deal details (read-only)."
+    [breadcrumbs]="[{ label: 'FTP Transactions' }, { label: 'FTP Upcoming Deal' }, { label: 'Details' }]"
+  >
+    <button mat-stroked-button type="button" class="backbtn" (click)="back()">
+      <mat-icon>arrow_back</mat-icon> Back
+    </button>
+  </app-page-header>
+</div>
+
+<div class="rf-card detail">
+  @if (loading()) {
+    <p class="rf-muted detail__empty">Loading…</p>
+  } @else if (order(); as o) {
+    <div class="detail__grid">
+      <div class="detail__field">
+        <span class="detail__label">Order No</span>
+        <span class="detail__value">{{ o.orderNumber || '#' + o.recordId }}</span>
+      </div>
+      <div class="detail__field">
+        <span class="detail__label">Client</span>
+        <span class="detail__value">{{ clientName() }}</span>
+      </div>
+      <div class="detail__field">
+        <span class="detail__label">Client Bank</span>
+        <span class="detail__value">{{ bankName() }}</span>
+      </div>
+      <div class="detail__field">
+        <span class="detail__label">Import / Export</span>
+        <span class="detail__value">{{ o.impExp || '—' }}</span>
+      </div>
+      <div class="detail__field">
+        <span class="detail__label">Currency</span>
+        <span class="detail__value">{{ o.currencyCode || '—' }}</span>
+      </div>
+      <div class="detail__field">
+        <span class="detail__label">Amount</span>
+        <span class="detail__value">{{ o.amount != null ? (o.amount | number: '1.2-2') : '—' }}</span>
+      </div>
+      <div class="detail__field">
+        <span class="detail__label">What To Do</span>
+        <span class="detail__value">{{ o.buySell || '—' }}</span>
+      </div>
+      <div class="detail__field">
+        <span class="detail__label">Transaction Type</span>
+        <span class="detail__value">{{ txnName() }}</span>
+      </div>
+      <div class="detail__field">
+        <span class="detail__label">Maturity Date</span>
+        <span class="detail__value">{{ o.maturityDate ? (o.maturityDate | date: 'dd-MMM-yyyy') : '—' }}</span>
+      </div>
+      <div class="detail__field">
+        <span class="detail__label">Upcoming Deal Date</span>
+        <span class="detail__value">{{ o.upcomingDate ? (o.upcomingDate | date: 'dd-MMM-yyyy') : '—' }}</span>
+      </div>
+      <div class="detail__field">
+        <span class="detail__label">Status</span>
+        <span class="detail__value">
+          <span class="rf-chip rf-chip--info">{{ o.activeStatus || 'Upcoming' }}</span>
+        </span>
+      </div>
+    </div>
+  } @else {
+    <p class="rf-muted detail__empty">Deal not found.</p>
+  }
+</div>

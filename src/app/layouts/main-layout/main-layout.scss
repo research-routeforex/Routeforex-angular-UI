@@ -2,16 +2,17 @@
   height: 100vh;
 
   &__nav {
-    // Fixed dark "Admindek"-style palette — the sidebar stays dark in both themes.
+    // Legacy cyan-blue sidebar (client colour match) — stays the same in both themes.
     // Scoped here so the topbar / page keep following the light/dark theme.
-    --nav-bg: light-dark(#1b2432, #0e131b);
-    --nav-fg: #c2ccdb;
+    --nav-bg: var(--rf-cyan);
+    --nav-fg: rgba(255, 255, 255, 0.92);
     --nav-fg-strong: #ffffff;
-    --nav-muted: #7c8698;
-    --nav-accent: rgba(255, 255, 255, 0.06);
-    --nav-active-bg: rgba(255, 255, 255, 0.1);
-    --nav-active-fg: #7ea9ff;
-    --nav-border: rgba(255, 255, 255, 0.07);
+    --nav-muted: rgba(255, 255, 255, 0.72);
+    --nav-accent: rgba(255, 255, 255, 0.16);
+    // Active item = legacy green tile with white text.
+    --nav-active-bg: var(--rf-green);
+    --nav-active-fg: #ffffff;
+    --nav-border: rgba(255, 255, 255, 0.2);
 
     width: var(--rf-sidebar-width);
     border-right: none;
@@ -61,8 +62,9 @@
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background: var(--mat-sys-primary);
-    color: var(--mat-sys-on-primary);
+    // Legacy green logo box.
+    background: var(--rf-green);
+    color: #ffffff;
     flex: none;
   }
   &__text {
@@ -137,7 +139,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    height: 42px;
+    height: 35px;
     padding: 0 12px;
     margin: 2px 0;
     border-radius: 10px;
@@ -298,21 +300,151 @@
   padding: 0;
 }
 
+// ---- Favourites ------------------------------------------------------------
+// Star toggle on the right of each nav row.
+.nav__fav {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-right: -4px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--nav-muted);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: inherit;
+  }
+  &:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--nav-fg-strong);
+  }
+  &--on {
+    opacity: 1;
+    color: #ffd54a; // gold star
+  }
+}
+// Keep the star its own colour even when the row/active-row recolours icons.
+.nav__item:hover .nav__fav mat-icon {
+  color: inherit;
+}
+.nav__fav--on,
+.nav__item:hover .nav__fav--on,
+.nav__item--active .nav__fav--on mat-icon {
+  color: #ffd54a;
+}
+
+// Pinned "Favourites" section header.
+.nav__section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav__section-star {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+  color: #ffd54a;
+}
+.nav__section--fav {
+  cursor: default;
+  color: var(--nav-fg-strong);
+
+  &:hover {
+    background: transparent;
+    color: var(--nav-fg-strong);
+  }
+}
+
 // ---- Top bar ---------------------------------------------------------------
+/* Dealer Pad quick-link shortcuts in the header — icon-only glossy badges,
+   grouped inside a frosted-glass pill so they read as one attractive control. */
+.topshort {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 10px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+}
+
+.topshort__item {
+  --sc: #7c6cff;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #ffffff;
+  text-decoration: none;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--sc) 86%, #fff),
+      color-mix(in srgb, var(--sc) 82%, #000)
+    );
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 2px 6px -2px rgba(0, 0, 0, 0.45);
+  transition:
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+
+  mat-icon {
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  }
+
+  &:hover {
+    transform: translateY(-2px) scale(1.12);
+    filter: saturate(1.15) brightness(1.06);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      0 8px 18px -5px var(--sc),
+      0 0 0 3px color-mix(in srgb, var(--sc) 30%, transparent);
+  }
+
+  &:active {
+    transform: translateY(0) scale(1.02);
+  }
+}
+
+@media (max-width: 640px) {
+  .topshort {
+    display: none;
+  }
+}
+
 .topbar {
   position: sticky;
   top: 0;
   z-index: 5;
   height: var(--rf-header-height);
   min-height: var(--rf-header-height);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--rf-primary) 7%, var(--rf-surface-2)) 0%,
-    var(--rf-surface-2) 100%
-  );
-  border-bottom: 1px solid var(--rf-border);
+  // Legacy solid-blue header bar with white content.
+  background: var(--rf-blue);
+  color: #ffffff;
+  border-bottom: 1px solid color-mix(in oklab, #000 18%, var(--rf-blue));
   padding: 0;
-  backdrop-filter: saturate(1.1);
 
   // Center the header content to the same width as the page content below it,
   // while the gradient background + accent line keep spanning full width.
@@ -337,14 +469,20 @@
     height: 2px;
     background: linear-gradient(
       90deg,
-      var(--rf-primary),
-      oklch(62% 0.24 290),
-      var(--rf-info),
-      var(--rf-primary)
+      var(--rf-green),
+      var(--rf-cyan),
+      var(--rf-pink),
+      var(--rf-green)
     );
     background-size: 300% 100%;
     animation: topbar-strip 10s linear infinite;
-    opacity: 0.75;
+    opacity: 0.9;
+  }
+
+  // White icons/text over the blue header bar.
+  .mat-mdc-icon-button {
+    --mdc-icon-button-icon-color: #ffffff;
+    color: #ffffff;
   }
 
   // Circular collapse / menu toggle (FLUX style)
@@ -355,17 +493,17 @@
     height: 38px;
     flex: none;
     border-radius: 50%;
-    border: 1px solid var(--rf-border);
-    background: var(--rf-surface-2);
-    color: var(--rf-muted-fg);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
     cursor: pointer;
     transition:
       background 0.15s ease,
       color 0.15s ease;
 
     &:hover {
-      background: var(--rf-sidebar-accent);
-      color: var(--rf-primary);
+      background: rgba(255, 255, 255, 0.24);
+      color: #ffffff;
     }
   }
 
@@ -380,10 +518,10 @@
     max-height: 32px;
     margin-left: 8px;
     padding: 0 12px;
-    border: 1px solid var(--rf-border);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 999px;
-    background: var(--rf-page-bg);
-    color: var(--rf-muted-fg);
+    background: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.85);
 
     mat-icon {
       font-size: 20px;
@@ -395,12 +533,12 @@
       border: none;
       outline: none;
       background: transparent;
-      color: var(--rf-text);
+      color: #ffffff;
       font-family: var(--rf-font);
       font-size: 14px;
     }
     input::placeholder {
-      color: var(--rf-muted-fg);
+      color: rgba(255, 255, 255, 0.75);
     }
   }
 
@@ -409,8 +547,8 @@
     font-weight: 600;
     padding: 2px 7px;
     border-radius: 6px;
-    border: 1px solid var(--rf-border);
-    color: var(--rf-muted-fg);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.85);
   }
 
   &__bell {
@@ -458,12 +596,20 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
+  overflow: hidden;
   background: linear-gradient(135deg, var(--mat-sys-primary), oklch(62% 0.24 290));
   color: var(--mat-sys-on-primary);
   font-size: 13px;
   font-weight: 700;
   flex: none;
   box-shadow: 0 2px 8px color-mix(in oklab, var(--mat-sys-primary) 38%, transparent);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
 }
 
 // Topbar live/gradient keyframes
@@ -482,26 +628,8 @@
   }
 }
 
-.usermenu__head {
-  display: flex;
-  flex-direction: column;
-  padding: 10px 16px;
-}
-
-.usermenu__badge {
-  margin-left: auto;
-  min-width: 22px;
-  height: 20px;
-  padding: 0 7px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 600;
-  border-radius: 999px;
-  color: var(--rf-primary);
-  background: color-mix(in oklab, var(--rf-primary) 14%, transparent);
-}
+// The account menu panel is styled globally (it renders in a CDK overlay, outside
+// this component) — see .usermenu in styles.scss.
 
 // ---- Page + footer ---------------------------------------------------------
 .page {

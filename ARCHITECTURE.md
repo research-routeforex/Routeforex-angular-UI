@@ -17,7 +17,7 @@ Angular 22 single-page application for the **RouteForex Forex Transaction Manage
 | HTTP                 | `HttpClient` + functional interceptors + generic API layer            |
 | Forms                | Reactive Forms, `FormBuilder`, custom validators                       |
 | Charts               | Dependency-free SVG chart component (swap-in point for ngx-charts)     |
-| Theming              | Runtime light/dark via M3 `color-scheme`, persisted                    |
+| Theming              | Fixed legacy brand palette (hex tokens) + runtime light/dark surfaces via M3 `color-scheme` |
 
 > **Zoneless:** the generated project ships without `zone.js`. Change detection is driven entirely by Signals + `OnPush`. Every component uses `ChangeDetectionStrategy.OnPush`.
 
@@ -143,6 +143,7 @@ Per-screen access is **backend-driven**. The menu API returns the screens a user
 - **`guestGuard`** — keeps signed-in users off the login page.
 - **`*appHasRole`** / `AuthService.hasRole` / `hasAnyRole` — still available for in-component UI decisions (showing/hiding controls), but no longer gate any route.
 - **Dynamic sidebar** — the sidebar renders from the backend menu, so only permitted screens appear.
+- **Favourites** — users star any screen; favourites are pinned in a **Favourites** section at the top of the sidebar and persisted **per-user server-side** (`RF_UserFavourite`, via `GET/POST/DELETE api/v1/Favourites`), so they follow the user across devices.
 
 ```ts
 {
@@ -184,7 +185,8 @@ This satisfies the brief's state requirements (Auth/User/Roles, dashboard, maste
 | `PageHeaderComponent` | Title + breadcrumb + projected action slot.                                                          |
 | `StatCardComponent`   | KPI card with icon tint and trend delta.                                                              |
 | `ChartComponent`      | Dependency-free SVG bar/line/area chart.                                                              |
-| `ConfirmDialogComponent` + `ConfirmService` | Reusable confirmation modal (`confirmDelete()` helper).                         |
+| `ConfirmDialogComponent` + `ConfirmService` | Reusable confirmation modal (`confirmDelete()` helper); supports `destructive` (red) and `warning` (amber) tones and a single-action `hideCancel` alert mode. |
+| `SelectComponent` (`app-select`) | Searchable combobox implementing `ControlValueAccessor`. **Keyboard-first:** tabbing in opens the panel with the filter box focused; Up/Down move, Enter selects, Escape closes, and it closes on focus-out so Tab flows to the next control — identical to a mouse click. |
 | `EmptyStateComponent` / `StatusPageComponent` | Empty + 403/404 states.                                                       |
 | `PlaceholderComponent` | Data-driven "module coming soon" page for not-yet-built features.                                    |
 
@@ -201,8 +203,9 @@ export class CitiesService extends CrudService<City, CreateCityRequest, UpdateCi
 
 ## 8. Theming
 
-- Angular Material **M3** theme in `styles.scss` using `mat.theme(...)`.
-- Light/dark switch by toggling `color-scheme` (`.theme-dark` on `<html>`), so M3 system variables flip at runtime — **no second theme to compile**.
+- Angular Material **M3** theme in `styles.scss` via `mat.theme(...)`, layered with custom `--rf-*` design tokens.
+- **Brand palette is fixed to the legacy colours** (hex tokens): `--rf-blue` header, `--rf-cyan` sidebar, `--rf-green` logo/active-menu, `--rf-pink` as the app **primary**. `--rf-primary` maps onto `--mat-sys-primary`, so Material buttons, focus rings and checkboxes all follow the pink accent. These brand colours stay identical in both themes.
+- Light/dark still switches by toggling `color-scheme` (`.theme-dark` on `<html>`), flipping the **surface** tokens (page / card / border / text) at runtime — **no second theme to compile**.
 - `ThemeService` persists the choice and respects the OS preference on first load.
 - Semantic status tokens (`--rf-success`, `--rf-danger`, …) use `light-dark()` so they adapt automatically.
 
@@ -222,7 +225,7 @@ export class CitiesService extends CrudService<City, CreateCityRequest, UpdateCi
 
 `environment.ts` (prod) / `environment.development.ts` (dev) are swapped by the `fileReplacements` in `angular.json`.
 
-In development, `proxy.conf.json` forwards `/api/*` to the API at `https://localhost:7080`, so the SPA calls same-origin `/api/v1/...` with **no CORS** friction.
+In development, `proxy.conf.json` forwards `/api/*` to the API (the deployed `https://routeforexapi.azurewebsites.net` by default; repoint at `https://localhost:7080` for a local backend), so the SPA calls same-origin `/api/v1/...` with **no CORS** friction.
 
 ```bash
 npm install
@@ -236,7 +239,7 @@ Point the proxy/`apiBaseUrl` at the deployed API for other environments.
 
 ## 11. Backend coverage
 
-Implemented against live endpoints: **Auth (login, refresh, logout, forgot/reset/change password), Users (CRUD + role assignment), Roles (CRUD), Cities (CRUD), Tenors (CRUD)**, plus **Client Master** (client + banks + contracts, where each selected charge is stored as its own row), **Common Master** (Country Region / Country / State / City), **Currency Master**, **Bank Master** (with RM contacts + Head Office tab), **Company Master** (with a **Company Bank** tab), **Dealer Pad**, **Management Dashboard**, **Ticker Live Rate** (time-metered), **FTP Order Entry** (+ order recordings/documents), **Generate Invoice**, **Reports** (Client Wise Revenue, Report UC), and a backend-driven **menu / screen-permission** system.
+Implemented against live endpoints: **Auth (login, refresh, logout, forgot/reset/change password), Users (CRUD + role assignment), Roles (CRUD), Cities (CRUD), Tenors (CRUD)**, plus **Client Master** (client + banks + contracts, where each selected charge is stored as its own row), **Common Master** (Country Region / Country / State / City), **Currency Master**, **Bank Master** (with RM contacts + Head Office tab), **Company Master** (with a **Company Bank** tab), **Dealer Pad** (legacy-coloured live-rate board fed by **real DB rates only** — never simulated; editable Live/Dealer rate bands with a derived Net Rate), **Management Dashboard**, **Ticker Live Rate** (time-metered; live spot-board / forward-premium / currency-future feeds via `LiveRates/{forex,premium,currency-future}` backed by `usp_RF_Mast_ForexLiveScreen`), **FTP Order Entry** (transaction-type-driven date fields with holiday-adjusted maturity auto-fill via `usp_RF_CheckHolidayDate`, Upcoming scheduling, order recordings/documents), **Generate Invoice**, **Reports** (Client Wise Revenue, Report UC), a backend-driven **menu / screen-permission** system, and per-user **favourite screens** (`RF_UserFavourite`, `api/v1/Favourites`).
 
 **Generate Invoice** is an end-to-end flow: pick a client + date range to bill their booked orders, choose a **GST number** (from Company Master), enter an **invoice number** and **date**, then persist a header + one detail row per order. Tax is computed **server-side** — CGST + SGST (intra-state) or IGST (inter-state), decided by the client vs. company GST state code, rates from `TFTPO_Mast_TaxValue`. A **Generated Invoices** tab searches saved invoices (Client-Master-style grid with per-column filters, totals and paging); each row can **Print** (opens a standalone printable invoice in a new tab) or **e-mail** the invoice to the client's contact address. The standalone print page (`invoice-print`) renders a **From** block (invoicing company address / contact / CIN / GSTIN) and a consignee **Bill To** block (client address / state / GSTIN / state code), shows **only the applicable tax line** (IGST for inter-state, else CGST + SGST), and auto-scales via a `--print-zoom` factor so the invoice fits a single A4 page for both the Print button and Ctrl+P.
 

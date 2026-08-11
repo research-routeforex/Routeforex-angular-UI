@@ -13,7 +13,11 @@
     <h3 class="panel__title"><mat-icon>person</mat-icon> Profile</h3>
     <div class="profile">
       <div class="profile__avatar">
-        {{ (auth.displayName()[0] || 'U') | uppercase }}
+        @if (auth.profileImageUrl(); as img) {
+          <img [src]="img" alt="Profile photo" />
+        } @else {
+          {{ (auth.displayName()[0] || 'U') | uppercase }}
+        }
       </div>
       <div class="profile__meta">
         <span class="profile__name">{{ auth.displayName() }}</span>
@@ -22,6 +26,19 @@
           @for (role of roleLabels(); track role) {
             <span class="rf-chip rf-chip--info">{{ role }}</span>
           }
+        </div>
+        <div class="profile__photo">
+          <input #photoInput type="file" accept="image/*" hidden (change)="onPhotoSelected($event)" />
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="uploading()"
+            (click)="photoInput.click()"
+          >
+            <mat-icon>photo_camera</mat-icon>
+            {{ uploading() ? 'Uploading…' : (auth.profileImageUrl() ? 'Change photo' : 'Upload photo') }}
+          </button>
+          <span class="rf-muted profile__hint">JPG, PNG or GIF · up to 5 MB</span>
         </div>
       </div>
     </div>

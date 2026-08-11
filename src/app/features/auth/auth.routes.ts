@@ -29,6 +29,17 @@ export const AUTH_ROUTES: Routes = [
         loadComponent: () =>
           import('./reset-password/reset-password').then((m) => m.ResetPasswordComponent),
       },
+      {
+        // First-login forced password change. No guestGuard: the user IS authenticated
+        // here (they just signed in); the app shell's firstLoginGuard redirects them
+        // here until they set a personal password.
+        path: 'first-login',
+        title: 'Set your password — RouteForex',
+        loadComponent: () =>
+          import('./first-login-password/first-login-password').then(
+            (m) => m.FirstLoginPasswordComponent,
+          ),
+      },
     ],
   },
 ];
