@@ -39,7 +39,7 @@
 
     <app-field [label]="lcDateLabel()" class="col-sm">
       <div class="rf-datewrap" (click)="d1.open()">
-        <input class="rf-input" [matDatepicker]="d1" formControlName="bankLcDate" placeholder="dd-MMM-yyyy" readonly />
+        <input class="rf-input" [matDatepicker]="d1" [appOpenOnFocus]="d1" formControlName="bankLcDate" placeholder="dd-MMM-yyyy" readonly />
         <mat-datepicker-toggle class="rf-date-toggle" [for]="d1" />
       </div>
       <mat-datepicker #d1 panelClass="rf-datepicker" />
@@ -69,7 +69,7 @@
 
     <app-field [label]="takenDateLabel()" class="col-sm">
       <div class="rf-datewrap" (click)="d2.open()">
-        <input class="rf-input" [matDatepicker]="d2" formControlName="buyersCreditTakenDate" placeholder="dd-MMM-yyyy" readonly />
+        <input class="rf-input" [matDatepicker]="d2" [appOpenOnFocus]="d2" formControlName="buyersCreditTakenDate" placeholder="dd-MMM-yyyy" readonly />
         <mat-datepicker-toggle class="rf-date-toggle" [for]="d2" />
       </div>
       <mat-datepicker #d2 panelClass="rf-datepicker" />
@@ -81,7 +81,7 @@
 
     <app-field label="Due Date" class="col-sm">
       <div class="rf-datewrap" (click)="d3.open()">
-        <input class="rf-input" [matDatepicker]="d3" formControlName="dueDate" placeholder="dd-MMM-yyyy" readonly />
+        <input class="rf-input" [matDatepicker]="d3" [appOpenOnFocus]="d3" formControlName="dueDate" placeholder="dd-MMM-yyyy" readonly />
         <mat-datepicker-toggle class="rf-date-toggle" [for]="d3" />
       </div>
       <mat-datepicker #d3 panelClass="rf-datepicker" />
@@ -119,7 +119,7 @@
 
     <app-field label="Forward Contract Booking Date" class="col-sm">
       <div class="rf-datewrap" (click)="d4.open()">
-        <input class="rf-input" [matDatepicker]="d4" formControlName="forwardContractBookingDate" placeholder="dd-MMM-yyyy" readonly />
+        <input class="rf-input" [matDatepicker]="d4" [appOpenOnFocus]="d4" formControlName="forwardContractBookingDate" placeholder="dd-MMM-yyyy" readonly />
         <mat-datepicker-toggle class="rf-date-toggle" [for]="d4" />
       </div>
       <mat-datepicker #d4 panelClass="rf-datepicker" />

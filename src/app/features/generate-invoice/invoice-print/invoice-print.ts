@@ -37,6 +37,22 @@ export class InvoicePrintComponent implements OnInit {
   protected readonly header = computed(() => this.doc()?.header ?? null);
   protected readonly lines = computed(() => this.doc()?.lines ?? []);
   protected readonly companyInfo = computed(() => this.doc()?.company ?? null);
+  /** Labelled contact + e-mail for the "From" block (e.g. "Contact: … , Email: …"; blanks skipped). */
+  protected readonly companyContact = computed(() => {
+    const c = this.companyInfo();
+    const parts: string[] = [];
+    if (c?.contact1?.trim()) parts.push(`Contact: ${c.contact1.trim()}`);
+    if (c?.email?.trim()) parts.push(`Email: ${c.email.trim()}`);
+    return parts.join(', ');
+  });
+  /** GSTIN + SAC code on one line for the "From" block (blanks skipped). */
+  protected readonly companyGstSac = computed(() => {
+    const h = this.header();
+    const parts: string[] = [];
+    if (h?.gstNumber?.trim()) parts.push(`GSTIN: ${h.gstNumber.trim()}`);
+    if (h?.sacCode?.trim()) parts.push(`SAC Code: ${h.sacCode.trim()}`);
+    return parts.join(', ');
+  });
   protected readonly grandTotal = computed(() => this.header()?.totalAmount ?? 0);
   protected readonly roundedTotal = computed(() => Math.round(this.grandTotal()));
   protected readonly roundOff = computed(() => this.roundedTotal() - this.grandTotal());

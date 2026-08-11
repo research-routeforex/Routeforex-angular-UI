@@ -1,0 +1,133 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="FTP Upcoming Deal"
+    subtitle="All deals scheduled ahead (status Upcoming)."
+    [breadcrumbs]="[{ label: 'FTP Transactions' }, { label: 'FTP Upcoming Deal' }]"
+  />
+</div>
+
+<!-- ===== Search (Client / Bank / Import-Export + Upcoming Date) ===== -->
+<div class="rf-card searchpanel">
+  <div class="searchpanel__row">
+    <label class="searchfield searchfield--grow">
+      <span class="searchfield__label">Client / Bank / Import-Export</span>
+      <input
+        class="rf-input"
+        placeholder="Client Name, Bank Name &amp; Import/Export"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        (keyup.enter)="runSearch()"
+      />
+    </label>
+    <label class="searchfield">
+      <span class="searchfield__label">Upcoming Deal Date</span>
+      <div class="rf-datewrap" (click)="ud.open()">
+        <input
+          class="rf-input"
+          [matDatepicker]="ud"
+          [appOpenOnFocus]="ud"
+          [ngModel]="upcomingDate()"
+          (ngModelChange)="upcomingDate.set($event)"
+          placeholder="dd-MMM-yyyy"
+          readonly
+        />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="ud" />
+      </div>
+      <mat-datepicker #ud panelClass="rf-datepicker" />
+    </label>
+    <div class="searchpanel__actions">
+      <button type="button" class="btn btn-warning" (click)="runSearch()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button type="button" class="btn btn-outline" (click)="clearSearch()">
+        <mat-icon>clear</mat-icon> Clear
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="rf-card tablewrap">
+  <table class="grid">
+    <thead>
+      <tr>
+        <th><span class="th__name">Order No</span></th>
+        <th><span class="th__name">Client Name</span></th>
+        <th><span class="th__name">Bank Name</span></th>
+        <th><span class="th__name">Import / Export</span></th>
+        <th><span class="th__name">Currency</span></th>
+        <th><span class="th__name">Transaction</span></th>
+        <th class="ta-r"><span class="th__name">Amount</span></th>
+        <th><span class="th__name">Upcoming Deal Date</span></th>
+        <th><span class="th__name">Order Type</span></th>
+        <th><span class="th__name">Status</span></th>
+        <th class="ta-r"><span class="th__name">Action</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (o of page().items; track o.recordId) {
+        <tr>
+          <td class="name">{{ o.orderNumber || '#' + o.recordId }}</td>
+          <td>{{ o.clientName || '—' }}</td>
+          <td>{{ o.bankName || '—' }}</td>
+          <td>{{ o.impExp || '—' }}</td>
+          <td>{{ o.currencyCode || '—' }}</td>
+          <td>{{ o.transactionType || '—' }}</td>
+          <td class="ta-r">{{ o.amount != null ? (o.amount | number: '1.2-2') : '—' }}</td>
+          <td>{{ o.upcomingDate ? (o.upcomingDate | date: 'dd-MMM-yyyy') : '—' }}</td>
+          <td>FTP</td>
+          <td>
+            @if (o.activeStatus) {
+              <span class="rf-chip rf-chip--info">{{ o.activeStatus }}</span>
+            } @else {
+              —
+            }
+          </td>
+          <td class="ta-r actions">
+            <button type="button" class="rf-iconbtn" (click)="view(o)" matTooltip="View details">
+              <mat-icon>visibility</mat-icon>
+            </button>
+            <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(o)" matTooltip="Edit in Dealer Pad">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="11" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No upcoming deals found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="pager">
+  <div class="pager__size">
+    <span class="rf-muted">Rows per page</span>
+    <select class="rf-select pager__select" (change)="onPageSize($any($event.target).value)">
+      @for (n of pageSizeOptions; track n) {
+        <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
+      }
+    </select>
+  </div>
+  <span class="rf-spacer"></span>
+  <span class="pager__info rf-muted">{{ fromRow() }}–{{ toRow() }} of {{ page().totalCount }}</span>
+  <div class="pager__nav">
+    <button mat-icon-button [disabled]="!page().hasPrevious" (click)="first()" matTooltip="First page">
+      <mat-icon>first_page</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="!page().hasPrevious" (click)="prev()" matTooltip="Previous page">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="pager__page">{{ page().pageNumber }} / {{ page().totalPages || 1 }}</span>
+    <button mat-icon-button [disabled]="!page().hasNext" (click)="next()" matTooltip="Next page">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="!page().hasNext" (click)="last()" matTooltip="Last page">
+      <mat-icon>last_page</mat-icon>
+    </button>
+  </div>
+</div>

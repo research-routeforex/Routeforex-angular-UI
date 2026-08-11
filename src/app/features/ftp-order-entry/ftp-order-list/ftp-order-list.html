@@ -1,15 +1,73 @@
-<div class="hero">
-  <span class="hero__glow hero__glow--a"></span>
-  <span class="hero__glow hero__glow--b"></span>
-  <app-page-header
-    title="FTP Order Entry"
-    subtitle="All booked orders. Add a new deal to book an order."
-    [breadcrumbs]="[{ label: 'Transactions' }, { label: 'FTP Order Entry' }]"
-  >
-    <a mat-flat-button color="primary" routerLink="/ftp-order-entry/new">
-      <mat-icon>add</mat-icon> Add Deal
-    </a>
-  </app-page-header>
+@if (!embedded()) {
+  <div class="hero">
+    <span class="hero__glow hero__glow--a"></span>
+    <span class="hero__glow hero__glow--b"></span>
+    <app-page-header
+      [title]="config.title"
+      subtitle="All booked orders. Add a new deal to book an order."
+      [breadcrumbs]="[{ label: 'Transactions' }, { label: config.title }]"
+    >
+      <a class="btn btn-success" [routerLink]="[config.basePath, 'new']">
+        <mat-icon>add</mat-icon> Add Deal
+      </a>
+    </app-page-header>
+  </div>
+}
+
+<!-- ===== Dropdown search (above the grid) ===== -->
+<div class="rf-card searchpanel">
+  <div class="searchpanel__row">
+    <label class="searchfield">
+      <span class="searchfield__label">Client</span>
+      <app-select
+        [options]="clientOptions()"
+        placeholder="All clients"
+        searchPlaceholder="Search client…"
+        [ngModel]="sClient()"
+        (ngModelChange)="sClient.set($event)"
+      />
+    </label>
+    <label class="searchfield">
+      <span class="searchfield__label">Import / Export</span>
+      <app-select
+        [options]="impExpOptions"
+        placeholder="All"
+        [searchable]="false"
+        [ngModel]="sImpExp()"
+        (ngModelChange)="sImpExp.set($event)"
+      />
+    </label>
+    <label class="searchfield">
+      <span class="searchfield__label">Transaction Type</span>
+      <app-select
+        [options]="txnOptions()"
+        placeholder="All types"
+        searchPlaceholder="Search type…"
+        [ngModel]="sTxn()"
+        (ngModelChange)="sTxn.set($event)"
+      />
+    </label>
+    @if (!fixedStatus) {
+      <label class="searchfield">
+        <span class="searchfield__label">Status</span>
+        <app-select
+          [options]="statusOptions"
+          placeholder="All statuses"
+          [searchable]="false"
+          [ngModel]="sStatus()"
+          (ngModelChange)="sStatus.set($event)"
+        />
+      </label>
+    }
+    <div class="searchpanel__actions">
+      <button type="button" class="btn btn-warning" (click)="runSearch()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button type="button" class="btn btn-outline" (click)="clearSearch()">
+        <mat-icon>clear</mat-icon> Clear
+      </button>
+    </div>
+  </div>
 </div>
 
 <div class="rf-card tablewrap">
@@ -17,13 +75,19 @@
     <colgroup>
       <col class="col-order" />
       <col class="col-client" />
+      <col class="col-bank" />
       <col class="col-txn" />
       <col class="col-impexp" />
       <col class="col-ccy" />
       <col class="col-amount" />
+      <col class="col-net" />
       <col class="col-maturity" />
       <col class="col-status" />
-      <col class="col-actions" />
+      <col class="col-createdDate" />
+      <col class="col-media" />
+      @if (!hideActions()) {
+        <col class="col-actions" />
+      }
     </colgroup>
     <thead>
       <tr>
@@ -35,6 +99,7 @@
           <span class="th__name">Client</span>
           <input class="colfilter" placeholder="Search…" (input)="setFilter('client', $any($event.target).value)" />
         </th>
+        <th><span class="th__name">Bank</span></th>
         <th>
           <span class="th__name">Transaction Type</span>
           <input class="colfilter" placeholder="Search…" (input)="setFilter('transactionType', $any($event.target).value)" />
@@ -51,6 +116,7 @@
           <span class="th__name">Amount</span>
           <input class="colfilter" placeholder="Search…" (input)="setFilter('amount', $any($event.target).value)" />
         </th>
+        <th class="ta-r"><span class="th__name">Net Rate</span></th>
         <th>
           <span class="th__name">Maturity Date</span>
           <input class="colfilter" placeholder="Search…" (input)="setFilter('maturity', $any($event.target).value)" />
@@ -59,7 +125,15 @@
           <span class="th__name">Status</span>
           <input class="colfilter" placeholder="Search…" (input)="setFilter('status', $any($event.target).value)" />
         </th>
-        <th class="ta-r"><span class="th__name">Actions</span></th>
+        <th>          
+          <span class="th__name">Created Date</span>
+         
+        </th>
+        <!-- <th class="ta-c"><span class="th__name">Voice</span></th> -->
+        <th class="ta-c"><span class="th__name">Documents</span></th>
+        @if (!hideActions()) {
+          <th class="ta-r"><span class="th__name">Actions</span></th>
+        }
       </tr>
     </thead>
     <tbody>
@@ -67,10 +141,12 @@
         <tr>
           <td class="name">{{ o.orderNumber || '#' + o.recordId }}</td>
           <td>{{ o.clientName || '—' }}</td>
+          <td>{{ o.bankName || '—' }}</td>
           <td>{{ o.transactionType || '—' }}</td>
           <td>{{ o.impExp || '—' }}</td>
           <td>{{ o.currencyCode || '—' }}</td>
           <td class="ta-r">{{ o.amount != null ? (o.amount | number: '1.2-2') : '—' }}</td>
+          <td class="ta-r mono">{{ o.netRateD != null ? (o.netRateD | number: '1.4-4') : '—' }}</td>
           <td>{{ o.maturityDate ? (o.maturityDate | date: 'dd-MMM-yyyy') : '—' }}</td>
           <td>
             @if (o.activeStatus) {
@@ -79,18 +155,53 @@
               —
             }
           </td>
-          <td class="ta-r actions">
-            <a class="rf-iconbtn rf-iconbtn--edit" [routerLink]="['/ftp-order-entry', o.recordId, 'edit']" matTooltip="Edit">
-              <mat-icon>edit</mat-icon>
-            </a>
-            <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(o)" matTooltip="Mark inactive">
-              <mat-icon>delete</mat-icon>
-            </button>
+          <td>{{ o.createdDateTime ? (o.createdDateTime | date: 'dd-MMM-yyyy') : '—' }}</td>
+          <td class="ta-c" style="padding:2px 0px ip !important">
+            @if (o.voiceCount) {
+              <button type="button" class="mediachip" (click)="openMedia(o, 'Voice')"
+                      [matTooltip]="'Play ' + o.voiceCount + ' voice recording(s)'">
+                <mat-icon>graphic_eq</mat-icon>{{ o.voiceCount }}
+              </button>
+            } @else {
+              <span class="rf-muted"></span>
+            }
+            <!--  give space between the two media buttons (voice and screenshot) so that they don't appear too close to each other -->
+
+            
+            
+             @if (o.screenshotCount) {
+              <button type="button" class="mediachip" (click)="openMedia(o, 'Screenshot')"
+                      [matTooltip]="'View ' + o.screenshotCount + ' screenshot(s)'">
+                <mat-icon>image</mat-icon>{{ o.screenshotCount }}
+              </button>
+            } @else {
+              <span class="rf-muted"></span>
+            }
           </td>
+          <!-- <td class="ta-c">
+            @if (o.screenshotCount) {
+              <button type="button" class="mediachip" (click)="openMedia(o, 'Screenshot')"
+                      [matTooltip]="'View ' + o.screenshotCount + ' screenshot(s)'">
+                <mat-icon>image</mat-icon>{{ o.screenshotCount }}
+              </button>
+            } @else {
+              <span class="rf-muted">—</span>
+            }
+          </td> -->
+          @if (!hideActions()) {
+            <td class="ta-r actions">
+              <a class="rf-iconbtn rf-iconbtn--edit" [routerLink]="[config.basePath, o.recordId, 'edit']" matTooltip="Edit">
+                <mat-icon>edit</mat-icon>
+              </a>
+              <button type="button" class="rf-iconbtn rf-iconbtn--del" (click)="remove(o)" matTooltip="Mark inactive">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          }
         </tr>
       } @empty {
         <tr>
-          <td colspan="9" class="empty rf-muted">
+          <td colspan="13" class="empty rf-muted">
             {{ loading() ? 'Loading…' : 'No orders found.' }}
           </td>
         </tr>
@@ -126,3 +237,44 @@
     </button>
   </div>
 </div>
+
+<!-- ===== Attached media (Voice / Screenshot) popover ===== -->
+@if (mediaOrder(); as o) {
+  <div class="media-modal" (click)="closeMedia()">
+    <div class="media-modal__card" (click)="$event.stopPropagation()">
+      <header class="media-modal__bar">
+        <mat-icon>{{ mediaType() === 'Voice' ? 'graphic_eq' : 'image' }}</mat-icon>
+        <span class="media-modal__title">
+          {{ mediaType() === 'Voice' ? 'Voice recordings' : 'Screenshots' }}
+          · Order {{ o.orderNumber || '#' + o.recordId }}
+        </span>
+        <button type="button" class="media-modal__close" (click)="closeMedia()" aria-label="Close">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+
+      <div class="media-modal__body">
+        @if (mediaLoading()) {
+          <p class="rf-muted media-modal__empty">Loading…</p>
+        } @else {
+          @for (rec of mediaFiles(); track rec.fileName) {
+            <button type="button" class="media-item" (click)="openFile(rec)">
+              <mat-icon>{{ mediaType() === 'Voice' ? 'play_circle' : 'visibility' }}</mat-icon>
+              <span class="media-item__name">{{ displayName(rec.fileName) }}</span>
+              <span class="media-item__date rf-muted">{{ rec.createdDate | date: 'dd-MMM-yyyy HH:mm' }}</span>
+            </button>
+          } @empty {
+            <p class="rf-muted media-modal__empty">No files.</p>
+          }
+        }
+
+        @if (playingUrl(); as url) {
+          <div class="media-player">
+            <span class="media-player__name">{{ playingName() }}</span>
+            <audio [src]="url" controls autoplay></audio>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

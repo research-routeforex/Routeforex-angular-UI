@@ -1,0 +1,167 @@
+:host {
+  display: block;
+}
+
+// ---- Hero band -------------------------------------------------------------
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, oklch(62% 0.24 290) 14%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a {
+    top: -120px;
+    right: 8%;
+    background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+  }
+  &--b {
+    bottom: -150px;
+    left: 12%;
+    background: radial-gradient(circle, oklch(62% 0.24 290), transparent 70%);
+  }
+}
+
+// ---- Three cards -----------------------------------------------------------
+.perm {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(240px, 1.2fr) minmax(260px, 1.4fr);
+  gap: var(--rf-gap);
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .perm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.perm__card {
+  padding: 16px;
+  min-height: 160px;
+}
+.perm__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.perm__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+.perm__subtitle {
+  font-weight: 500;
+  color: var(--rf-muted-fg);
+}
+.perm__hint,
+.perm__empty {
+  margin: 10px 2px 0;
+  font-size: 13px;
+}
+.perm__empty {
+  padding: 8px 2px;
+}
+
+.perm__list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  max-height: 440px;
+  overflow: auto;
+}
+.perm__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 6px;
+  border-radius: 8px;
+
+  &--active {
+    background: color-mix(in oklab, var(--mat-sys-primary) 12%, transparent);
+  }
+  &:hover {
+    background: color-mix(in oklab, var(--mat-sys-primary) 7%, transparent);
+  }
+}
+.perm__cb {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--mat-sys-primary);
+}
+.perm__name {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 4px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface);
+  text-align: left;
+  cursor: pointer;
+
+  &--static {
+    cursor: default;
+    font-weight: 500;
+  }
+}
+.perm__count {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--mat-sys-primary) 12%, transparent);
+}
+.perm__chev {
+  flex: none;
+  margin-left: auto;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--rf-muted-fg);
+}

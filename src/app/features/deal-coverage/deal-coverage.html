@@ -1,0 +1,70 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Deal Coverage"
+    subtitle="All booked orders. Attach Voice / Screenshot documents to an existing order."
+    [breadcrumbs]="[{ label: 'Transactions' }, { label: 'Deal Coverage' }]"
+  >
+    <button mat-flat-button color="primary" type="button" (click)="toggleUpload()">
+      <mat-icon>{{ showUpload() ? 'close' : 'upload_file' }}</mat-icon>
+      {{ showUpload() ? 'Close' : 'Upload Document' }}
+    </button>
+  </app-page-header>
+</div>
+
+@if (showUpload()) {
+  <div class="rf-card cover">
+    <div class="cover__pickers">
+      <label class="cover__field">
+        <span class="cover__lbl">Client</span>
+        <app-select
+          [options]="clientOptions()"
+          placeholder="Select client"
+          searchPlaceholder="Search client…"
+          [ngModel]="selectedClientId()"
+          (ngModelChange)="onClientChange($event)"
+        />
+      </label>
+
+      <label class="cover__field">
+        <span class="cover__lbl">Order</span>
+        <app-select
+          [options]="orderOptions()"
+          [placeholder]="
+            !selectedClientId()
+              ? 'Select a client first'
+              : ordersLoading()
+                ? 'Loading orders…'
+                : orderOptions().length
+                  ? 'Select order'
+                  : 'No orders for this client'
+          "
+          searchPlaceholder="Search order…"
+          [ngModel]="selectedRecordId()"
+          (ngModelChange)="selectedRecordId.set($event)"
+        />
+      </label>
+    </div>
+
+    @if (selectedRecordId(); as recordId) {
+      <div class="cover__docs">
+        <app-order-documents
+          [recordId]="recordId"
+          [clientId]="selectedClientId()"
+          [orderNumber]="selectedOrder()?.orderNumber ?? ''"
+        />
+      </div>
+    } @else {
+      <p class="cover__hint rf-muted">
+        Select a client and an order to view its documents and upload new ones.
+      </p>
+    }
+  </div>
+}
+
+<!-- Same booked-orders list as FTP Order Entry (grid + filters, no Add Deal / Actions).
+     Hidden while the Upload Document panel is open. -->
+@if (!showUpload()) {
+  <app-ftp-order-list [embedded]="true" [hideActions]="true" />
+}

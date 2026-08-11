@@ -1,0 +1,146 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="User Company Mapping"
+    subtitle="Map users to their clients (companies). Pick a user, tick the clients, save."
+    [breadcrumbs]="[{ label: 'Masters' }, { label: 'User Company Mapping' }]"
+  >
+    <button mat-flat-button color="primary" type="button" (click)="toggleForm()">
+      <mat-icon>{{ showForm() ? 'close' : 'group_add' }}</mat-icon>
+      {{ showForm() ? 'Cancel' : 'Map User Company' }}
+    </button>
+  </app-page-header>
+</div>
+
+<!-- Map user -> companies -->
+@if (showForm()) {
+  <div class="rf-card child__add">
+    <div class="child__addhead">
+      <h4 class="child__addtitle">
+        <mat-icon>group_add</mat-icon>
+        {{ editing() ? 'Edit Mapping' : 'Map User Company' }}
+      </h4>
+    </div>
+
+    <div class="child__form">
+      <label class="fld">
+        <span class="fld__lbl">User</span>
+        @if (editing()) {
+          <input class="rf-input" type="text" [value]="formUserName()" readonly />
+        } @else {
+          <app-select
+            [options]="userOptions()"
+            placeholder="Select user"
+            searchPlaceholder="Search user…"
+            [ngModel]="formUserId()"
+            (ngModelChange)="onFormUser($event)"
+          />
+        }
+      </label>
+
+      <!-- Company (client) checkbox list -->
+      <div class="multi">
+        <span class="rf-label">Company List</span>
+        <div class="multi__box">
+          @for (opt of clientOptions(); track opt.value) {
+            <label class="multi__opt">
+              <input
+                type="checkbox"
+                [checked]="isChecked($any(opt.value))"
+                (change)="toggleClient($any(opt.value), $event)"
+              />
+              {{ opt.label }}
+            </label>
+          } @empty {
+            <span class="rf-muted multi__empty">No companies available.</span>
+          }
+        </div>
+      </div>
+
+      <div class="child__formactions">
+        <button mat-stroked-button type="button" (click)="closeForm()">Clear</button>
+        <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving() || !formUserId()">
+          <mat-icon>save</mat-icon>
+          {{ saving() ? 'Saving…' : 'Submit' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Filters -->
+<div class="rf-card filter">
+  <div class="filter__fields">
+    <label class="filter__field">
+      <span class="filter__lbl">User</span>
+      <app-select
+        [options]="userOptions()"
+        placeholder="All users"
+        searchPlaceholder="Search user…"
+        [ngModel]="filterUserId()"
+        (ngModelChange)="onFilterUser($event)"
+      />
+    </label>
+    <label class="filter__field">
+      <span class="filter__lbl">Client</span>
+      <app-select
+        [options]="clientOptions()"
+        placeholder="All clients"
+        searchPlaceholder="Search client…"
+        [ngModel]="filterClientId()"
+        (ngModelChange)="onFilterClient($event)"
+      />
+    </label>
+    <div class="filter__actions">
+      <button mat-flat-button color="primary" type="button" (click)="search()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- List -->
+<div class="rf-card child__tablewrap">
+  <table class="child__table">
+    <!-- Per-column sizing: tweak each width in user-company-mapping.scss (.col-*). -->
+    <colgroup>
+      <col class="col-sno" />
+      <col class="col-userid" />
+      <col class="col-username" />
+      <col class="col-clients" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>S.No.</th>
+        <th>User ID</th>
+        <th>User Name</th>
+        <th>Client Name</th>
+        <th class="ta-r">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of rows(); track r.userId; let i = $index) {
+        <tr>
+          <td>{{ i + 1 }}</td>
+          <td>{{ r.userId }}</td>
+          <td class="name">{{ r.userName || '—' }}</td>
+          <td>{{ r.clientNames || '—' }}</td>
+          <td class="ta-r">
+            <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(r)" matTooltip="Edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No mappings found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -13,42 +13,6 @@ import {
   OrderClientDetailsApi,
 } from './dealer-pad.models';
 
-const SEED_RATES: CurrencyRate[] = [
-  rate('USD / INR', 95.7075, 95.7175, 0.008, 0.013, 0.004, 0.0065, 95.6945, 95.7095),
-  rate('EUR / INR', 110.2175, 110.24, 0.0092, 0.015, 0.0046, 0.0075, 110.2025, 110.2308),
-  rate('GBP / INR', 127.5575, 127.5775, 0.0107, 0.0174, 0.0053, 0.0087, 127.5401, 127.5668),
-  rate('JPY / INR', 59.815, 59.825, 0.008, 0.013, 0.004, 0.0065, 59.802, 59.817),
-  rate('AUD / INR', 67.5025, 67.515, 0.008, 0.013, 0.004, 0.0065, 67.4895, 67.507),
-];
-
-function rate(
-  pair: string,
-  spotBid: number,
-  spotAsk: number,
-  cashSpotBid: number,
-  cashSpotAsk: number,
-  tomSpotBid: number,
-  tomSpotAsk: number,
-  cashRateBid: number,
-  cashRateAsk: number,
-): CurrencyRate {
-  return {
-    pair,
-    spotBid,
-    spotAsk,
-    cashSpotBid,
-    cashSpotAsk,
-    tomSpotBid,
-    tomSpotAsk,
-    cashRateBid,
-    cashRateAsk,
-    spotBidDir: 0,
-    spotAskDir: 0,
-    cashRateBidDir: 0,
-    cashRateAskDir: 0,
-  };
-}
-
 let seq = 1000;
 const id = () => `DL-${++seq}`;
 
@@ -78,115 +42,10 @@ function deal(partial: Partial<Deal>): Deal {
   };
 }
 
-/** Inputs to the Dealer Rates net-rate formula (a port of the legacy CalNetRate). */
-export interface NetRateInput {
-  /** Dealer-entered spot (#txtdealerspot). */
-  spot: number;
-  /** Dealer-entered premium / discount (#txtdealerpremiumdiscount). */
-  premium: number;
-  /** Dealer-entered margin (#txtdealermargin). */
-  margin: number;
-  direction: Deal['direction'];
-  /** Transaction-type id (TFTPO_Mast_TransType / ddlTranType): '1'..'9'. */
-  transactionType?: string | null;
-  /** Forward window mode (legacy ddlForwd) — only used for type 5. */
-  windowMode?: string | null;
-  /** Maturity date (type 5 + Fix). Accepts DD/MM/YYYY, DD-MMM-YYYY, DD-MM-YYYY or YYYY-MM-DD. */
-  maturityDate?: string | null;
-  /** For type 7 only — the transaction type's Cash/Forward description (legacy TransactionDetail). */
-  transactionDetail?: string | null;
-}
-
-const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-
-/** Parse a maturity-date string into a Date, tolerating the common desk formats. */
-function parseMaturityDate(value: string | null | undefined): Date | null {
-  const s = (value ?? '').trim();
-  if (!s) return null;
-  // Legacy format: DD/MM/YYYY.
-  if (s.includes('/')) {
-    const [dd, mm, yyyy] = s.split('/');
-    const d = Number(dd), m = Number(mm), y = Number(yyyy);
-    return d && m && y ? new Date(y, m - 1, d) : null;
-  }
-  // Hyphen formats: YYYY-MM-DD, DD-MMM-YYYY or DD-MM-YYYY.
-  if (s.includes('-')) {
-    const p = s.split('-');
-    if (p.length !== 3) return null;
-    if (p[0].length === 4) {
-      const y = Number(p[0]), m = Number(p[1]), d = Number(p[2]);
-      return y && m && d ? new Date(y, m - 1, d) : null;
-    }
-    const d = Number(p[0]);
-    const y = Number(p[2]);
-    let m = Number(p[1]);
-    if (!m) m = MONTHS.indexOf(p[1].slice(0, 3).toLowerCase()) + 1;
-    return d && m && y ? new Date(y, m - 1, d) : null;
-  }
-  const t = Date.parse(s);
-  return Number.isNaN(t) ? null : new Date(t);
-}
-
-/** Whole-day offset of the maturity date from today: 0 today, -1 yesterday, -2 day-before. */
-function maturityOffsetDays(value: string | null | undefined): number | null {
-  const d = parseMaturityDate(value);
-  if (!d) return null;
-  const now = new Date();
-  const a = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
-  const b = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.round((a - b) / 86_400_000);
-}
-
-/**
- * Dealer Rates net rate — a faithful port of the legacy `CalNetRate()`.
- * Branches on Import/Export, the transaction-type id, and (for forwards, type 5)
- * the window mode plus the maturity date's proximity to today.
- */
-export function computeNetRate(input: NetRateInput): number {
-  const spot = Number(input.spot) || 0;
-  const premium = Number(input.premium) || 0;
-  const margin = Number(input.margin) || 0;
-  const txn = String(input.transactionType ?? '').trim();
-  const isImport = input.direction === 'Import';
-
-  let net: number;
-
-  if (txn === '8') {
-    // Cash-spot value-date — margin is not applied (legacy zeroes it).
-    net = premium + spot;
-  } else if (txn === '7') {
-    // Driven by the deal's transaction detail; identical for Import & Export.
-    const detail = String(input.transactionDetail ?? '').toLowerCase();
-    net = detail.includes('forward') ? spot + premium - margin : spot - premium - margin;
-  } else if (txn === '3') {
-    // Cash — no premium.
-    net = isImport ? spot + margin : spot - margin;
-  } else if (txn === '4') {
-    // Forward.
-    net = isImport ? spot + premium + margin : spot + premium - margin;
-  } else if (txn === '5') {
-    // Forward, with an optional Fix maturity-date settlement adjustment.
-    if (String(input.windowMode ?? '') === 'Fix') {
-      const rel = maturityOffsetDays(input.maturityDate);
-      if (isImport) {
-        if (rel === 0 || rel === -1) net = spot - premium - margin;
-        else if (rel === -2) net = spot - margin;
-        else net = spot + premium - margin;
-      } else {
-        if (rel === 0 || rel === -1) net = spot - premium + margin;
-        else if (rel === -2) net = spot + margin;
-        else net = spot + premium + margin;
-      }
-    } else {
-      net = isImport ? spot + premium - margin : spot + premium + margin;
-    }
-  } else {
-    // Types 1 / 2 / 6 / 9 (cash-spot family) and the default.
-    net = isImport ? spot - premium + margin : spot - premium - margin;
-  }
-
-  return Math.round(net * 10000) / 10000;
-}
+// Dealer Rates net-rate formula (legacy CalNetRate) now lives in a shared util so
+// FTP Order Entry computes an identical Net Rate. Re-exported for existing callers.
+export { computeNetRate } from '../../shared/rates/net-rate';
+export type { NetRateInput } from '../../shared/rates/net-rate';
 
 /**
  * Dealer-pad signal store: live rate board plus the pending and saved deal
@@ -197,7 +56,9 @@ export function computeNetRate(input: NetRateInput): number {
 export class DealerPadService {
   private readonly api = inject(ApiService);
 
-  private readonly _rates = signal<CurrencyRate[]>(SEED_RATES);
+  // Starts empty — the board only ever shows live data from the API. If the feed
+  // is unavailable the grid stays empty; no dummy/seed rates are shown.
+  private readonly _rates = signal<CurrencyRate[]>([]);
   readonly rates = this._rates.asReadonly();
 
   /** Timestamp of the last time the rate board was refreshed (fetch or tick). */
@@ -310,33 +171,6 @@ export class DealerPadService {
         context: silentContext(),
       })
       .pipe(map((rows) => (rows ?? []).map((o) => orderToDeal(o, status))));
-  }
-
-  /** Nudge every rate slightly to simulate a live market feed. */
-  tick(): void {
-    this._rates.update((rates) =>
-      rates.map((r) => {
-        const drift = (Math.random() - 0.5) * (r.spotBid * 0.0004);
-        const spotBid = round(r.spotBid + drift);
-        const spotAsk = round(spotBid + (r.spotAsk - r.spotBid));
-        // Cash rate moves with the market too; its arrows reflect this change.
-        const cashRateBid = round(r.cashRateBid + drift);
-        const cashRateAsk = round(cashRateBid + (r.cashRateAsk - r.cashRateBid));
-        const dir: -1 | 0 | 1 = drift > 0 ? 1 : drift < 0 ? -1 : 0;
-        return {
-          ...r,
-          spotBid,
-          spotAsk,
-          cashRateBid,
-          cashRateAsk,
-          spotBidDir: dir,
-          spotAskDir: dir,
-          cashRateBidDir: dir,
-          cashRateAskDir: dir,
-        };
-      }),
-    );
-    this._lastUpdated.set(new Date());
   }
 
   /** Persist (or update) a deal in the saved queue. */

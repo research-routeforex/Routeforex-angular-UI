@@ -107,11 +107,13 @@ export class ManagementDashboardComponent {
 
     // Live feed: re-fetch from the DB every 2 seconds, silently (no loading
     // flicker, drill-down stays open, last good data kept if a poll fails).
+    // Skip the tick if a request is still in flight so slow responses can't pile
+    // up; the service cancels any stale request when client/section/bank changes.
     interval(2000)
       .pipe(takeUntilDestroyed())
       .subscribe(() => {
         const clientId = this.selectedClient();
-        if (clientId == null) return;
+        if (clientId == null || this.svc.fetching()) return;
         this.svc.load(clientId, this.section(), this.selectedBank(), true);
       });
   }

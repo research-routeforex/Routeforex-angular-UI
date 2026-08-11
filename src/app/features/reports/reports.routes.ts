@@ -18,4 +18,9 @@ export const REPORTS_ROUTES: Routes = [
     title: 'PNL MIS Report — RouteForex',
     loadComponent: () => import('./pnl-mis/pnl-mis').then((m) => m.PnlMisComponent),
   },
+  {
+    path: 'mis-report',
+    title: 'MIS Report — RouteForex',
+    loadComponent: () => import('./mis-report/mis-report').then((m) => m.MisReportComponent),
+  },
 ];

@@ -79,11 +79,13 @@ export class ExecutiveDashboardComponent {
     });
 
     // Live feed: silently re-fetch every 2 seconds (no loading flicker).
+    // Skip the tick if a request is still in flight so slow responses can't pile
+    // up; the service cancels any stale request when the client/section changes.
     interval(2000)
       .pipe(takeUntilDestroyed())
       .subscribe(() => {
         const clientId = this.selectedClient();
-        if (clientId == null) return;
+        if (clientId == null || this.svc.fetching()) return;
         this.svc.load(clientId, this.section(), true);
       });
   }

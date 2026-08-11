@@ -117,6 +117,11 @@ export class ClientFormComponent implements OnInit {
     this.form.controls.city.valueChanges.pipe(takeUntilDestroyed()).subscribe((cityId) => {
       this.selectedCity.set(cityId);
     });
+
+    // Re-evaluate contact rules as the user types: a subsequent row's Name becomes
+    // required the moment it gets an email/number, and drops the requirement again
+    // when cleared. (updateValueAndValidity uses emitEvent:false, so no loop.)
+    this.contacts.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.applyContactValidators());
   }
 
   private loadCountries(regionId: number | null): void {
@@ -156,12 +161,47 @@ export class ClientFormComponent implements OnInit {
     });
   }
 
+  /**
+   * Applies position-based validation to the contact rows:
+   *  - the FIRST contact must have Name, Email and Contact Number;
+   *  - every other contact needs a Name ONLY when that row has data (an email or
+   *    number typed in) — a completely blank extra row is ignored, so it never
+   *    blocks the save. Email is still format-checked whenever present.
+   * Re-run on add/remove and whenever a contact field changes (see constructor),
+   * so the rules always follow the current first row and live data.
+   */
+  private applyContactValidators(): void {
+    this.contacts.controls.forEach((group, i) => {
+      const name = group.get('contactName')!;
+      const email = group.get('email')!;
+      const number = group.get('contactNumber')!;
+
+      if (i === 0) {
+        name.setValidators([Validators.required, Validators.maxLength(150)]);
+        email.setValidators([Validators.required, Validators.email]);
+        number.setValidators([Validators.required]);
+      } else {
+        const rowHasData = !!(email.value?.trim() || number.value?.trim());
+        name.setValidators(
+          rowHasData ? [Validators.required, Validators.maxLength(150)] : [Validators.maxLength(150)],
+        );
+        email.setValidators([Validators.email]);
+        number.clearValidators();
+      }
+      name.updateValueAndValidity({ emitEvent: false });
+      email.updateValueAndValidity({ emitEvent: false });
+      number.updateValueAndValidity({ emitEvent: false });
+    });
+  }
+
   protected addContact(): void {
     this.contacts.push(this.newContact());
+    this.applyContactValidators();
   }
 
   protected removeContact(i: number): void {
     this.contacts.removeAt(i);
+    this.applyContactValidators();
   }
 
   private loadClient(id: number): void {
@@ -194,6 +234,7 @@ export class ClientFormComponent implements OnInit {
         this.contacts.clear();
         const list = c.contacts?.length ? c.contacts : [{}];
         for (const ct of list) this.contacts.push(this.newContact(ct));
+        this.applyContactValidators();
 
         // Restore Region → Country → City in order without firing the reset cascade.
         const regionId = toId(c.region);

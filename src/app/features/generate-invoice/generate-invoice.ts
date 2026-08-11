@@ -12,10 +12,11 @@ import { FieldComponent } from '../../shared/components/field/field';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header';
 import { SelectComponent, SelectOption } from '../../shared/components/select/select';
 import { DMY_DATE_FORMATS, DmyDateAdapter } from '../../shared/date/dmy-date-adapter';
+import { OpenDatepickerOnFocusDirective } from '../../shared/directives/open-datepicker-on-focus.directive';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { DropdownService } from '../../shared/services/dropdown.service';
 import { CompanyMasterService } from '../company-master/company-master.service';
-import { GeneratedInvoice, InvoiceFooter, InvoiceLine, SaveInvoiceResult } from './invoice.model';
+import { GeneratedInvoice, InvoiceLine } from './invoice.model';
 import { InvoiceService } from './invoice.service';
 
 type InvoiceTab = 'generate' | 'history';
@@ -42,6 +43,7 @@ interface HistFilters {
     MatButtonModule,
     MatIconModule,
     MatDatepickerModule,
+    OpenDatepickerOnFocusDirective,
     MatTooltipModule,
     DecimalPipe,
     DatePipe,
@@ -61,14 +63,6 @@ export class GenerateInvoiceComponent {
   private readonly notify = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
 
-  // Company details for the invoice header/footer.
-  protected readonly company = {
-    name: 'RouteForex Solutions Pvt. Ltd.',
-    tagline: 'Bringing Transparency Adding Bottomline',
-    logo: 'invoice/logo.jpg',
-    stamp: 'invoice/stamp.jpg',
-  };
-
   protected readonly tabs: { key: InvoiceTab; label: string; icon: string }[] = [
     { key: 'generate', label: 'Generate Invoice', icon: 'receipt_long' },
     { key: 'history', label: 'Generated Invoices', icon: 'history' },
@@ -85,27 +79,8 @@ export class GenerateInvoiceComponent {
   protected readonly loading = signal(false);
   protected readonly searched = signal(false);
 
-  // Invoice (set after "Generate Invoice").
+  // Invoice generation state (drives the "Generate Invoice" button).
   protected readonly generating = signal(false);
-  protected readonly generated = signal(false);
-  protected readonly invoiceNo = signal('');
-  protected readonly invoiceDate = signal<Date>(new Date());
-  protected readonly gstNumber = signal('');
-  /** Billing period shown on the printable invoice (search range, or rebuilt on re-print). */
-  protected readonly periodFrom = signal<Date | null>(null);
-  protected readonly periodTo = signal<Date | null>(null);
-  /** Server-computed tax breakdown (set after Generate) — drives the invoice split. */
-  protected readonly tax = signal<SaveInvoiceResult | null>(null);
-  /** Which tax applies — inter-state IGST, or intra-state CGST + SGST. */
-  protected readonly taxMode = computed<'igst' | 'split'>(() => {
-    const t = this.tax();
-    const k = (t?.taxType ?? '').toUpperCase().replace(/[^A-Z]/g, '');
-    if (k === 'IGST') return 'igst';
-    if (k.includes('CGST') || k.includes('SGST')) return 'split';
-    return (t?.igst ?? 0) > 0 && (t?.cgst ?? 0) === 0 && (t?.sgst ?? 0) === 0 ? 'igst' : 'split';
-  });
-  /** Bank + contact details bound in the invoice footer. */
-  protected readonly footer = signal<InvoiceFooter | null>(null);
 
   protected readonly form = this.fb.group({
     client: this.fb.control<number | null>(null, [Validators.required]),
@@ -192,23 +167,8 @@ export class GenerateInvoiceComponent {
   protected readonly totalCharges = computed(() =>
     this.lines().reduce((s, l) => s + (l.charge ?? 0), 0),
   );
-  /** Grand total from the server breakdown once generated, else the charges subtotal. */
-  protected readonly grandTotal = computed(() => this.tax()?.totalAmount ?? this.totalCharges());
-  /** Round the payable to the nearest rupee; the difference is shown as "Round Off". */
-  protected readonly roundedTotal = computed(() => Math.round(this.grandTotal()));
-  protected readonly roundOff = computed(() => this.roundedTotal() - this.grandTotal());
-
-  /** Client name for the invoice (from rows, else the picked option). */
-  protected readonly clientName = computed(() => {
-    const fromRows = this.lines()[0]?.clientName;
-    if (fromRows) return fromRows;
-    const id = this.form.controls.client.value;
-    return this.clientOptions().find((o) => Number(o.value) === id)?.label ?? '';
-  });
-
   constructor() {
     this.dropdowns.get('Client').subscribe((opts) => this.clientOptions.set(opts));
-    this.service.getFooter().subscribe((f) => this.footer.set(f));
 
     // GST-number dropdown from company master — Active companies only, distinct non-blank GSTN.
     this.companies.getCompanies().subscribe((list) => {
@@ -239,12 +199,11 @@ export class GenerateInvoiceComponent {
     }
 
     this.loading.set(true);
-    this.generated.set(false);
     this.service
       .generate(client!, toIso(fromDate!), toIso(toDate!))
       .pipe(finalize(() => this.loading.set(false)))
-      .subscribe((rows) => {
-        this.lines.set(rows);
+      .subscribe((result) => {
+        this.lines.set(result.lines);
         this.searched.set(true);
       });
   }
@@ -284,21 +243,12 @@ export class GenerateInvoiceComponent {
           })
           .pipe(finalize(() => this.generating.set(false)))
           .subscribe((result) => {
-            this.tax.set(result);
-            this.invoiceNo.set(invoiceNumber.trim());
-            this.invoiceDate.set(invoiceDate!);
-            this.gstNumber.set(gstNumber!);
-            const range = this.form.getRawValue();
-            this.periodFrom.set(range.fromDate ?? null);
-            this.periodTo.set(range.toDate ?? null);
-            this.generated.set(true);
             this.notify.success('Invoice generated.');
+            // Open the saved invoice on the shared print page — the exact document
+            // the e-mailed PDF renders — so print and e-mail stay identical.
+            window.open(`/invoice/print/${result.invoiceHdrId}`, '_blank');
           });
       });
-  }
-
-  protected print(): void {
-    window.print();
   }
 
   // ---- Generated Invoices (history) ---------------------------------------

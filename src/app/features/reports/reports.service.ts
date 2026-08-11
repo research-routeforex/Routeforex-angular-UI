@@ -3,6 +3,7 @@ import { map, Observable } from 'rxjs';
 import { API } from '../../core/constants/api-endpoints';
 import { ApiService } from '../../core/services/api.service';
 import { ClientWiseRevenueReport } from './client-wise-revenue.model';
+import { MisReportFilters, MisReportRow } from './mis-report.model';
 import { PnlZoneReport } from './pnl-mis.model';
 import { ReportUcFilters, ReportUcRow } from './report-uc.model';
 
@@ -32,5 +33,15 @@ export class ReportsService {
     return this.api
       .get<ReportUcRow[]>(API.reports.executiveDashboardUc, { params })
       .pipe(map((rows) => rows ?? []));
+  }
+
+  /** MIS / Deal-Coverage report rows (From/To required, client optional). */
+  getMisReport(filters: MisReportFilters): Observable<MisReportRow[]> {
+    const params: Record<string, string | number> = {
+      fromDate: filters.fromDate,
+      toDate: filters.toDate,
+    };
+    if (filters.clientId != null) params['clientId'] = filters.clientId;
+    return this.api.get<MisReportRow[]>(API.reports.mis, { params }).pipe(map((rows) => rows ?? []));
   }
 }

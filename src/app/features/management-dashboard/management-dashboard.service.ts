@@ -1,5 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { map, Observable, of, Subject } from 'rxjs';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 import { API } from '../../core/constants/api-endpoints';
 import { silentContext } from '../../core/interceptors/http-context.tokens';
 import { ApiService } from '../../core/services/api.service';
@@ -10,6 +12,14 @@ import { DashboardLeaf, DashboardRowApi, Section, toLeaf } from './management-da
 interface ClientItemApi {
   key: unknown;
   value: string;
+}
+
+/** A single grid-load request pushed through the (latest-wins) fetch pipeline. */
+interface LoadRequest {
+  clientId: number;
+  type: Section;
+  bankId: number | null;
+  silent: boolean;
 }
 
 /**
@@ -38,6 +48,57 @@ export class ManagementDashboardService {
   readonly lastUpdated = this._lastUpdated.asReadonly();
 
   /**
+   * True while a fetch is in flight (silent polls included). The poll uses this to
+   * avoid stacking a new request on top of one that hasn't returned yet.
+   */
+  private readonly _fetching = signal(false);
+  readonly fetching = this._fetching.asReadonly();
+
+  /**
+   * All grid loads flow through this stream. `switchMap` cancels any in-flight
+   * request when a newer one arrives, so a slow response for a *previous* client,
+   * section or bank can never overwrite the current selection's data (latest-wins).
+   */
+  private readonly _load$ = new Subject<LoadRequest>();
+
+  constructor() {
+    this._load$
+      .pipe(
+        tap((req) => {
+          this._fetching.set(true);
+          if (!req.silent) {
+            this._loading.set(true);
+            this._loaded.set(false);
+          }
+        }),
+        switchMap((req) =>
+          this.api
+            .get<DashboardRowApi[]>(API.managementDashboard.transactions, {
+              params: { clientId: req.clientId, type: req.type, clientBank: req.bankId ?? undefined },
+              context: req.silent ? silentContext() : undefined,
+            })
+            .pipe(
+              map((rows) => ({ req, rows: rows ?? [], ok: true })),
+              // Keep the pipeline alive on error so later polls still fire.
+              catchError(() => of({ req, rows: [] as DashboardRowApi[], ok: false })),
+            ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe(({ req, rows, ok }) => {
+        if (ok) {
+          this._leaves.set(rows.map(toLeaf));
+          this._lastUpdated.set(new Date());
+        } else if (!req.silent) {
+          this._leaves.set([]);
+        }
+        this._loaded.set(true);
+        this._loading.set(false);
+        this._fetching.set(false);
+      });
+  }
+
+  /**
    * Client list for the picker, from Proc_RF_ManagementDashboard
    * (@Action = 'GetClientInformation', @CreatedBy = signed-in user — resolved
    * server-side). Mapped to {@link SelectOption} ({ value, label }).
@@ -54,28 +115,7 @@ export class ManagementDashboardService {
    * data already on screen rather than blanking it.
    */
   load(clientId: number, type: Section, bankId: number | null = null, silent = false): void {
-    if (!silent) {
-      this._loading.set(true);
-      this._loaded.set(false);
-    }
-    this.api
-      .get<DashboardRowApi[]>(API.managementDashboard.transactions, {
-        params: { clientId, type, clientBank: bankId ?? undefined },
-        context: silent ? silentContext() : undefined,
-      })
-      .subscribe({
-        next: (rows) => {
-          this._leaves.set((rows ?? []).map(toLeaf));
-          this._lastUpdated.set(new Date());
-          this._loaded.set(true);
-          this._loading.set(false);
-        },
-        error: () => {
-          if (!silent) this._leaves.set([]);
-          this._loaded.set(true);
-          this._loading.set(false);
-        },
-      });
+    this._load$.next({ clientId, type, bankId, silent });
   }
 
   /** Reset to the initial "no client selected" state. */
@@ -83,5 +123,7 @@ export class ManagementDashboardService {
     this._leaves.set([]);
     this._loaded.set(false);
     this._lastUpdated.set(null);
+    this._loading.set(false);
+    this._fetching.set(false);
   }
 }

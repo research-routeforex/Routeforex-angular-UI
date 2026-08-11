@@ -1,17 +1,34 @@
 <button
+  #trigger
   type="button"
   class="sel__trigger"
+  role="combobox"
+  [attr.aria-expanded]="open()"
   [class.sel__trigger--open]="open()"
   [class.sel__trigger--placeholder]="!selectedLabel()"
   [disabled]="disabled()"
-  (click)="toggle()"
+  (mousedown)="onTriggerPointer()"
+  (focus)="onTriggerFocus()"
+  (click)="toggle($event)"
 >
   <span class="sel__value">{{ selectedLabel() || placeholder() }}</span>
   <mat-icon class="sel__chev" [class.sel__chev--open]="open()">expand_more</mat-icon>
 </button>
 
 @if (open()) {
-  <div class="sel__panel">
+  <!--
+    Some screens wrap <app-select> in a native <label>. A label's default action is
+    to forward a click on its non-control descendants (our option <li>) as a synthetic
+    click on the labelled control (our trigger button) — which re-opens the panel we
+    just closed on selection. That synthetic click is dispatched straight at the trigger
+    (it does NOT bubble through the panel), so stopPropagation can't catch it; the fix is
+    preventDefault() on the panel click, which cancels the label's forward default action.
+  -->
+  <div
+    class="sel__panel"
+    [class.sel__panel--up]="dropUp()"
+    (click)="$event.preventDefault()"
+  >
     @if (searchable()) {
       <div class="sel__search">
         <mat-icon>search</mat-icon>
@@ -20,19 +37,24 @@
           type="text"
           [value]="search()"
           [placeholder]="searchPlaceholder()"
-          (input)="search.set($any($event.target).value)"
+          (input)="onSearch($any($event.target).value)"
         />
       </div>
     }
-    <ul class="sel__list">
-      @for (opt of filtered(); track opt.value) {
+    <ul class="sel__list" role="listbox">
+      @for (opt of filtered(); track opt.value; let i = $index) {
         <li
           class="sel__opt"
-          [class.sel__opt--active]="isSelected(opt.value)"
+          role="option"
+          [class.sel__opt--null]="opt.value === null"
+          [attr.aria-selected]="isSelected(opt.value)"
+          [class.sel__opt--active]="isSelected(opt.value) && opt.value !== null"
+          [class.sel__opt--highlighted]="i === highlighted()"
+          (mouseenter)="highlighted.set(i)"
           (click)="selectOption(opt)"
         >
           <span>{{ opt.label }}</span>
-          @if (isSelected(opt.value)) {
+          @if (isSelected(opt.value) && opt.value !== null) {
             <mat-icon>check</mat-icon>
           }
         </li>

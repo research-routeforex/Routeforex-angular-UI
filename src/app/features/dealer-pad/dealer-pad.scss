@@ -8,8 +8,37 @@
 .dp__main {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
+}
+
+// Compact density pass — shrink inputs / selects / labels inside the deal form
+// so the whole pad (form + rate bands + submit) fits on one screen without the
+// dealer scrolling, mirroring the tight legacy layout (~90% visual scale).
+.dp {
+  .rf-input,
+  .rf-select,
+  textarea.rf-textarea,
+  app-select .sel__trigger {
+    height: 28px;
+    font-size: 13px;
+  }
+  textarea.rf-textarea {
+    height: auto;
+    padding: 5px 10px;
+  }
+  .rf-input {
+    padding: 0 10px;
+  }
+  // Keep space for the leading search icon (Pending / Saved search boxes) —
+  // the compact padding above must not slide the text under the icon.
+  .rf-input--icon {
+    padding-left: 40px;
+  }
+  .rf-label {
+    font-size: 12.5px;
+    line-height: 1.15;
+  }
 }
 
 .dp__aside {
@@ -22,16 +51,16 @@
 
 // ---- Live rate board -------------------------------------------------------
 .board {
-  padding: 10px 14px;
+  padding: 8px 12px;
 
   &__head {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     h3 {
       margin: 0;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
     }
   }
@@ -94,11 +123,11 @@
   table-layout: fixed;
   min-width: 720px;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12.5px;
 
   th,
   td {
-    padding: 5px 12px;
+    padding: 4px 10px;
     border-bottom: 1px solid var(--rf-border);
     text-align: left;
     white-space: nowrap;
@@ -115,18 +144,27 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--rf-primary) 96%, white) 0%,
-      color-mix(in oklab, var(--rf-primary) 82%, black) 100%
-    );
+    background: #3a3f47; // Currency — charcoal (legacy)
     color: #fff;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    border-bottom: 2px solid color-mix(in oklab, var(--rf-primary) 60%, black);
-    box-shadow: 0 2px 8px -4px color-mix(in oklab, var(--rf-primary) 70%, transparent);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.35);
+    box-shadow: 0 2px 8px -4px rgba(0, 0, 0, 0.4);
+  }
+  // Legacy per-column header colours (match the tbody bands below).
+  thead th:nth-child(2) {
+    background: #d62828; // Spot — red
+  }
+  thead th:nth-child(3) {
+    background: #8a7712; // Cash Spot — olive
+  }
+  thead th:nth-child(4) {
+    background: #46687d; // Tom Spot — slate
+  }
+  thead th:nth-child(5) {
+    background: #2f8a34; // Cash Rate — green
   }
   thead th + th {
     border-left: 1px solid color-mix(in oklab, white 16%, transparent);
@@ -139,11 +177,7 @@
   }
   // Highlight the live Cash Rate column header with a pulsing dot.
   thead th.live-col {
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--rf-primary) 80%, white) 0%,
-      color-mix(in oklab, var(--rf-primary) 70%, black) 100%
-    );
+    background: #2f8a34; // Cash Rate — green (legacy)
   }
   thead th.live-col::after {
     content: '';
@@ -160,24 +194,64 @@
     font-weight: 600;
   }
 
-  // Distinct, subtle background per column so each section (Currency / Spot /
-  // Cash Spot / Tom Spot / Cash Rate) reads as its own coloured band. Tints are
-  // mixed with `transparent` so they adapt to both the light and dark surface.
+  // Solid legacy colour bands (same as the column headers) with white text:
+  // charcoal Currency, red Spot, olive Cash Spot, slate Tom Spot, green Cash Rate.
+  tbody td {
+    color: #fff;
+  }
+  // Inner bid/ask spans set their own up/down colour — force white to match.
+  tbody td .rate,
+  tbody td .px {
+    color: #fff;
+  }
   tbody td:nth-child(1) {
-    background: color-mix(in oklab, #f43f5e 9%, transparent); // Currency — rose
+    background: #3a3f47; // Currency — charcoal
   }
   tbody td:nth-child(2) {
-    background: color-mix(in oklab, #2f6df6 13%, transparent); // Spot — blue
+    background: #d62828; // Spot — red
   }
   tbody td:nth-child(3) {
-    background: color-mix(in oklab, #0ea5a5 9%, transparent); // Cash Spot — teal
+    background: #8a7712; // Cash Spot — olive
   }
   tbody td:nth-child(4) {
-    background: color-mix(in oklab, #f59e0b 11%, transparent); // Tom Spot — amber
+    background: #46687d; // Tom Spot — slate
   }
   tbody td:nth-child(5) {
-    background: color-mix(in oklab, var(--rf-primary) 15%, transparent); // Cash Rate — brand violet
+    background: #2f8a34; // Cash Rate — green
   }
+}
+
+// Lock a constant data-row height so the board always shows exactly 5 rows —
+// the tick arrow can no longer make a row taller than a plain-text row.
+.rates tbody td {
+  height: 23px;
+}
+
+// Each rate section is split into two right-aligned halves (bid | ask) with a
+// vertical divider line between them, matching the legacy board.
+.rates td.seg {
+  padding: 0;
+  font-size: 0; // collapse the whitespace between the two inline-block halves
+}
+.rates td.seg > .seg__v {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 50%;
+  padding: 0 6px;
+  font-size: 12.5px; // restore (matches .rates)
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  line-height: 23px;
+}
+.rates td.seg > .seg__v:first-child {
+  border-right: 1px solid rgba(255, 255, 255, 0.4);
+}
+// Thin separators between the sections too (legacy has vertical lines).
+.rates tbody td + td {
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 // Spot price with directional arrow (green up / red down).
@@ -185,6 +259,9 @@
   display: inline-flex;
   align-items: center;
   font-weight: 600;
+  // Fixed line box so a row is the SAME height whether or not the tick arrow
+  // is shown — otherwise arrow rows grow ~3px each and the 5th row is clipped.
+  line-height: 15px;
   margin-right: 10px;
   &:last-child {
     margin-right: 0;
@@ -196,10 +273,15 @@
     color: var(--rf-danger);
   }
   &__arr {
-    font-size: 18px;
-    width: 14px;
-    height: 18px;
-    margin-left: -2px;
+    flex: none;
+    // Constrained to the text line height (with overflow clipped) so the icon
+    // never makes the row taller than a plain-text row.
+    font-size: 15px;
+    width: 12px;
+    height: 15px;
+    line-height: 15px;
+    margin-left: -1px;
+    overflow: hidden;
   }
 }
 
@@ -228,7 +310,7 @@
 
 // ---- Deal form -------------------------------------------------------------
 .dealform {
-  padding: 12px 16px;
+  padding: 10px 14px;
   position: relative;
 
   &__overlay {
@@ -260,48 +342,48 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 0 0 9px;
-    font-size: 14px;
+    margin: 0 0 6px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--rf-primary);
     mat-icon {
-      font-size: 19px;
-      width: 19px;
-      height: 19px;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
     }
   }
   .rf-field {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   &__actions {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 10px;
-    padding-top: 10px;
+    margin-top: 8px;
+    padding-top: 8px;
     border-top: 1px solid var(--rf-border);
   }
 }
 
 // Stacked sections: Client Information first, then Deal Details.
 .dform-section + .dform-section {
-  margin-top: 4px;
-  padding-top: 10px;
+  margin-top: 2px;
+  padding-top: 6px;
   border-top: 1px solid var(--rf-border);
 }
 
 // The two 2-row textareas (Dealing Room Landline, Remarks) default to a tall
 // 96px box — shrink them so the rate bands aren't pushed far down the page.
 .dealform textarea.rf-textarea {
-  min-height: 50px;
-  padding: 7px 12px;
+  min-height: 40px;
+  padding: 5px 10px;
 }
 
-// Three-column field layout (matches the legacy deal form density).
+// Five-column field layout (packs Client Info / Deal Details tightly to save space).
 .fieldgrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0 18px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0 16px;
 
   // Let items shrink below content so long values truncate, not widen the column.
   > * {
@@ -326,7 +408,9 @@
 // Documents complete? — read-only YES / NO display.
 // Client-document download row (SLA + Authorized Letter).
 .doc-downloads {
-  grid-column: 1 / -1;
+  // Sit in the trailing columns of the 3rd row (after Bank Margin +
+  // Contact Person 2) instead of dropping onto its own 4th row.
+  grid-column: span 3;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -399,8 +483,8 @@
   display: flex;
   align-items: stretch;
   gap: 14px;
-  margin-top: 10px;
-  padding: 9px 12px;
+  margin-top: 7px;
+  padding: 6px 10px;
   border: 1px solid var(--rf-border);
   border-radius: var(--rf-radius-sm);
   background: var(--rf-surface-muted);
@@ -431,7 +515,7 @@
   &__cell {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 3px;
     min-width: 0;
 
     label {
@@ -445,10 +529,10 @@
   }
 
   &__val {
-    height: 32px;
+    height: 28px;
     display: flex;
     align-items: center;
-    padding: 0 12px;
+    padding: 0 10px;
     border: 1px solid var(--rf-border);
     border-radius: var(--rf-radius-sm);
     background: var(--rf-surface-2);
@@ -480,12 +564,53 @@
 .band--live .band__val--net {
   background: var(--rf-success);
 }
+// Editable Net Rate (Live Rates) — same green background as the display chip,
+// white bold text, right-aligned; the dealer can override the computed value.
+.band--live .band__net-input {
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+  text-align: right;
+  background: linear-gradient(135deg, oklch(64% 0.16 150), oklch(55% 0.15 163));
+  box-shadow: 0 3px 12px color-mix(in oklab, var(--rf-success) 38%, transparent);
+}
+.band--live .band__net-input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+// Live Rates value fields — light green tint (matches the green band); the Net
+// Rate keeps its solid green chip. Fields are system-computed / read-only.
+.band--live .rf-input[readonly] {
+  cursor: not-allowed;
+}
+.band--live .rf-input:not(.band__net-input) {
+  background: color-mix(in oklab, var(--rf-success) 12%, var(--rf-surface-2));
+  border-color: color-mix(in oklab, var(--rf-success) 28%, var(--rf-border));
+}
 .band--dealer .band__title {
   color: var(--rf-primary);
   background: color-mix(in oklab, var(--rf-primary) 14%, transparent);
 }
 .band--dealer .band__val--net {
   background: var(--rf-primary);
+}
+// Editable Net Rate (Dealer Rates) — same primary background the display chip
+// had before it became editable; white bold text, right-aligned.
+.band--dealer .band__net-input {
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+  text-align: right;
+  background: linear-gradient(135deg, var(--rf-primary), oklch(60% 0.24 292));
+  box-shadow: 0 3px 12px color-mix(in oklab, var(--rf-primary) 40%, transparent);
+}
+.band--dealer .band__net-input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+// Dealer Rates value fields — light primary/purple tint (matches the band); the
+// Net Rate keeps its solid primary chip. Fields stay editable.
+.band--dealer .rf-input:not(.band__net-input) {
+  background: color-mix(in oklab, var(--rf-primary) 10%, var(--rf-surface-2));
+  border-color: color-mix(in oklab, var(--rf-primary) 26%, var(--rf-border));
 }
 
 // ---- Queues ----------------------------------------------------------------
@@ -621,7 +746,7 @@
 }
 @media (max-width: 1200px) {
   .fieldgrid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 @media (max-width: 900px) {
@@ -688,19 +813,15 @@
       box-shadow: inset 3px 0 0 var(--rf-primary);
     }
   }
-  // Currency pair gets a subtle gradient chip feel.
+  // Currency pair — white on the solid charcoal band.
   &__pair {
-    color: var(--rf-primary);
+    color: #fff;
   }
 }
 
-// Gradient wash behind the whole live-rate board.
+// Legacy dealer pad: plain neutral board surface (no brand-tint wash).
 .board {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--rf-primary) 7%, var(--rf-surface-2)) 0%,
-    var(--rf-surface-2) 160px
-  );
+  background: var(--rf-surface-2);
 }
 
 // Live indicator as a soft pill.
@@ -715,17 +836,17 @@
 
 // ---- Section titles --------------------------------------------------------
 .dealform__title {
-  padding-bottom: 10px;
-  margin-bottom: 16px;
+  padding-bottom: 5px;
+  margin-bottom: 8px;
   border-bottom: 1px solid var(--rf-border);
 
   mat-icon {
     display: grid;
     place-items: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 9px;
-    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    font-size: 16px;
     color: #fff;
     background: linear-gradient(135deg, var(--rf-primary), oklch(62% 0.24 290));
     box-shadow: 0 2px 8px color-mix(in oklab, var(--rf-primary) 32%, transparent);
@@ -838,8 +959,8 @@
 .hero {
   position: relative;
   overflow: hidden;
-  margin-bottom: var(--rf-gap);
-  padding: 7px 16px 4px;
+  margin-bottom: 8px;
+  padding: 6px 16px 4px;
   border: 1px solid color-mix(in oklab, var(--rf-primary) 22%, var(--rf-border));
   border-radius: var(--rf-radius);
   background: linear-gradient(
@@ -924,11 +1045,9 @@
 }
 
 // ---- Animated gradient accent strip on the primary cards -------------------
-.board,
 .dealform {
   position: relative;
 }
-.board::before,
 .dealform::before {
   content: '';
   position: absolute;

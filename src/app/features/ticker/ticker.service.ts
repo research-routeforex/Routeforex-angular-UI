@@ -1,81 +1,222 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+import { Observable } from 'rxjs';
+import { API } from '../../core/constants/api-endpoints';
+import { silentContext } from '../../core/interceptors/http-context.tokens';
+import { ApiService } from '../../core/services/api.service';
 import {
-  buildForexBoard,
-  buildFutures,
   CurrencyFutureQuote,
   ForexBoardRow,
+  ForexNewsRow,
+  ForwardPremiumRow,
+  TickerAccess,
 } from './ticker.models';
 
+/** Raw shapes returned by usp_RF_Mast_ForexLiveScreen (camelCased by the API). */
+interface ForexLiveRateApi {
+  description: string;
+  bid: number;
+  ask: number;
+  netChange: number;
+  percentageChange: number;
+  high: number;
+  low: number;
+  open: number;
+  ltp: number;
+  close: number;
+}
+interface CurrencyFutureApi {
+  id: number;
+  symbol: string;
+  expiry: string;
+  bidQty: number;
+  bid: number;
+  ask: number;
+  askQty: number;
+  ltp: number;
+  netChg: number;
+  perChg: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+interface ForexPremiumApi {
+  description: string;
+  bidPrice: number;
+  askPrice: number;
+  bidPercentage: number;
+  askPercentage: number;
+  monthEndDate: string;
+  fwdOutrightBid: number;
+  fwdOutrightAsk: number;
+  currency: string;
+}
+interface ForexNewsApi {
+  recordId: number;
+  mailSubject: string;
+  sourceName: string;
+  mailBody: string;
+  /** Pre-formatted by the SP, e.g. "08-Jun-2026  4:26am". */
+  requestedDate: string;
+}
+
+const sign = (next: number, prev: number): number => (next > prev ? 1 : next < prev ? -1 : 0);
+
 /**
- * Backs the Ticker Live Rate screen. Serves dummy currency-future and spot-FX
- * quotes and jitters them on each {@link tick}. Replace the builders + tick with
- * a real market-data feed later — the component reads only the signals here.
+ * Backs the Ticker Live Rate screen with live data from
+ * `usp_RF_Mast_ForexLiveScreen` (@Action + @Description):
+ *   - board   -> SEARCHLIVERATE       (spot-rate board)
+ *   - futures -> SEARCHCURRENCYFUTURE  (currency-future board)
+ *   - premium -> SEARCHFOREXPREMIUM    (per-currency forward premium)
+ *
+ * The component reads only the signals here. Each refresh diffs against the
+ * previous snapshot to set per-cell tick direction (up/down) for the flash UI.
+ * Requests are "silent" so transient poll errors don't spam notifications; the
+ * last good data is kept on error.
  */
 @Injectable({ providedIn: 'root' })
 export class TickerService {
-  private readonly _futures = signal<CurrencyFutureQuote[]>(buildFutures());
+  private readonly api = inject(ApiService);
+
+  private readonly _futures = signal<CurrencyFutureQuote[]>([]);
   readonly futures = this._futures.asReadonly();
 
-  private readonly _board = signal<ForexBoardRow[]>(buildForexBoard());
+  private readonly _board = signal<ForexBoardRow[]>([]);
   readonly board = this._board.asReadonly();
 
-  private readonly _lastUpdated = signal<Date>(new Date());
+  private readonly _premium = signal<ForwardPremiumRow[]>([]);
+  readonly premium = this._premium.asReadonly();
+
+  private readonly _news = signal<ForexNewsRow[]>([]);
+  readonly news = this._news.asReadonly();
+
+  private readonly _lastUpdated = signal<Date | null>(null);
   readonly lastUpdated = this._lastUpdated.asReadonly();
 
-  private static sign(next: number, prev: number): number {
-    if (next > prev) return 1;
-    if (next < prev) return -1;
-    return 0;
+  /**
+   * Effective Ticker access for the signed-in user (mode + free-trial budget).
+   * Drives the paywall: only Clients are metered — Admin / subscribers are
+   * "Unrestricted" / "Subscribed".
+   */
+  getAccess(): Observable<TickerAccess> {
+    return this.api.get<TickerAccess>(API.tickerLiveScreenRight.access);
   }
 
-  /** Advance every quote by a small random move. Call on a ~1s interval. */
-  tick(): void {
-    this._futures.update((rows) =>
-      rows.map((q) => {
-        const d = q.close < 1 ? 4 : 4;
-        const drift = (Math.random() - 0.5) * q.close * 0.0008;
-        const ltp = +(q.ltp + drift).toFixed(d);
-        const spread = +(q.close * 0.0002).toFixed(d);
-        const bid = +(ltp - spread).toFixed(d);
-        const ask = +(ltp + spread).toFixed(d);
+  /** Persist elapsed free-trial seconds; returns the server's updated access. */
+  sendHeartbeat(seconds: number): Observable<TickerAccess> {
+    return this.api.post<TickerAccess>(
+      API.tickerLiveScreenRight.heartbeat,
+      { seconds },
+      { context: silentContext() },
+    );
+  }
+
+  /** Refresh the spot board + currency futures. Call on a polling interval. */
+  refresh(): void {
+    this.api
+      .get<ForexLiveRateApi[]>(API.forex.tickerForex, { context: silentContext() })
+      .subscribe({ next: (rows) => this.applyBoard(rows ?? []) });
+
+    this.api
+      .get<CurrencyFutureApi[]>(API.forex.tickerCurrencyFuture, { context: silentContext() })
+      .subscribe({ next: (rows) => this.applyFutures(rows ?? []) });
+  }
+
+  /** Load the forward-premium grid for a currency (e.g. "USDINR"). */
+  loadPremium(currency: string): void {
+    this.api
+      .get<ForexPremiumApi[]>(API.forex.tickerPremium, {
+        params: { description: currency },
+        context: silentContext(),
+      })
+      .subscribe({
+        next: (rows) =>
+          this._premium.set(
+            (rows ?? []).map((r) => ({
+              description: r.description,
+              bid: r.bidPrice,
+              ask: r.askPrice,
+              bidPct: r.bidPercentage ?? null,
+              askPct: r.askPercentage ?? null,
+              monthEnd: r.monthEndDate,
+              fwdBid: r.fwdOutrightBid,
+              fwdAsk: r.fwdOutrightAsk,
+            })),
+          ),
+      });
+  }
+
+  /** Load the Forex News feed for the signed-in user (@Action='selectNEWS'). */
+  loadNews(): void {
+    this.api
+      .get<ForexNewsApi[]>(API.forex.tickerNews, { context: silentContext() })
+      .subscribe({
+        next: (rows) =>
+          this._news.set(
+            (rows ?? []).map((r) => {
+              // RequestedDate is "dd-Mon-yyyy  h:mmam" — split date from time.
+              const parts = (r.requestedDate ?? '').trim().split(/\s+/);
+              return {
+                date: parts[0] ?? '',
+                time: parts.slice(1).join(' '),
+                subject: r.mailSubject,
+                source: r.sourceName,
+                body: r.mailBody ?? '',
+              };
+            }),
+          ),
+      });
+  }
+
+  private applyBoard(rows: ForexLiveRateApi[]): void {
+    const prev = new Map(this._board().map((r) => [r.description, r]));
+    this._board.set(
+      rows.map((r) => {
+        const p = prev.get(r.description);
         return {
-          ...q,
-          ltpDir: TickerService.sign(ltp, q.ltp),
-          bidDir: TickerService.sign(bid, q.bid),
-          askDir: TickerService.sign(ask, q.ask),
-          ltp,
-          bid,
-          ask,
-          bidQty: 1 + Math.floor(Math.random() * 40),
-          askQty: 1 + Math.floor(Math.random() * 40),
-          high: Math.max(q.high, ltp),
-          low: Math.min(q.low, ltp),
-          volume: q.volume + Math.floor(Math.random() * 600),
+          description: r.description,
+          bid: r.bid,
+          ask: r.ask,
+          ltp: r.ltp,
+          open: r.open,
+          high: r.high,
+          low: r.low,
+          close: r.close,
+          bidDir: p ? sign(r.bid, p.bid) : 0,
+          askDir: p ? sign(r.ask, p.ask) : 0,
+          ltpDir: p ? sign(r.ltp, p.ltp) : 0,
         };
       }),
     );
+    this._lastUpdated.set(new Date());
+  }
 
-    this._board.update((rows) =>
-      rows.map((q) => {
-        const drift = (Math.random() - 0.5) * q.close * 0.0008;
-        const ltp = +(q.ltp + drift).toFixed(4);
-        const spread = +(q.close * 0.0002).toFixed(4);
-        const bid = +(ltp - spread).toFixed(4);
-        const ask = +(ltp + spread).toFixed(4);
+  private applyFutures(rows: CurrencyFutureApi[]): void {
+    const key = (s: string, e: string) => `${s}|${e}`;
+    const prev = new Map(this._futures().map((r) => [key(r.symbol, r.expiry), r]));
+    this._futures.set(
+      rows.map((r) => {
+        const p = prev.get(key(r.symbol, r.expiry));
         return {
-          ...q,
-          ltpDir: TickerService.sign(ltp, q.ltp),
-          bidDir: TickerService.sign(bid, q.bid),
-          askDir: TickerService.sign(ask, q.ask),
-          ltp,
-          bid,
-          ask,
-          high: Math.max(q.high, ltp),
-          low: Math.min(q.low, ltp),
+          symbol: r.symbol,
+          expiry: r.expiry,
+          bidQty: r.bidQty,
+          bid: r.bid,
+          ask: r.ask,
+          askQty: r.askQty,
+          ltp: r.ltp,
+          open: r.open,
+          high: r.high,
+          low: r.low,
+          close: r.close,
+          volume: r.volume,
+          bidDir: p ? sign(r.bid, p.bid) : 0,
+          askDir: p ? sign(r.ask, p.ask) : 0,
+          ltpDir: p ? sign(r.ltp, p.ltp) : 0,
         };
       }),
     );
-
     this._lastUpdated.set(new Date());
   }
 }

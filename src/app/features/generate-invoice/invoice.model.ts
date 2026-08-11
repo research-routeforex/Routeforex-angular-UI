@@ -5,6 +5,10 @@ export interface InvoiceLine {
   transactionTypeID: number | null;
   transactionType: string | null;
   impExp: string | null;
+  /** Transaction detail (proc TransDetail column). */
+  transDetail: string | null;
+  /** Client bank on the order (proc Bank column). */
+  bank: string | null;
   currencyCode: string | null;
   amount: number | null;
   createdDatetime: string | null;
@@ -50,13 +54,25 @@ export interface InvoiceDocumentHeader {
   taxType: string | null;
   periodFrom: string | null;
   periodTo: string | null;
+  /** HSN/SAC code for the service (from the header's SacCode column). */
+  sacCode: string | null;
 }
 
 /** Invoicing company details shown in the "From" block. */
 export interface InvoiceCompany {
   address: string | null;
   contact1: string | null;
+  /** Invoicing company e-mail, shown next to the contact number in the "From" block. */
+  email: string | null;
   cin: string | null;
+  /** HSN/SAC code for the service. */
+  sacCode: string | null;
+}
+
+/** Generate-Invoice result: invoicing company (From block + SAC) + billable lines. */
+export interface InvoiceGenerateResult {
+  company: InvoiceCompany | null;
+  lines: InvoiceLine[];
 }
 
 /** A saved invoice reconstructed for re-print: header + billed lines + company. */

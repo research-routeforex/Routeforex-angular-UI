@@ -51,7 +51,15 @@ html.theme-dark {
   --rf-text: light-dark(oklch(13% 0.02 285), oklch(92% 0.01 285));
   --rf-muted-fg: light-dark(oklch(50% 0.02 285), oklch(55% 0.02 285));
 
-  // Brand (FLUX --primary, hue 285 violet/indigo)
+  // ---- Legacy brand palette (client colour match) --------------------------
+  // Fixed hexes so the brand colours stay identical in light & dark themes.
+  --rf-blue: #1b79bf; // top header bar
+  --rf-cyan: #29abe2; // left sidebar / menu bar
+  --rf-green: #8cc63f; // logo box + active menu item
+  --rf-pink: #ec1c8e; // primary action buttons / CTAs
+  --rf-slate: #5c7284; // inactive tabs
+
+  // Brand primary now follows the legacy pink CTA colour (buttons/focus/links).
   --rf-primary: light-dark(oklch(55% 0.25 285), oklch(70% 0.25 285));
   --rf-ring: var(--rf-primary);
 
@@ -444,23 +452,154 @@ textarea.rf-textarea:disabled {
   box-shadow: 0 5px 12px -5px color-mix(in oklab, var(--rf-danger) 70%, transparent);
 }
 
-// Account menu popup — always a clean white surface with dark text
+// Account menu popup — theme-aware profile card (matches the app in light + dark).
 .mat-mdc-menu-panel.usermenu {
-  --mat-menu-container-color: #ffffff;
-  --mat-sys-surface-container: #ffffff;
-  background-color: #ffffff;
+  --mat-menu-container-color: var(--rf-surface-2);
+  --mat-sys-surface-container: var(--rf-surface-2);
+  min-width: 268px;
+  max-width: 320px;
+  border-radius: 16px;
   border: 1px solid var(--rf-border);
+  background-color: var(--rf-surface-2);
+  box-shadow:
+    0 16px 40px -12px color-mix(in oklab, #000 55%, transparent),
+    0 4px 12px -4px color-mix(in oklab, #000 30%, transparent);
+  overflow: hidden;
+
+  .mat-mdc-menu-content {
+    padding: 6px;
+  }
 }
-.mat-mdc-menu-panel.usermenu .mat-mdc-menu-item .mdc-list-item__primary-text,
-.mat-mdc-menu-panel.usermenu .mat-mdc-menu-item .mat-icon,
-.mat-mdc-menu-panel.usermenu .usermenu__head strong {
-  color: oklch(20% 0.02 285);
+
+// Header — profile card with avatar + name + email on a soft accent wash.
+.usermenu__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 12px;
+  margin: -6px -6px 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--rf-primary) 20%, var(--rf-surface-2)),
+    var(--rf-surface-2) 75%
+  );
 }
-.mat-mdc-menu-panel.usermenu .usermenu__head small {
-  color: oklch(50% 0.02 285);
+.usermenu__avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--rf-primary), oklch(62% 0.24 290));
+  box-shadow: 0 4px 14px -3px color-mix(in oklab, var(--rf-primary) 60%, transparent);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
 }
-.mat-mdc-menu-panel.usermenu .mat-mdc-menu-item:hover {
-  background: oklch(96% 0.02 285);
+.usermenu__id {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.usermenu__name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--rf-text);
+  line-height: 1.25;
+}
+.usermenu__email {
+  font-size: 12px;
+  color: var(--rf-muted-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usermenu__rolewrap {
+  padding: 10px 10px 4px;
+}
+.usermenu__role {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--rf-primary);
+  background: color-mix(in oklab, var(--rf-primary) 14%, transparent);
+
+  .mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.usermenu__sep {
+  height: 1px;
+  margin: 6px 8px;
+  background: var(--rf-border);
+}
+
+.mat-mdc-menu-panel.usermenu .usermenu__item {
+  min-height: 42px;
+  margin: 2px 4px;
+  border-radius: 10px;
+
+  .mdc-list-item__primary-text {
+    color: var(--rf-text);
+    font-weight: 500;
+  }
+  .mat-icon {
+    color: var(--rf-muted-fg);
+    transition: color 0.15s ease;
+  }
+
+  &:hover {
+    background: color-mix(in oklab, var(--rf-primary) 12%, transparent);
+    .mat-icon {
+      color: var(--rf-primary);
+    }
+  }
+}
+
+.mat-mdc-menu-panel.usermenu .usermenu__item--danger {
+  .mdc-list-item__primary-text,
+  .mat-icon {
+    color: var(--rf-danger);
+  }
+  &:hover {
+    background: var(--rf-danger-bg);
+    .mat-icon {
+      color: var(--rf-danger);
+    }
+  }
+}
+
+.usermenu__badge {
+  margin-left: auto;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--rf-primary);
 }
 
 // Snackbar variants

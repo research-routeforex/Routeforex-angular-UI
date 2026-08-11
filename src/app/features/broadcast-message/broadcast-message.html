@@ -1,0 +1,309 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Broadcast Message"
+    subtitle="Send a notification, trading call or site news to clients or groups."
+    [breadcrumbs]="[{ label: 'Masters' }, { label: 'Broadcast Message' }]"
+  >
+    <button
+      mat-icon-button
+      type="button"
+      class="hero__refresh"
+      (click)="refresh()"
+      [disabled]="loading()"
+      matTooltip="Refresh list"
+    >
+      <mat-icon [class.spin]="loading()">refresh</mat-icon>
+    </button>
+    @if (!adding()) {
+      <button mat-flat-button color="primary" type="button" (click)="startAdd()">
+        <mat-icon>add</mat-icon> New Broadcast
+      </button>
+    }
+  </app-page-header>
+</div>
+
+<!-- Add New / Send form -->
+@if (adding()) {
+  <form [formGroup]="form" class="rf-card sendform" (ngSubmit)="send()">
+    <!-- Recipient mode -->
+    <div class="modebar">
+      <label class="mode">
+        <input
+          type="checkbox"
+          [checked]="recipientMode() === 'client'"
+          (change)="setRecipientMode('client')"
+        />
+        Client Wise
+      </label>
+      <label class="mode">
+        <input
+          type="checkbox"
+          [checked]="recipientMode() === 'group'"
+          (change)="setRecipientMode('group')"
+        />
+        Group Wise
+      </label>
+    </div>
+
+    <!-- Type + type-specific fields -->
+    <div class="typerow">
+      <app-field label="Type">
+        <app-select formControlName="sourceName" [options]="typeOptions" [searchable]="false" />
+      </app-field>
+    </div>
+
+    @switch (type()) {
+      @case ('TradingCalls') {
+        <div class="callgrid">
+          <app-field label="Buy / Sell">
+            <app-select formControlName="buySell" [options]="buySellOptions" [searchable]="false" placeholder="Select" />
+          </app-field>
+          <app-field label="Currency / Commodity">
+            <input class="rf-input" formControlName="currency" placeholder="e.g. Gold, USD/INR" />
+          </app-field>
+          <app-field label="Expiry">
+            <input class="rf-input" formControlName="expiry" placeholder="e.g. March" />
+          </app-field>
+          <app-field label="Entry Price">
+            <input class="rf-input" type="text" inputmode="decimal" formControlName="entryPrice" placeholder="0.00" />
+          </app-field>
+          <app-field label="Target Price">
+            <input class="rf-input" type="text" inputmode="decimal" formControlName="targetPrice" placeholder="0.00" />
+          </app-field>
+          <app-field label="Stop / Close">
+            <input class="rf-input" type="text" inputmode="decimal" formControlName="stopClose" placeholder="0.00" />
+          </app-field>
+        </div>
+      }
+      @case ('Normal') {
+        <div class="msggrid">
+          <app-field label="Notification Header" required [control]="form.controls.subject" error="Header is required.">
+            <input class="rf-input" formControlName="subject" placeholder="Headline / subject" />
+          </app-field>
+          <app-field label="Notification Description">
+            <textarea class="rf-textarea" formControlName="siteName" rows="4" placeholder="Message body…"></textarea>
+          </app-field>
+          <app-field label="File Header">
+            <label class="filepick" [class.filepick--has]="form.controls.fileHeader.value">
+              <input #hdr type="file" hidden (change)="onFile('fileHeader', $event)" />
+              <mat-icon class="filepick__icon">{{ form.controls.fileHeader.value ? 'description' : 'cloud_upload' }}</mat-icon>
+              <span class="filepick__text">{{ form.controls.fileHeader.value || 'Click or drop a file to attach' }}</span>
+              @if (form.controls.fileHeader.value) {
+                <button type="button" class="filepick__clear" (click)="clearFile('fileHeader', hdr, $event)" matTooltip="Remove">
+                  <mat-icon>close</mat-icon>
+                </button>
+              } @else {
+                <span class="filepick__btn">Browse</span>
+              }
+            </label>
+          </app-field>
+          <app-field label="File Footer">
+            <label class="filepick" [class.filepick--has]="form.controls.fileFooter.value">
+              <input #ftr type="file" hidden (change)="onFile('fileFooter', $event)" />
+              <mat-icon class="filepick__icon">{{ form.controls.fileFooter.value ? 'description' : 'cloud_upload' }}</mat-icon>
+              <span class="filepick__text">{{ form.controls.fileFooter.value || 'Click or drop a file to attach' }}</span>
+              @if (form.controls.fileFooter.value) {
+                <button type="button" class="filepick__clear" (click)="clearFile('fileFooter', ftr, $event)" matTooltip="Remove">
+                  <mat-icon>close</mat-icon>
+                </button>
+              } @else {
+                <span class="filepick__btn">Browse</span>
+              }
+            </label>
+          </app-field>
+        </div>
+      }
+      @case ('SiteNews') {
+        <div class="msggrid">
+          <app-field label="Notification Header" required [control]="form.controls.subject" error="Header is required.">
+            <input class="rf-input" formControlName="subject" placeholder="Headline / subject" />
+          </app-field>
+          <app-field label="Notification Description">
+            <textarea class="rf-textarea" formControlName="siteName" rows="4" placeholder="Message body…"></textarea>
+          </app-field>
+        </div>
+      }
+      @default {
+        <p class="rf-muted typehint">
+          <mat-icon>info</mat-icon> Choose a type above to compose the broadcast.
+        </p>
+      }
+    }
+
+    <!-- Recipient checkbox list -->
+    <div class="recips">
+      <div class="recips__bar">
+        <label class="recips__label">
+          {{ recipientMode() === 'group' ? 'Groups' : 'Clients' }}
+          <span class="rf-muted">({{ selectedCount() }} selected)</span>
+        </label>
+        <span class="rf-spacer"></span>
+        <input
+          class="rf-input recips__search"
+          placeholder="Search…"
+          [value]="recipientFilter()"
+          (input)="recipientFilter.set($any($event.target).value)"
+        />
+      </div>
+
+      <label class="recips__all">
+        <input
+          type="checkbox"
+          [checked]="allFilteredSelected()"
+          (change)="toggleAllFiltered($any($event.target).checked)"
+        />
+        Select all
+      </label>
+
+      <div class="recips__list">
+        @for (r of filteredRecipients(); track r.id) {
+          <label class="recips__item">
+            <input
+              type="checkbox"
+              [checked]="isSelected(r.id)"
+              (change)="toggleRecipient(r.id, $any($event.target).checked)"
+            />
+            <span>{{ r.name }}</span>
+          </label>
+        } @empty {
+          <p class="rf-muted recips__empty">
+            No {{ recipientMode() === 'group' ? 'groups' : 'clients' }} found.
+          </p>
+        }
+      </div>
+    </div>
+
+    <div class="sendform__actions">
+      <button mat-button type="button" (click)="cancelAdd()">Cancel</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="sending()">
+        {{ sending() ? 'Sending…' : 'Send' }}
+      </button>
+    </div>
+  </form>
+}
+
+<!-- Trading-call edit / close -->
+@if (editRow(); as row) {
+  <form [formGroup]="editForm" class="rf-card editform" (ngSubmit)="updateCall()">
+    <h3 class="editform__title">Update Trading Call</h3>
+    <p class="editform__meta rf-muted">{{ row.subject }}</p>
+    <div class="editgrid">
+      <app-field label="Status">
+        <app-select formControlName="status" [options]="statusOptions" [searchable]="false" />
+      </app-field>
+      <app-field label="Exit Type">
+        <app-select formControlName="exitType" [options]="exitTypeOptions" [searchable]="false" />
+      </app-field>
+      <app-field label="Exit Rate">
+        <input class="rf-input" type="text" inputmode="decimal" formControlName="exitRate" placeholder="0.00" />
+      </app-field>
+    </div>
+    <div class="sendform__actions">
+      <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="updating()">
+        {{ updating() ? 'Updating…' : 'Update' }}
+      </button>
+    </div>
+  </form>
+}
+
+<!-- Sent-broadcast list -->
+<div class="rf-card tablewrap">
+  <table class="grid">
+    <colgroup>
+      <col class="col-type" />
+      <col class="col-recip" />
+      <col />
+      <col class="col-date" />
+      <col class="col-status" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th><span class="th__name">Type</span></th>
+        <th><span class="th__name">Recipients</span></th>
+        <th>
+          <span class="th__name">Message</span>
+          <input class="colfilter" placeholder="Search…" (input)="setListFilter($any($event.target).value)" />
+        </th>
+        <th><span class="th__name">Send Date</span></th>
+        <th><span class="th__name">Status</span></th>
+        <th class="ta-r"><span class="th__name">Action</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of pagedRows(); track r.id) {
+        @let recips = recipientNames(r);
+        <tr>
+          <td>{{ typeLabel(r.sourceName) }}</td>
+          <td class="recip-cell" [title]="recips">{{ recips || '—' }}</td>
+          <td class="msg" [title]="r.subject || ''">{{ r.subject || '—' }}</td>
+          <td>{{ r.requestedDate ? (r.requestedDate | date: 'dd-MMM-yyyy HH:mm') : '—' }}</td>
+          <td class="status-cell">
+            @let isCall = r.sourceName === 'TradingCalls';
+            @if (isCall) {
+              <span
+                class="rf-chip"
+                [class.rf-chip--success]="r.status === 'Active'"
+                [class.rf-chip--warn]="r.status !== 'Active'"
+              >
+                {{ r.status }}
+              </span>
+            } @else {
+              <span
+                class="rf-chip"
+                [class.rf-chip--success]="r.msgStatus === 'SENT'"
+                [class.rf-chip--warn]="r.msgStatus !== 'SENT'"
+              >
+                {{ r.msgStatus || 'PENDING' }}
+              </span>
+            }
+          </td>
+          <td class="ta-r actions">
+            @if (r.sourceName === 'TradingCalls' && r.status !== 'Inactive') {
+              <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="startEdit(r)" matTooltip="Edit / close call">
+                <mat-icon>edit</mat-icon>
+              </button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No broadcast messages found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="pager">
+  <div class="pager__size">
+    <span class="rf-muted">Rows per page</span>
+    <select class="rf-select pager__select" (change)="onPageSize($any($event.target).value)">
+      @for (n of pageSizeOptions; track n) {
+        <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
+      }
+    </select>
+  </div>
+  <span class="rf-spacer"></span>
+  <span class="pager__info rf-muted">{{ fromRow() }}–{{ toRow() }} of {{ total() }}</span>
+  <div class="pager__nav">
+    <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="first()" matTooltip="First page">
+      <mat-icon>first_page</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="prev()" matTooltip="Previous page">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="pager__page">{{ pageNumber() }} / {{ totalPages() }}</span>
+    <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="next()" matTooltip="Next page">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="last()" matTooltip="Last page">
+      <mat-icon>last_page</mat-icon>
+    </button>
+  </div>
+</div>

@@ -37,14 +37,14 @@
           @if (companyInfo()?.address) {
             <span class="inv__party-sub">{{ companyInfo()?.address }}</span>
           }
-          @if (companyInfo()?.contact1) {
-            <span class="inv__party-sub">Contact: {{ companyInfo()?.contact1 }}</span>
+          @if (companyContact()) {
+            <span class="inv__party-sub">{{ companyContact() }}</span>
           }
           @if (companyInfo()?.cin) {
             <span class="inv__party-sub">CIN: {{ companyInfo()?.cin }}</span>
           }
-          @if (header()?.gstNumber) {
-            <span class="inv__party-sub">GSTIN: {{ header()?.gstNumber }}</span>
+          @if (companyGstSac()) {
+            <span class="inv__party-sub">{{ companyGstSac() }}</span>
           }
         </div>
         <div class="inv__party inv__party--to">
@@ -74,24 +74,28 @@
         <table class="inv__table">
           <thead>
             <tr>
-              <th class="ta-c">#</th>
               <th>Order No</th>
               <th>Date</th>
               <th>Transaction</th>
+              <th>Trans Detail</th>
               <th>Ccy</th>
+              <th>Bank</th>
               <th class="ta-r">Value</th>
+              <th class="ta-r">Rate</th>
               <th class="ta-r">Charge (₹)</th>
             </tr>
           </thead>
           <tbody>
-            @for (l of lines(); track l.recordId; let i = $index) {
+            @for (l of lines(); track l.recordId) {
               <tr>
-                <td class="ta-c">{{ i + 1 }}</td>
                 <td>{{ l.orderNumber || '#' + l.recordId }}</td>
                 <td>{{ l.createdDatetime ? (l.createdDatetime | date: 'dd MMM yyyy') : '—' }}</td>
                 <td>{{ l.transactionType || '—' }}</td>
+                <td>{{ l.transDetail || '—' }}</td>
                 <td>{{ l.currencyCode || '—' }}</td>
+                <td>{{ l.bank || '—' }}</td>
                 <td class="ta-r">{{ l.amount != null ? (l.amount | number: '1.2-2') : '—' }}</td>
+                <td class="ta-r">{{ l.chargesValue != null ? (l.chargesValue | number: '1.2-4') : '—' }}</td>
                 <td class="ta-r inv__charge">{{ l.charge | number: '1.2-2' }}</td>
               </tr>
             }
@@ -166,15 +170,6 @@
           <img class="inv__stamp" [src]="company.stamp" alt="Seal" />
         </div>
       </section>
-
-      <!-- Contact -->
-      <footer class="inv__contact">
-        <mat-icon class="inv__contact-icon">mail</mat-icon>
-        {{ footer()?.contactUsEmail || '—' }}
-        <span class="inv__contact-sep">&bull;</span>
-        <mat-icon class="inv__contact-icon">call</mat-icon>
-        {{ footer()?.contactUsMobile || '—' }}
-      </footer>
     </article>
   </div>
 }

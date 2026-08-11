@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,16 +12,16 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute } from '@angular/router';
 import { finalize, interval } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { FieldComponent } from '../../shared/components/field/field';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header';
 import { SelectComponent, SelectOption } from '../../shared/components/select/select';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { DropdownService } from '../../shared/services/dropdown.service';
+import { orderFieldVisibility } from '../../shared/rates/order-field-visibility';
 import {
   BANKS,
   CURRENCY_PAIRS,
@@ -57,32 +57,21 @@ const COLUMN_TO_CONTROL: Record<string, string> = {
   todate: 'toDate', // To Date             ← ToDate
   maturitydate: 'maturityDate', // Maturity Date       ← MaturityDate
   forwardcontactno: 'forwardContactNo', // Forward Contact No. ← ForwardContactNo
+  billdiscount: 'currency2', // Currency 2          ← BillDiscount
+  // transactiondetail / bookingrate / outstandingamount auto-map by matching name.
 };
-
-/** Computed values shown in the Live Rates band (all numeric, like the legacy desk). */
-interface RateSnapshot {
-  base: number;
-  home: number;
-  spot: number;
-  premium: number;
-  margin: number;
-  net: number;
-}
 
 @Component({
   selector: 'app-dealer-pad',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    PageHeaderComponent,
     FieldComponent,
     SelectComponent,
     MatButtonModule,
     MatIconModule,
-    MatSlideToggleModule,
     MatTooltipModule,
     DecimalPipe,
-    DatePipe,
   ],
   templateUrl: './dealer-pad.html',
   styleUrl: './dealer-pad.scss',
@@ -94,6 +83,7 @@ export class DealerPadComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly confirm = inject(ConfirmService);
   private readonly clients = inject(ClientsService);
+  private readonly route = inject(ActivatedRoute);
   protected readonly svc = inject(DealerPadService);
 
   /** Client document filenames (null = not on file) — power the download buttons. */
@@ -111,23 +101,32 @@ export class DealerPadComponent implements OnInit {
   );
   protected readonly bankOptions = signal<SelectOption[]>(BANKS.map((b) => ({ value: b, label: b })));
   protected readonly bankDealerOptions = signal<SelectOption[]>([]);
+  /** Transaction Detail (Cash/Tom/Forward/Spot) + Currency 2 — for the conversion types. */
+  protected readonly transactionDetailOptions = signal<SelectOption[]>([]);
+  protected readonly currency2Options = signal<SelectOption[]>([]);
   /** Contacts (from table 3) backing the Bank Dealer dropdown, with their landlines. */
   private readonly bankDealerContacts = signal<OrderContactApi[]>([]);
 
   protected readonly paused = signal(false);
-  /** Show/hide the live-rate table (the feed keeps running regardless). */
-  protected readonly showRates = signal(true);
   /** Collapse/expand the Client Information section. */
   protected readonly showClientInfo = signal(true);
-  /** True once the live board is being served from the API/database. */
-  protected readonly usingApi = signal(false);
   protected readonly editingId = signal<string | null>(null);
   protected readonly editingSource = signal<'pending' | 'saved' | null>(null);
+  /**
+   * The loaded deal's actual Cash/Forward TransactionDetail — only Bill Discount
+   * (type 7) uses it, and the Dealer Pad has no selector for it, so it must come
+   * from the deal being edited (null for a fresh deal). Feeds computeNetRate so
+   * type 7 takes the correct branch instead of falling back to the type label.
+   */
+  private readonly dealTransactionDetail = signal<string | null>(null);
   /** True while a clicked deal's full details are being loaded. */
   protected readonly detailsLoading = signal(false);
 
   protected readonly pendingSearch = signal('');
   protected readonly savedSearch = signal('');
+
+  /** True once the "Dealer name is empty" warning has been shown for this deal. */
+  private dealerNameWarned = false;
 
   protected readonly windowFixOptions = ['Window', 'Fix'];
 
@@ -152,6 +151,9 @@ export class DealerPadComponent implements OnInit {
     transactionType: ['', [Validators.required]],
     direction: ['Export' as DealDirection, [Validators.required]],
     currencyPair: ['USD / INR', [Validators.required]],
+    // EEFC Conversion / Bill Discount / PCFC Disbursement extras (same as FTP Order Entry).
+    transactionDetail: [''],
+    currency2: [''],
     bookingRate: [0],
     amount: [0, [Validators.required, Validators.min(1)]],
     bank: [''],
@@ -167,6 +169,15 @@ export class DealerPadComponent implements OnInit {
     forwardContractNo: [''],
     remarks: [''],
 
+    // Live Rates — auto-filled from the market feed (Pull / deal-click), then
+    // editable by the dealer. Net Rate is derived (see liveNetRate).
+    liveBase: [0],
+    liveHome: [0],
+    liveSpot: [0],
+    livePremium: [0],
+    liveMargin: [0],
+    liveNet: [0],
+
     // Dealer Rates — entered manually by the dealer.
     dealerBase: [0],
     dealerHome: [0],
@@ -174,6 +185,9 @@ export class DealerPadComponent implements OnInit {
     premium: [0],
     // Blank on load — the dealer enters the margin manually (0 is assumed until then).
     margin: new FormControl<number | null>(null),
+    // Net Rate is derived (see netRate) but editable — a manual edit sticks until
+    // Spot/Premium/Margin change again (mirrors the Live Rates Net Rate).
+    dealerNet: [0],
   });
 
   private readonly formValue = toSignal(this.form.valueChanges, {
@@ -191,8 +205,24 @@ export class DealerPadComponent implements OnInit {
       transactionType: String(v.transactionType ?? ''),
       windowMode: v.windowFix ?? 'Window',
       maturityDate: v.maturityDate ?? null,
-      // Type 7 keys off the transaction type's Cash/Forward description (TransactionDetail).
-      transactionDetail: this.txnLabel(),
+      // Type 7 (Bill Discount) keys off the Cash/Forward Transaction Detail: prefer the
+      // now-visible form control, then the loaded deal's value, then the type label.
+      transactionDetail: v.transactionDetail || this.dealTransactionDetail() || this.txnLabel(),
+    });
+  });
+
+  /** Live Rates net rate — derived from the (now editable) Live Rates inputs. */
+  protected readonly liveNetRate = computed(() => {
+    const v = this.formValue();
+    return computeNetRate({
+      spot: Number(v.liveSpot) || 0,
+      premium: Number(v.livePremium) || 0,
+      margin: Number(v.liveMargin) || 0,
+      direction: (v.direction as DealDirection) ?? 'Export',
+      transactionType: String(v.transactionType ?? ''),
+      windowMode: v.windowFix ?? 'Window',
+      maturityDate: v.maturityDate ?? null,
+      transactionDetail: v.transactionDetail || this.dealTransactionDetail() || this.txnLabel(),
     });
   });
 
@@ -212,14 +242,6 @@ export class DealerPadComponent implements OnInit {
   /** Quote/home currency, e.g. "INR". */
   protected readonly homeCcy = computed(() => (this.currentPair().split('/')[1] ?? '').trim());
 
-  /**
-   * Live Rates band — a manual snapshot. It is populated only when the user
-   * clicks a pending/saved deal, or clicks the "Pull live rate" (⚡) button. It
-   * does NOT update automatically with the market feed.
-   */
-  protected readonly liveBand = signal<RateSnapshot | null>(null);
-  /** Flag (legacy `flag == 1`): live band is computed from the feed while a deal is loaded. */
-  private readonly liveBandActive = signal(false);
   /** Forward premium (legacy PremiumForwardType) for transaction types 4/5/8. */
   private readonly premiumForward = signal(0);
 
@@ -230,19 +252,30 @@ export class DealerPadComponent implements OnInit {
     const opt = this.txnOptions().find((o) => String(o.value) === String(v));
     return (opt?.label ?? String(v ?? '')).toLowerCase();
   });
-  protected readonly isCash = computed(() => this.txnLabel().includes('cash'));
-  protected readonly isForward = computed(() => this.txnLabel().includes('forward'));
-  private readonly windowMode = computed(() => this.formValue().windowFix ?? 'Window');
+  /**
+   * Transaction-type field visibility — the SAME shared rules as FTP Order Entry
+   * (keyed off the transaction-type id + Window/Fix), so a given type shows/hides
+   * the same controls on both screens.
+   */
+  private readonly vis = computed(() => {
+    const id = Number(this.formValue().transactionType);
+    return orderFieldVisibility(
+      Number.isFinite(id) ? id : null,
+      this.formValue().windowFix ?? null,
+      this.formValue().transactionDetail ?? null,
+    );
+  });
 
-  /** Window / Fix + Forward Contact No. show for Forward deals. */
-  protected readonly showWindowFix = computed(() => this.isForward());
-  protected readonly showForwardContact = computed(() => this.isForward());
-  /** From / To Date show for Forward + Window. */
-  protected readonly showFromToDate = computed(() => this.isForward() && this.windowMode() === 'Window');
-  /** Maturity Date shows for Cash, or Forward + Fix. */
-  protected readonly showMaturityDate = computed(
-    () => this.isCash() || (this.isForward() && this.windowMode() === 'Fix'),
-  );
+  /** EEFC Conversion (6) / Bill Discount (7) / PCFC Disbursement (9) — Transaction Detail + Currency 2. */
+  protected readonly showConversionFields = computed(() => this.vis().showConversionFields);
+  protected readonly showWindowFix = computed(() => this.vis().showWindowFix);
+  protected readonly showFromToDate = computed(() => this.vis().showFromTo);
+  protected readonly showMaturityDate = computed(() => this.vis().showMaturity);
+  /** Booking Rate — consuming types (Forward Cancellation / Utilization) + non-forward date types. */
+  protected readonly showBookingRate = computed(() => this.vis().showBookingRate);
+  /** Forward Cancellation (5) only: Forward Contact No. + Outstanding Amount. */
+  protected readonly showForwardContact = computed(() => this.vis().showForwardContact);
+  protected readonly showOutstanding = computed(() => this.vis().showOutstanding);
 
   protected readonly filteredPending = computed(() =>
     filter(this.svc.pending(), this.pendingSearch()),
@@ -250,26 +283,13 @@ export class DealerPadComponent implements OnInit {
   protected readonly filteredSaved = computed(() => filter(this.svc.saved(), this.savedSearch()));
 
   constructor() {
-    // While a deal is loaded (flag), recompute the Live Rates band from the feed
-    // whenever the rates, direction, transaction type, currency or margin change.
-    effect(() => {
-      if (this.liveBandActive()) this.computeLiveBand();
-    });
-
-    // Simulated feed — only runs while the API feed is unavailable.
-    interval(1400)
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => {
-        if (!this.usingApi() && !this.paused()) this.svc.tick();
-      });
-
-    // API feed — refresh the board from the database (Proc_TFTPO_Mast_LiveRate).
+    // Live rate board — poll the database feed (Proc_TFTPO_Mast_LiveRate). Only
+    // real data is ever shown: if the feed returns nothing the board stays empty
+    // (no dummy rows, no simulated ticks).
     interval(4000)
       .pipe(takeUntilDestroyed())
       .subscribe(() => {
-        if (this.usingApi() && !this.paused()) {
-          this.svc.fetchLiveRates().subscribe({ error: () => this.usingApi.set(false) });
-        }
+        if (!this.paused()) this.svc.fetchLiveRates().subscribe({ error: () => {} });
       });
 
     // Refresh the Pending / Saved deal queues from the database.
@@ -286,17 +306,54 @@ export class DealerPadComponent implements OnInit {
           this.form.controls.dealingRoomLandline.setValue(contact.landlineNo, { emitEvent: false });
         }
       });
+
+    // Dealer Rates: recompute Spot when Base/Home currency changes (legacy CalDealerSpot).
+    this.form.controls.dealerBase.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.calcDealerSpot());
+    this.form.controls.dealerHome.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.calcDealerSpot());
+
+    // Keep the (editable) Live Rates Net Rate in sync with the computed value.
+    // Editing Spot/Premium/Margin recomputes it; a manual edit to Net Rate itself
+    // is not a `liveNetRate` input, so it isn't overwritten until those change.
+    effect(() => {
+      const net = this.liveNetRate();
+      this.form.controls.liveNet.setValue(net, { emitEvent: false });
+    });
+
+    // Keep the (editable) Dealer Rates Net Rate in sync with the computed value.
+    // Editing Spot/Premium/Margin recomputes it; a manual edit to Net Rate itself
+    // is not a `netRate` input, so the computed value is unchanged and the effect
+    // does not re-run — the dealer's override is preserved.
+    effect(() => {
+      const net = this.netRate();
+      this.form.controls.dealerNet.setValue(net, { emitEvent: false });
+    });
+  }
+
+  /**
+   * Port of the legacy CalDealerSpot(): derive the Dealer Rates Spot from the
+   * dealer-entered Base/Home rates. For a USD/EUR/GBP base the two multiply;
+   * otherwise Home is divided by Base. A blank, empty or zero input counts as 1.
+   */
+  private calcDealerSpot(): void {
+    debugger;
+    const num = (v: number | null | undefined) => Number(v) || 1;
+    const base = num(this.form.controls.dealerBase.value);
+    const home = num(this.form.controls.dealerHome.value);
+    const baseCcy = this.baseCcy();
+    const major = baseCcy === 'USD' || baseCcy === 'EUR' || baseCcy === 'GBP';
+    const spot = major ? base * home : home / base;
+    this.form.controls.spot.setValue(Number.isFinite(spot) ? Number(spot.toFixed(4)) : 0);
   }
 
   ngOnInit(): void {
-    // The top market board auto-updates from the DB feed (falls back to sim).
+    // Initial live-rate load (silent). Real data only — an empty or failed
+    // response leaves the board empty rather than showing dummy rates.
     // The Live Rates band is NOT touched here — it only fills on user action.
-    this.svc.fetchLiveRates().subscribe({
-      next: (rates) => {
-        if (rates.length) this.usingApi.set(true);
-      },
-      error: () => this.usingApi.set(false),
-    });
+    this.svc.fetchLiveRates().subscribe({ error: () => {} });
 
     // Pending (ActiveStatus=New) and Saved (ActiveStatus=Progressing) queues.
     this.refreshQueues();
@@ -315,6 +372,39 @@ export class DealerPadComponent implements OnInit {
       next: (o) => this.bankDealerOptions.set(o),
       error: () => {},
     });
+    // Conversion-type extras (EEFC / Bill Discount / PCFC): Transaction Detail + Currency 2.
+    this.dropdowns.get('TransactionDetail').subscribe({
+      next: (o) => this.transactionDetailOptions.set(o),
+      error: () => {},
+    });
+    this.dropdowns.get('CURRENCY2').subscribe({
+      next: (o) => this.currency2Options.set(o),
+      error: () => {},
+    });
+
+    // Deep-link: /dealer-pad?recordId=29792 (e.g. edit from the FTP Upcoming Deal list)
+    // opens that order directly, the same way clicking a Pending/Saved deal does.
+    const recordId = Number(this.route.snapshot.queryParamMap.get('recordId'));
+    if (Number.isFinite(recordId) && recordId > 0) this.openOrderById(recordId);
+  }
+
+  /**
+   * Opens an existing order by RecordID via the same details API used when a
+   * Pending/Saved deal is clicked. Used by the FTP Upcoming Deal "edit" action.
+   */
+  private openOrderById(recordId: number): void {
+    this.editingId.set(String(recordId));
+    this.detailsLoading.set(true);
+    this.svc
+      .getOrderDetails(recordId)
+      .pipe(finalize(() => this.detailsLoading.set(false)))
+      .subscribe({
+        next: (details) => {
+          this.applyOrderDetails(details);
+          this.computeLiveBand();
+        },
+        error: () => this.notify.error('Could not open the deal.'),
+      });
   }
 
   /** Reload both deal queues from the database. */
@@ -329,7 +419,6 @@ export class DealerPadComponent implements OnInit {
    * market (it never auto-updates).
    */
   pullLiveRate(): void {
-    this.liveBandActive.set(true);
     this.computeLiveBand();
   }
 
@@ -419,6 +508,13 @@ export class DealerPadComponent implements OnInit {
           }
           base = usd.spotAsk;
         }
+        // Cross pair quoted in INR (e.g. EUR / INR): Home Currency is the USD/INR
+        // leg, so Base (foreign/USD) × Home (USD/INR) reconstructs the foreign/INR
+        // rate. (Legacy left the prior USD/INR value in HomeCurrency here.)
+        if (selQuote === 'INR') {
+          const usdInr = find('USD', 'INR');
+          if (usdInr) home = usdInr.spotAsk;
+        }
         if (cashSpot || txn === '2') net = spot - premium + margin;
         else if (txn === '3') net = spot + margin;
         else if (txn === '4') net = spot + premium + margin;
@@ -476,6 +572,13 @@ export class DealerPadComponent implements OnInit {
           }
           base = usd.spotBid;
         }
+        // Cross pair quoted in INR (e.g. EUR / INR): Home Currency is the USD/INR
+        // leg, so Base (foreign/USD) × Home (USD/INR) reconstructs the foreign/INR
+        // rate. (Legacy left the prior USD/INR value in HomeCurrency here.)
+        if (selQuote === 'INR') {
+          const usdInr = find('USD', 'INR');
+          if (usdInr) home = usdInr.spotBid;
+        }
         if (cashSpot || txn === '2') net = spot - premium - margin;
         else if (txn === '3') net = spot - margin;
         else if (txn === '4') net = spot + premium - margin;
@@ -484,7 +587,14 @@ export class DealerPadComponent implements OnInit {
       }
     }
 
-    this.liveBand.set({ base, home, spot, premium, margin, net });
+    // Seed the (editable) Live Rates inputs. `net` above is the legacy snapshot
+    // value; the displayed Net Rate is now derived live via `liveNetRate` so it
+    // tracks any manual edits the dealer makes to these fields.
+    void net;
+    this.form.patchValue(
+      { liveBase: base, liveHome: home, liveSpot: spot, livePremium: premium, liveMargin: margin },
+      { emitEvent: false },
+    );
   }
 
   loadDeal(d: Deal, source: 'pending' | 'saved'): void {
@@ -510,8 +620,8 @@ export class DealerPadComponent implements OnInit {
       remarks: d.remarks,
     });
 
-    // Flag the deal as loaded → the Live Rates band is now computed from the feed.
-    this.liveBandActive.set(true);
+    // Seed the (editable) Live Rates band from the feed for this deal.
+    this.computeLiveBand();
 
     // Pull the full client + deal + bank-dealer contacts (USP_RF_GETORDERCLIENTDETAILS).
     const recordId = Number(d.id);
@@ -537,7 +647,12 @@ export class DealerPadComponent implements OnInit {
     }
 
     if (details.client) this.patchFormFromObject(details.client);
-    if (details.deal) this.patchFormFromObject(details.deal);
+    if (details.deal) {
+      this.patchFormFromObject(details.deal);
+      // Capture the deal's real Cash/Forward detail (there's no form control for it)
+      // so Bill Discount (type 7) computes the correct Net Rate.
+      this.dealTransactionDetail.set(readField(details.deal, 'TransactionDetail'));
+    }
 
     // Bank Dealer Name dropdown from table 3; select the first + its landline.
     const contacts = details.contacts ?? [];
@@ -552,6 +667,9 @@ export class DealerPadComponent implements OnInit {
         dealingRoomLandline: first.landlineNo,
       });
     }
+
+    // Re-seed the Live Rates band now that bank / currency / margin are applied.
+    this.computeLiveBand();
 
     // Load the client's SLA / Authorized-Letter status for the download buttons
     // and to drive "Documents complete?".
@@ -656,6 +774,24 @@ export class DealerPadComponent implements OnInit {
 
   submit(): void {
     if (!this.validate()) return;
+
+    // Warn once (warning-styled modal) if the Dealer Name is empty; clicking Ok
+    // just closes it. A second Submit click then proceeds to book the deal.
+    const dealerEmpty = !String(this.form.controls.dealerName.value ?? '').trim();
+    if (dealerEmpty && !this.dealerNameWarned) {
+      this.dealerNameWarned = true;
+      this.confirm
+        .confirm({
+          title: 'Dealer name is empty',
+          message: 'Dealer name is empty. Click Submit again to book the deal.',
+          confirmText: 'Ok',
+          warning: true,
+          hideCancel: true,
+        })
+        .subscribe();
+      return;
+    }
+
     this.confirm
       .confirm({
         title: 'Submit deal?',
@@ -688,7 +824,6 @@ export class DealerPadComponent implements OnInit {
   /** Build the order-booking payload (mirrors the legacy desk field set). */
   private buildBookingPayload(activeStatus: string): Record<string, string> {
     const v = this.form.getRawValue();
-    const lb = this.liveBand();
     const now = formatDmyTime(new Date());
     const f4 = (n: number) => (Number.isFinite(n) ? n : 0).toFixed(4);
     const s = (x: unknown) => (x === null || x === undefined ? '' : String(x));
@@ -714,22 +849,28 @@ export class DealerPadComponent implements OnInit {
       FromDate: s(v.fromDate),
       ToDate: s(v.toDate),
       MaturityDate: s(v.maturityDate),
-      // Live Rates band (computed)
-      BaseCurrency: lb ? f4(lb.base) : '0',
-      HomeCurrency: lb ? f4(lb.home) : '0',
-      Spot: lb ? f4(lb.spot) : '0',
-      PremiumDiscount: lb ? f4(lb.premium) : '0',
-      Margin: lb ? f4(lb.margin) : '0',
-      NetRate: lb ? f4(lb.net) : '0',
+      // Live Rates band (editable inputs; Net Rate is derived)
+      BaseCurrency: f4(Number(v.liveBase) || 0),
+      HomeCurrency: f4(Number(v.liveHome) || 0),
+      Spot: f4(Number(v.liveSpot) || 0),
+      PremiumDiscount: f4(Number(v.livePremium) || 0),
+      Margin: f4(Number(v.liveMargin) || 0),
+      NetRate: f4(Number(v.liveNet) || 0),
       // Dealer Rates band (manual) — the "D" set
       BaseCurrencyD: s(v.dealerBase),
       HomeCurrencyD: s(v.dealerHome),
       SpotD: s(v.spot),
       PremiumDiscountD: s(v.premium),
       MarginD: s(v.margin),
-      NetRateD: f4(this.netRate()),
-      BookingRate: f4(this.netRate()),
+      NetRateD: f4(Number(v.dealerNet) || 0),
+      // Consuming types (Forward Cancellation / Utilization) carry the parent's Booking
+      // Rate from the field; other deals keep the desk convention (booking = dealer net).
+      BookingRate: this.showBookingRate() ? f4(Number(v.bookingRate) || 0) : f4(Number(v.dealerNet) || 0),
       ForwardContactNo: s(v.forwardContactNo),
+      // EEFC / Bill Discount / PCFC extras + Forward Cancellation outstanding (same as FTP Order Entry).
+      TransactionDetail: s(v.transactionDetail),
+      BillDiscount: s(v.currency2),
+      OutstandingAmount: s(v.outstandingAmount),
       Remarks: s(v.remarks),
       CashSpot: '0',
       UpcomingDate: '',
@@ -755,17 +896,20 @@ export class DealerPadComponent implements OnInit {
       outstandingAmount: 0,
       spot: 0,
       premium: 0,
+      liveBase: 0,
+      liveHome: 0,
+      liveSpot: 0,
+      livePremium: 0,
+      liveMargin: 0,
+      liveNet: 0,
+      dealerNet: 0,
     });
     this.editingId.set(null);
     this.editingSource.set(null);
-    this.liveBandActive.set(false);
-    this.liveBand.set(null);
+    this.dealTransactionDetail.set(null);
     this.slaDoc.set(null);
     this.authDoc.set(null);
-  }
-
-  togglePause(): void {
-    this.paused.update((p) => !p);
+    this.dealerNameWarned = false;
   }
 
   private validate(): boolean {
@@ -797,7 +941,7 @@ export class DealerPadComponent implements OnInit {
       spot: Number(v.spot),
       premium: Number(v.premium),
       margin: Number(v.margin),
-      netRate: this.netRate(),
+      netRate: Number(v.dealerNet) || this.netRate(),
       remarks: v.remarks,
       status,
       updatedAt: new Date().toISOString(),
@@ -812,6 +956,17 @@ function formatDmyTime(d: Date): string {
     `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ` +
     `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
   );
+}
+
+/** Reads a value from a loose API record by field name, ignoring case/punctuation. */
+function readField(obj: Record<string, unknown>, name: string): string | null {
+  const target = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  for (const [k, v] of Object.entries(obj)) {
+    if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === target) {
+      return v == null ? null : String(v);
+    }
+  }
+  return null;
 }
 
 function filter(deals: Deal[], term: string): Deal[] {

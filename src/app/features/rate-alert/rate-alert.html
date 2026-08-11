@@ -1,0 +1,148 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Rate Alert"
+    subtitle="Create rate alerts and get notified by email / phone when a currency hits your threshold."
+    [breadcrumbs]="[{ label: 'FTP Transactions' }, { label: 'Rate Alert' }]"
+  >
+    <button mat-flat-button color="primary" type="button" (click)="toggleForm()">
+      <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+      {{ showForm() ? 'Cancel' : 'Add New Rate Alert' }}
+    </button>
+  </app-page-header>
+</div>
+
+<!-- Add -->
+@if (showForm()) {
+  <div class="rf-card child__add">
+    <div class="child__addhead">
+      <h4 class="child__addtitle">
+        <mat-icon>notifications_active</mat-icon>
+        {{ editingId() ? 'Edit Rate Alert' : 'New Rate Alert' }}
+      </h4>
+    </div>
+
+    <form class="child__form" [formGroup]="form" (ngSubmit)="save()">
+      <div class="child__row child__row--4">
+        <app-field label="Currency" required [control]="form.controls.currency" error="Select a currency.">
+          <app-select formControlName="currency" [options]="currencyOptions()" placeholder="Select currency" searchPlaceholder="Search currency…" />
+        </app-field>
+        <app-field label="Alert Me When" required [control]="form.controls.alertMeWhen" error="Select a condition.">
+          <app-select
+            formControlName="alertMeWhen"
+            [options]="alertMeWhenOptions()"
+            [placeholder]="form.controls.currency.value ? 'Select condition' : 'Select a currency first'"
+            searchPlaceholder="Search…"
+          />
+        </app-field>
+        <app-field label="Rate" required [control]="form.controls.rate" error="Enter a rate.">
+          <input class="rf-input" type="number" step="0.0001" formControlName="rate" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Validity of Alert" required [control]="form.controls.validityOfAlert" error="Select validity.">
+          <app-select formControlName="validityOfAlert" [options]="validityOptions()" placeholder="Select validity" searchPlaceholder="Search…" />
+        </app-field>
+      </div>
+
+      <div class="child__row child__row--4">
+        <div class="rf-field">
+          <span class="rf-label">Alert Me</span>
+          <div class="channels">
+            <mat-checkbox formControlName="alertEmail">Email</mat-checkbox>
+            <mat-checkbox formControlName="alertPhone">Phone</mat-checkbox>
+          </div>
+        </div>
+        <app-field label="Status">
+          <app-select formControlName="status" [options]="statusOptions" [nullable]="false" placeholder="Select status" searchPlaceholder="Search…" />
+        </app-field>
+      </div>
+
+      <div class="child__formactions">
+        <button mat-stroked-button type="button" (click)="closeForm()">Clear</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+          <mat-icon>notifications_active</mat-icon>
+          {{ saving() ? 'Saving…' : editingId() ? 'Update Alert' : 'Add Alert' }}
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Filters -->
+<div class="rf-card filter">
+  <div class="filter__fields">
+    <label class="filter__field filter__field--wide">
+      <span class="filter__lbl">Currency &amp; Alert Me When</span>
+      <input class="rf-input" type="text" [ngModel]="filterText()" (ngModelChange)="onFilterText($event)" placeholder="Search…" />
+    </label>
+    <label class="filter__field">
+      <span class="filter__lbl">Status</span>
+      <app-select
+        [options]="statusOptions"
+        placeholder="All"
+        searchPlaceholder="Search…"
+        [ngModel]="filterStatus()"
+        (ngModelChange)="onFilterStatus($event)"
+      />
+    </label>
+    <div class="filter__actions">
+      <button mat-flat-button color="primary" type="button" (click)="search()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- List -->
+<div class="rf-card child__tablewrap">
+  <table class="child__table">
+    <!-- Per-column sizing: tweak each width in rate-alert.scss (.col-*). -->
+    <colgroup>
+      <col class="col-sno" />
+      <col class="col-currency" />
+      <col class="col-when" />
+      <col class="col-rate" />
+      <col class="col-validity" />
+      <col class="col-on" />
+      <col class="col-status" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>S.No.</th>
+        <th>Currency</th>
+        <th>Alert Me When</th>
+        <th>Rate</th>
+        <th>Validity Of Alert</th>
+        <th>Alert Me On</th>
+        <th>Status</th>
+        <th class="ta-r">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of rows(); track r.recordID; let i = $index) {
+        <tr>
+          <td>{{ i + 1 }}</td>
+          <td class="name">{{ r.currency || '—' }}</td>
+          <td>{{ r.alertMeWhen || '—' }}</td>
+          <td>{{ r.rate != null ? (r.rate | number: '1.2-4') : '—' }}</td>
+          <td>{{ r.validityOfAlertName || '—' }}</td>
+          <td>{{ r.alertMeOn || '—' }}</td>
+          <td>{{ r.status || '—' }}</td>
+          <td class="ta-r">
+            <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(r)" matTooltip="Edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="8" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No rate alerts found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

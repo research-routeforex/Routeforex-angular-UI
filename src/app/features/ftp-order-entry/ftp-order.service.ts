@@ -4,7 +4,13 @@ import { API } from '../../core/constants/api-endpoints';
 import { ApiResponse } from '../../core/models/api-response.model';
 import { PagedResult, PaginationRequest } from '../../core/models/pagination.model';
 import { ApiService } from '../../core/services/api.service';
-import { ForwardDeal, FtpOrderDetail, FtpOrderListFilter, FtpOrderListItem } from './ftp-order.model';
+import {
+  ClientOrder,
+  ForwardDeal,
+  FtpOrderDetail,
+  FtpOrderListFilter,
+  FtpOrderListItem,
+} from './ftp-order.model';
 
 /** FTP Order Entry — list orders + book a new order into TFTPO_Txn_OrderBooking. */
 @Injectable({ providedIn: 'root' })
@@ -28,6 +34,8 @@ export class FtpOrderService {
         amount: filter?.amount || undefined,
         maturity: filter?.maturity || undefined,
         status: filter?.status || undefined,
+        createdDateTime: filter?.createdDateTime || undefined,
+        upcomingDate: filter?.upcomingDate || undefined,
       },
     });
   }
@@ -43,6 +51,23 @@ export class FtpOrderService {
   getForwardDeals(clientId: number, recordId?: number): Observable<ForwardDeal[]> {
     return this.api.get<ForwardDeal[]>(API.transaction.ftpForwardDeals, {
       params: { clientId, recordId: recordId || undefined },
+    });
+  }
+
+  /**
+   * Next working day (skips weekends + holidays) for `date` (default: today),
+   * as an ISO yyyy-MM-dd string. Used to default the order's date fields.
+   */
+  /** All live orders for a client — Deal Coverage's Order dropdown. */
+  getOrdersByClient(clientId: number): Observable<ClientOrder[]> {
+    return this.api.get<ClientOrder[]>(API.transaction.ftpOrdersByClient, {
+      params: { clientId },
+    });
+  }
+
+  getWorkingDate(date?: string): Observable<string> {
+    return this.api.get<string>(API.transaction.ftpWorkingDate, {
+      params: { date: date || undefined },
     });
   }
 

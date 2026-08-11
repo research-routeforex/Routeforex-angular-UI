@@ -54,6 +54,12 @@ export class LoginComponent {
       .login({ userName, password }, rememberMe)
       .pipe(finalize(() => this.submitting.set(false)))
       .subscribe(() => {
+        // First login (seeded LastLoginDate = null): force a password change
+        // before entering the app so the user sets their own personal password.
+        if (this.auth.user()?.mustChangePassword) {
+          void this.router.navigateByUrl('/auth/first-login');
+          return;
+        }
         const returnUrl =
           this.route.snapshot.queryParamMap.get('returnUrl') || '/dashboard';
         void this.router.navigateByUrl(returnUrl);

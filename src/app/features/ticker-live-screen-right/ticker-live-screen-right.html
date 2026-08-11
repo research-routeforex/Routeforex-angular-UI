@@ -1,0 +1,132 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Ticker Live Screen Right"
+    subtitle="Grant clients paid access to the Ticker Live Rate screen for a validity window."
+    [breadcrumbs]="[{ label: 'Administration' }, { label: 'Ticker Live Screen Right' }]"
+  >
+    @if (editingId() === null) {
+      <button mat-flat-button color="primary" type="button" (click)="startAdd()">
+        <mat-icon>add</mat-icon> Add Client
+      </button>
+    }
+  </app-page-header>
+</div>
+
+<!-- Inline add/edit form -->
+@if (editingId() !== null) {
+  <form [formGroup]="form" class="rf-card editform" (ngSubmit)="save()">
+    <div class="editform__grid">
+      <app-field label="Client" required [control]="form.controls.clientID" error="Client is required.">
+        <app-select
+          formControlName="clientID"
+          [options]="clientOptions()"
+          placeholder="Select client…"
+        />
+      </app-field>
+      <app-field label="Amount" [control]="form.controls.amount">
+        <input class="rf-input" type="number" step="0.01" formControlName="amount" placeholder="e.g. 25000" />
+      </app-field>
+      <app-field label="Validity From" required [control]="form.controls.validityFrom" error="Validity From is required.">
+        <input class="rf-input" type="date" formControlName="validityFrom" />
+      </app-field>
+      <app-field label="Validity To" required [control]="form.controls.validityTo" error="Validity To is required.">
+        <input class="rf-input" type="date" formControlName="validityTo" />
+      </app-field>
+    </div>
+    <div class="editform__actions">
+      <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : editingId() ? 'Update' : 'Add' }}
+      </button>
+    </div>
+  </form>
+}
+
+<div class="rf-card tablewrap">
+  <table class="grid">
+    <colgroup>
+      <col class="col-client" />
+      <col class="col-amount" />
+      <col class="col-date" />
+      <col class="col-date" />
+      <col class="col-created" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>
+          <span class="th__name">Client Name</span>
+          <select class="colfilter" (change)="setSearchClient($any($event.target).value)">
+            <option value="">All clients</option>
+            @for (c of clientOptions(); track c.value) {
+              <option [value]="$any(c.value)">{{ c.label }}</option>
+            }
+          </select>
+        </th>
+        <th class="ta-r"><span class="th__name">Amount</span></th>
+        <th>
+          <span class="th__name">Validity From</span>
+          <input class="colfilter" type="date" (change)="setSearchFrom($any($event.target).value)" />
+        </th>
+        <th>
+          <span class="th__name">Validity To</span>
+          <input class="colfilter" type="date" (change)="setSearchTo($any($event.target).value)" />
+        </th>
+        <th><span class="th__name">Created</span></th>
+        <th class="ta-r"><span class="th__name">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of pagedRows(); track r.id) {
+        <tr>
+          <td class="name">{{ r.clientName || '—' }}</td>
+          <td class="ta-r num">{{ r.amount == null ? '—' : (r.amount | number: '1.2-2') }}</td>
+          <td>{{ r.validityFrom ? (r.validityFrom | date: 'dd-MMM-yyyy') : '—' }}</td>
+          <td>{{ r.validityTo ? (r.validityTo | date: 'dd-MMM-yyyy') : '—' }}</td>
+          <td>{{ r.createdBy || '—' }}</td>
+          <td class="ta-r actions">
+            <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="startEdit(r)" matTooltip="Edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No clients found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="pager">
+  <div class="pager__size">
+    <span class="rf-muted">Rows per page</span>
+    <select class="rf-select pager__select" (change)="onPageSize($any($event.target).value)">
+      @for (n of pageSizeOptions; track n) {
+        <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
+      }
+    </select>
+  </div>
+  <span class="rf-spacer"></span>
+  <span class="pager__info rf-muted">{{ fromRow() }}–{{ toRow() }} of {{ total() }}</span>
+  <div class="pager__nav">
+    <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="first()" matTooltip="First page">
+      <mat-icon>first_page</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="prev()" matTooltip="Previous page">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="pager__page">{{ pageNumber() }} / {{ totalPages() }}</span>
+    <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="next()" matTooltip="Next page">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="last()" matTooltip="Last page">
+      <mat-icon>last_page</mat-icon>
+    </button>
+  </div>
+</div>
