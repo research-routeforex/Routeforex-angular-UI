@@ -1,5 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable, tap } from 'rxjs';
 import { API } from '../../core/constants/api-endpoints';
 import { silentContext } from '../../core/interceptors/http-context.tokens';
 import { ApiService } from '../../core/services/api.service';
@@ -8,6 +8,7 @@ import {
   ForexBoardRow,
   ForexNewsRow,
   ForwardPremiumRow,
+  ForwardRate,
   TickerAccess,
 } from './ticker.models';
 
@@ -52,6 +53,11 @@ interface ForexPremiumApi {
   fwdOutrightAsk: number;
   currency: string;
 }
+/** Generic key/value dropdown item (mirrors the API's DropdownItemDto). */
+interface DropdownItem {
+  key: string | number | null;
+  value: string | null;
+}
 interface ForexNewsApi {
   recordId: number;
   mailSubject: string;
@@ -88,6 +94,10 @@ export class TickerService {
   private readonly _premium = signal<ForwardPremiumRow[]>([]);
   readonly premium = this._premium.asReadonly();
 
+  /** Distinct currencies for the Forward Premium dropdown (from TPO_Mast_ForexPremium). */
+  private readonly _premiumCurrencies = signal<string[]>([]);
+  readonly premiumCurrencies = this._premiumCurrencies.asReadonly();
+
   private readonly _news = signal<ForexNewsRow[]>([]);
   readonly news = this._news.asReadonly();
 
@@ -123,6 +133,23 @@ export class TickerService {
       .subscribe({ next: (rows) => this.applyFutures(rows ?? []) });
   }
 
+  /**
+   * Load the distinct currencies for the Forward Premium dropdown. Returns them
+   * so the caller can pick a default; also stored in the `premiumCurrencies` signal.
+   */
+  loadPremiumCurrencies(): Observable<string[]> {
+    return this.api
+      .get<DropdownItem[]>(API.forex.tickerPremiumCurrencies, { context: silentContext() })
+      .pipe(
+        map((rows) =>
+          (rows ?? [])
+            .map((r) => String(r.value ?? r.key ?? '').trim())
+            .filter((v) => v.length > 0),
+        ),
+        tap((list) => this._premiumCurrencies.set(list)),
+      );
+  }
+
   /** Load the forward-premium grid for a currency (e.g. "USDINR"). */
   loadPremium(currency: string): void {
     this.api
@@ -145,6 +172,20 @@ export class TickerService {
             })),
           ),
       });
+  }
+
+  /**
+   * Forward rate for one Broken Rate Calculator row. currencyFrom/currencyTo are
+   * the 3-letter halves of the selected premium currency (e.g. USDINR → USD, INR);
+   * monthEndDate is yyyy-MM-dd. Returns the proc rows (usually one).
+   */
+  forwardRate(monthEndDate: string, currencyFrom: string, currencyTo: string): Observable<ForwardRate[]> {
+    return this.api
+      .get<ForwardRate[]>(API.forex.tickerForwardRate, {
+        params: { monthEndDate, currencyFrom, currencyTo },
+        context: silentContext(),
+      })
+      .pipe(map((rows) => rows ?? []));
   }
 
   /** Load the Forex News feed for the signed-in user (@Action='selectNEWS'). */

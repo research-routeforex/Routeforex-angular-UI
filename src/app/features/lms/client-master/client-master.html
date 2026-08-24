@@ -1,0 +1,246 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Client Master"
+    subtitle="LMS clients — address, turnover figures and a contact person."
+    [breadcrumbs]="[{ label: 'LMS' }, { label: 'Client Master' }]"
+  >
+    <button mat-flat-button color="primary" type="button" (click)="toggleForm()">
+      <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+      {{ showForm() ? 'Cancel' : 'Add New Client' }}
+    </button>
+  </app-page-header>
+</div>
+
+<!-- Add / edit / view -->
+@if (showForm()) {
+  <div class="rf-card child__add">
+    <div class="child__addhead">
+      <h4 class="child__addtitle">
+        <mat-icon>{{ viewing() ? 'visibility' : 'badge' }}</mat-icon>
+        {{ viewing() ? 'View Client' : editingId() ? 'Edit Client' : 'Add New Client' }}
+      </h4>
+    </div>
+
+    <form class="child__form" [formGroup]="form" (ngSubmit)="save()">
+      <!-- Row 1: Client Name (wide) + Region / Country / City / PIN (15% each) -->
+      <div class="child__row child__row--main">
+        <app-field label="Client Name" required [control]="form.controls.clientName" error="Enter a name.">
+          <input class="rf-input" type="text" formControlName="clientName" placeholder="Client name" />
+        </app-field>
+        <app-field label="Region">
+          <app-select formControlName="regionCode" [options]="regionOptions()" placeholder="Select region" searchPlaceholder="Search region…" />
+        </app-field>
+        <app-field label="Country">
+          <app-select
+            formControlName="country"
+            [options]="countryOptions()"
+            [placeholder]="form.controls.regionCode.value ? 'Select country' : 'Select region first'"
+            searchPlaceholder="Search country…"
+          />
+        </app-field>
+        <app-field label="City">
+          <app-select
+            formControlName="city"
+            [options]="cityOptions()"
+            [placeholder]="form.controls.country.value ? 'Select city' : 'Select country first'"
+            searchPlaceholder="Search city…"
+          />
+        </app-field>
+        <app-field label="PIN Code">
+          <input class="rf-input" type="text" formControlName="pin" placeholder="PIN code" />
+        </app-field>
+      </div>
+
+      <!-- Row 2: Address lines -->
+      <div class="child__row child__row--addr">
+        <app-field label="Address Line 1">
+          <input class="rf-input" type="text" formControlName="addressLine1" placeholder="Address line 1" />
+        </app-field>
+        <app-field label="Address Line 2">
+          <input class="rf-input" type="text" formControlName="addressLine2" placeholder="Address line 2" />
+        </app-field>
+      </div>
+
+      <!-- Row 3: Turnovers + Status (15% each) -->
+      <div class="child__row child__row--fig">
+        <app-field label="Export Turnover">
+          <input class="rf-input" type="number" step="0.01" formControlName="exportFigure" placeholder="0" />
+        </app-field>
+        <app-field label="Import Turnover">
+          <input class="rf-input" type="number" step="0.01" formControlName="importFigure" placeholder="0" />
+        </app-field>
+        <app-field label="Total Turnover">
+          <input class="rf-input" type="number" step="0.01" formControlName="totalFigure" placeholder="0" />
+        </app-field>
+        <app-field label="Status">
+          <app-select formControlName="status" [options]="statusOptions" [nullable]="false" placeholder="Select status" searchPlaceholder="Search…" />
+        </app-field>
+      </div>
+
+      <!-- Contact Details (add / remove) -->
+      <div class="sec sec--contacts">
+        <h3 class="sec__title">
+          <mat-icon>contacts</mat-icon> Contact Details
+          <span class="rf-spacer"></span>
+          @if (!viewing()) {
+            <button mat-stroked-button type="button" (click)="addContact()">
+              <mat-icon>add</mat-icon> Add Contact
+            </button>
+          }
+        </h3>
+
+        <div class="contacts" formArrayName="contacts">
+          <div class="contacts__head">
+            <span>Contact Name</span>
+            <span>Email</span>
+            <span>Contact Number</span>
+            <span>Designation</span>
+            <span></span>
+          </div>
+          @for (ctrl of contacts.controls; track ctrl; let i = $index) {
+            <div class="contacts__row" [formGroupName]="i">
+              <div class="rf-control">
+                <mat-icon class="rf-control__icon">person</mat-icon>
+                <input class="rf-input rf-input--icon" formControlName="contactName" placeholder="Name" />
+              </div>
+              <div class="rf-control">
+                <mat-icon class="rf-control__icon">mail</mat-icon>
+                <input class="rf-input rf-input--icon" formControlName="email" type="email" placeholder="email@company.com" />
+              </div>
+              <div class="rf-control">
+                <mat-icon class="rf-control__icon">call</mat-icon>
+                <input class="rf-input rf-input--icon" formControlName="contactNumber" placeholder="Phone" />
+              </div>
+              <div class="rf-control">
+                <mat-icon class="rf-control__icon">badge</mat-icon>
+                <input class="rf-input rf-input--icon" formControlName="designation" placeholder="Designation" />
+              </div>
+              @if (!viewing()) {
+                <button mat-icon-button type="button" (click)="removeContact(i)" matTooltip="Remove">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              } @else {
+                <span></span>
+              }
+            </div>
+          } @empty {
+            <p class="rf-muted contacts__empty">No contacts added yet.</p>
+          }
+        </div>
+      </div>
+
+      <div class="child__formactions">
+        <button mat-stroked-button type="button" (click)="closeForm()">
+          {{ viewing() ? 'Close' : 'Clear' }}
+        </button>
+        @if (!viewing()) {
+          <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+            <mat-icon>save</mat-icon>
+            {{ saving() ? 'Saving…' : editingId() ? 'Update' : 'Submit' }}
+          </button>
+        }
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Filters -->
+<div class="rf-card filter">
+  <div class="filter__fields">
+    <label class="filter__field filter__field--wide">
+      <span class="filter__lbl">Client Name</span>
+      <input
+        class="rf-input"
+        type="text"
+        [ngModel]="filterText()"
+        (ngModelChange)="onFilterText($event)"
+        placeholder="Search…"
+      />
+    </label>
+    <label class="filter__field">
+      <span class="filter__lbl">Status</span>
+      <app-select
+        [options]="statusOptions"
+        placeholder="All"
+        searchPlaceholder="Search…"
+        [ngModel]="filterStatus()"
+        (ngModelChange)="onFilterStatus($event)"
+      />
+    </label>
+    <div class="filter__actions">
+      <button mat-flat-button color="primary" type="button" (click)="search()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- List -->
+<div class="rf-card child__tablewrap">
+  <div class="child__listhead">
+    <h3 class="child__listtitle">Client List</h3>
+    <span class="child__count rf-muted">{{ total() }} record(s)</span>
+  </div>
+  <table class="child__table">
+    <colgroup>
+      <col class="col-sno" />
+      <col class="col-name" />
+      <col class="col-export" />
+      <col class="col-import" />
+      <col class="col-total" />
+      <col class="col-address" />
+      <col class="col-city" />
+      <col class="col-pin" />
+      <col class="col-status" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>S.No.</th>
+        <th>Client Name</th>
+        <th>Export Turnover</th>
+        <th>Import Turnover</th>
+        <th>Total Turnover</th>
+        <th>Address</th>
+        <th>City</th>
+        <th>PIN</th>
+        <th>Status</th>
+        <th class="ta-r">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of rows(); track r.clientID; let i = $index) {
+        <tr>
+          <td>{{ i + 1 }}</td>
+          <td class="name">{{ r.clientName || '—' }}</td>
+          <td>{{ r.exportFigure != null ? (r.exportFigure | number: '1.0-2') : '—' }}</td>
+          <td>{{ r.importFigure != null ? (r.importFigure | number: '1.0-2') : '—' }}</td>
+          <td>{{ r.totalFigure != null ? (r.totalFigure | number: '1.0-2') : '—' }}</td>
+          <td>{{ address(r) }}</td>
+          <td>{{ r.cityName || '—' }}</td>
+          <td>{{ r.pin || '—' }}</td>
+          <td>{{ r.status || '—' }}</td>
+          <td class="ta-r">
+            <div class="rowactions">
+              <button type="button" class="rf-iconbtn" (click)="view(r)" matTooltip="View">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(r)" matTooltip="Edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="10" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No clients found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

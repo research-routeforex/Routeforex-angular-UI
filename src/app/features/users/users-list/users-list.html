@@ -130,6 +130,39 @@
   </form>
 }
 
+<!-- Top filter bar (server-side search + role) -->
+<div class="rf-card filter">
+  <div class="filter__fields">
+    <label class="filter__field filter__field--wide">
+      <span class="filter__lbl">Username / Email / Full Name</span>
+      <input
+        class="rf-input"
+        type="text"
+        [value]="searchText()"
+        (input)="onSearchText($any($event.target).value)"
+        (keyup.enter)="search()"
+        placeholder="Search…"
+      />
+    </label>
+    <label class="filter__field">
+      <span class="filter__lbl">Role</span>
+      <app-select
+        [options]="roleOptions()"
+        placeholder="All"
+        searchPlaceholder="Search role…"
+        [ngModel]="filterRoleId()"
+        (ngModelChange)="onFilterRole($event)"
+      />
+    </label>
+    <div class="filter__actions">
+      <button mat-flat-button color="primary" type="button" (click)="search()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+</div>
+
 <div class="rf-card tablewrap">
   <table class="grid">
     <colgroup>
@@ -143,35 +176,17 @@
     </colgroup>
     <thead>
       <tr>
-        <th>
-          <span class="th__name">Username</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('userName', $any($event.target).value)" />
-        </th>
-        <th>
-          <span class="th__name">Full Name</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('fullName', $any($event.target).value)" />
-        </th>
-        <th>
-          <span class="th__name">Email</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('email', $any($event.target).value)" />
-        </th>
-        <th>
-          <span class="th__name">Roles</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('roles', $any($event.target).value)" />
-        </th>
-        <th>
-          <span class="th__name">Status</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('status', $any($event.target).value)" />
-        </th>
-        <th>
-          <span class="th__name">Last Login</span>
-          <input class="colfilter" placeholder="Search…" (input)="setFilter('lastLogin', $any($event.target).value)" />
-        </th>
+        <th><span class="th__name">Username</span></th>
+        <th><span class="th__name">Full Name</span></th>
+        <th><span class="th__name">Email</span></th>
+        <th><span class="th__name">Roles</span></th>
+        <th><span class="th__name">Status</span></th>
+        <th><span class="th__name">Last Login</span></th>
         <th class="ta-r"><span class="th__name">Actions</span></th>
       </tr>
     </thead>
     <tbody>
-      @for (u of pagedRows(); track u.id) {
+      @for (u of rows(); track u.id) {
         <tr>
           <td class="name">{{ u.userName }}</td>
           <td>{{ u.fullName || '—' }}</td>

@@ -177,6 +177,12 @@
   max-height: 78vh;
   overflow: auto;
 }
+// Currency Future table fills the screen in full-screen (its columns still keep
+// their relative colgroup widths under fixed layout).
+.ticker--fs .tablewrap .quotes {
+  width: 100%;
+  min-width: 0;
+}
 
 // ---- Section tabs ---------------------------------------------------------
 .tabs {
@@ -250,10 +256,15 @@
 }
 
 .quotes {
-  width: 100%;
+  // Fixed layout so the <colgroup> widths are AUTHORITATIVE. In the default
+  // (auto) layout the browser sizes columns from their content and treats col
+  // widths as mere hints — decreasing a width then has no visible effect. The
+  // table sizes to the sum of its column widths (`max-content`); the wrapper
+  // (.tablewrap / .quad__scroll) scrolls horizontally when that exceeds the panel.
+  table-layout: fixed;
+  width: max-content;
   border-collapse: collapse;
   font-size: 13px;
-  min-width: 1120px;
 
   thead th {
     position: sticky;
@@ -270,7 +281,11 @@
     text-transform: uppercase;
     letter-spacing: 0.03em;
     padding: 12px 12px;
-    white-space: nowrap;
+    // Allow the caption to wrap onto multiple lines so columns can be made
+    // narrower than the header text (e.g. "MONTH END DATE", "FWDOUT BID").
+    white-space: normal;
+    overflow-wrap: break-word;
+    vertical-align: bottom;
     border-bottom: 2px solid color-mix(in oklab, var(--mat-sys-primary) 60%, black);
   }
   thead th + th {
@@ -301,6 +316,9 @@
   td.num {
     text-align: right;
     font-variant-numeric: tabular-nums;
+  }
+  // Keep numeric DATA on one line; headers (th.num) are free to wrap.
+  td.num {
     white-space: nowrap;
   }
   th.name {
@@ -310,6 +328,10 @@
   td {
     padding: 6px 12px;
     border-bottom: 1px solid var(--rf-border);
+    // Fixed layout can't shrink content; clip anything wider than its column
+    // instead of letting it bleed into the neighbour.
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   tbody tr {
     transition: background 0.14s ease;
@@ -332,32 +354,86 @@
 // full-screen, where the table switches to table-layout:fixed and would otherwise
 // split the free space evenly and blow Source up.
 .news-grid {
-  th.col-date,
-  td.col-date {
-    width: 112px;
-    white-space: nowrap;
-  }
-  th.col-time,
-  td.col-time {
-    width: 76px;
-    white-space: nowrap;
-  }
+  // News fills its panel (overrides the max-content default) so the auto-width
+  // Subject column flexes to take the leftover space; Date/Time/Source are fixed.
+  width: 100%;
+  // Widths live on the <colgroup> cols (single place to tune). Date, Time and
+  // Source are fixed-length; only Subject flexes — including full-screen, where
+  // the table switches to table-layout:fixed and would otherwise split the free
+  // space evenly and blow Source up.
+  col.col-date { width: 112px; }
+  col.col-time { width: 76px; }
   // Size Source to its longest real value ("News & Update") on one line; the
   // rest of the free width goes to Subject.
-  th.col-source,
-  td.col-source {
-    width: 132px;
+  col.col-source { width: 132px; }
+  col.col-subject { width: auto; }
+
+  // col cannot control white-space, so keep the fixed columns on a single line.
+  th.col-date, td.col-date,
+  th.col-time, td.col-time,
+  th.col-source, td.col-source {
     white-space: nowrap;
-  }
-  th.col-subject,
-  td.col-subject {
-    width: auto;
   }
   // Rows open the full-story dialog on click.
   tbody tr.news-row {
     cursor: pointer;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Column widths — one place per table to tune sizing, via each table's
+// <colgroup>. The tables use table-layout:fixed, so these widths are
+// authoritative: change a value and the column resizes exactly. The table sizes
+// to the sum of its columns and scrolls inside its panel when wider. Adjust any
+// value below to resize that column.
+// ---------------------------------------------------------------------------
+
+// Currency Future tab (14 columns)
+col.col-cf-symbol { width: 140px; }
+col.col-cf-expiry { width: 140px; }
+col.col-cf-bidqty { width: 95px; }
+col.col-cf-bid { width: 95px; }
+col.col-cf-ask { width: 95px; }
+col.col-cf-askqty { width: 95px; }
+col.col-cf-ltp { width: 100px; }
+col.col-cf-netchg { width: 95px; }
+col.col-cf-pctchg { width: 95px; }
+col.col-cf-open { width: 95px; }
+col.col-cf-high { width: 95px; }
+col.col-cf-low { width: 95px; }
+col.col-cf-close { width: 95px; }
+col.col-cf-volume { width: 96px; }
+
+// Forex tab · Live rates board (Q1, 10 columns)
+col.col-bd-desc { width: 100px; }
+col.col-bd-bid { width: 75px; }
+col.col-bd-ask { width: 75px; }
+col.col-bd-ltp { width: 75px; }
+col.col-bd-pctchg { width: 60px; }
+col.col-bd-netchg { width: 75px; }
+col.col-bd-high { width: 75px; }
+col.col-bd-low { width: 75px; }
+col.col-bd-open { width: 75px; }
+col.col-bd-close { width: 80px; }
+
+// Forex tab · Forward Premium (Q2, 8 columns)
+col.col-fp-desc { width: 95px; }
+col.col-fp-bid { width: 75px; }
+col.col-fp-askprice { width: 75px; }
+col.col-fp-bidpct { width: 70px; }
+col.col-fp-askpct { width: 70px; }
+col.col-fp-monthend { width: 90px; }
+col.col-fp-fwdbid { width: 80px; }
+col.col-fp-fwdask { width: 80px; }
+
+// Forex tab · Broken Rate Calculator (Q4, 7 columns)
+col.col-brc-valuedate { width: 140px; }
+col.col-brc-spotbid { width: 85px; }
+col.col-brc-spotask { width: 85px; }
+col.col-brc-swapbid { width: 85px; }
+col.col-brc-swapask { width: 85px; }
+col.col-brc-fwdbid { width: 80px; }
+col.col-brc-fwdask { width: 80px; }
 
 // ---- Forex News detail dialog ---------------------------------------------
 .news-modal {
@@ -652,8 +728,9 @@
   font-size: 12px;
   thead th {
     position: static;
-    padding: 8px 10px;
+    padding: 5px 6px;
     border-radius: 0;
+    text-align: center;
   }
   thead th.group {
     text-align: center;
@@ -663,7 +740,7 @@
     font-size: 10px;
   }
   td {
-    padding: 5px 10px;
+    padding: 5px 6px;
   }
 }
 .quotes--sm tbody tr.row--sel td {
@@ -679,6 +756,38 @@
 .brc__note {
   padding: 10px 12px 4px;
   font-size: 12px;
+}
+
+// Per-row loader: shown across the result columns of the row whose date is being
+// fetched (spans the 6 non-date columns via colspan).
+.brc-loading {
+  text-align: center !important;
+  color: var(--rf-muted-fg);
+  white-space: nowrap;
+}
+.brc-loading__text {
+  font-size: 12px;
+  font-variant-numeric: normal;
+  vertical-align: middle;
+}
+.brc-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  vertical-align: middle;
+  border: 2px solid color-mix(in oklab, var(--mat-sys-primary) 30%, transparent);
+  border-top-color: var(--mat-sys-primary);
+  border-radius: 50%;
+  animation: brc-spin 0.7s linear infinite;
+}
+@keyframes brc-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brc-spinner {
+    animation-duration: 1.6s;
+  }
 }
 
 @media (max-width: 1100px) {

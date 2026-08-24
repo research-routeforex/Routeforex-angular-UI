@@ -1,5 +1,6 @@
 <div class="ticker" [class.ticker--fs]="fullscreen()" #root>
-  @if (!fullscreen()) {
+  <!-- @if (!fullscreen()) { -->
+  @if (!true) {
     <div class="hero">
       <span class="hero__glow hero__glow--a"></span>
       <span class="hero__glow hero__glow--b"></span>
@@ -7,12 +8,7 @@
         title="Ticker Live Rate"
         subtitle="Forex, currency futures, market news and support — live."
         [breadcrumbs]="[{ label: 'Trading' }, { label: 'Ticker Live Rate' }]"
-      >
-        <span class="live">
-          <span class="live__dot"></span>
-          Live · {{ svc.lastUpdated() | date: 'HH:mm:ss' }}
-        </span>
-      </app-page-header>
+      />
     </div>
   }
 
@@ -50,12 +46,10 @@
       </span>
     }
 
-    @if (fullscreen()) {
-      <span class="fs-live">
-        <span class="live__dot"></span>
-        Live · {{ svc.lastUpdated() | date: 'HH:mm:ss' }}
-      </span>
-    }
+    <span class="fs-live">
+      <span class="live__dot"></span>
+      Live · {{ svc.lastUpdated() | date: 'HH:mm:ss' }}
+    </span>
 
     <button type="button" class="fs-btn" (click)="toggleFullscreen()">
       <mat-icon>{{ fullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
@@ -67,6 +61,23 @@
 @if (active() === 'Currency Future') {
   <div class="rf-card tablewrap">
     <table class="quotes">
+      <!-- Column widths are managed in ticker.scss → "Column widths" (col-cf-*). -->
+      <colgroup>
+        <col class="col-cf-symbol" />
+        <col class="col-cf-expiry" />
+        <col class="col-cf-bidqty" />
+        <col class="col-cf-bid" />
+        <col class="col-cf-ask" />
+        <col class="col-cf-askqty" />
+        <col class="col-cf-ltp" />
+        <col class="col-cf-netchg" />
+        <col class="col-cf-pctchg" />
+        <col class="col-cf-open" />
+        <col class="col-cf-high" />
+        <col class="col-cf-low" />
+        <col class="col-cf-close" />
+        <col class="col-cf-volume" />
+      </colgroup>
       <thead>
         <tr>
           <th class="name">Symbol</th>
@@ -147,6 +158,19 @@
       </header>
       <div class="quad__scroll">
         <table class="quotes quotes--sm">
+          <!-- Column widths are managed in ticker.scss → "Column widths" (col-bd-*). -->
+          <colgroup>
+            <col class="col-bd-desc" />
+            <col class="col-bd-bid" />
+            <col class="col-bd-ask" />
+            <col class="col-bd-ltp" />
+            <col class="col-bd-pctchg" />
+            <col class="col-bd-netchg" />
+            <col class="col-bd-high" />
+            <col class="col-bd-low" />
+            <col class="col-bd-open" />
+            <col class="col-bd-close" />
+          </colgroup>
           <thead>
             <tr>
               <th class="name">Description</th>
@@ -194,7 +218,7 @@
           class="rf-select quad__ccy"
           (change)="onFwdCurrency($any($event.target).value)"
         >
-          @for (c of fwdCurrencies; track c) {
+          @for (c of fwdCurrencies(); track c) {
             <option [value]="c" [selected]="c === selectedFwdCurrency()">{{ c }}</option>
           }
         </select>
@@ -203,6 +227,18 @@
       </header>
       <div class="quad__scroll">
         <table class="quotes quotes--sm">
+          <!-- Column widths are managed in ticker.scss → "Column widths" (col-fp-*).
+               8 physical columns (Bid %/Ask % sit under the Forward Premium header). -->
+          <colgroup>
+            <col class="col-fp-desc" />
+            <col class="col-fp-bid" />
+            <col class="col-fp-askprice" />
+            <col class="col-fp-bidpct" />
+            <col class="col-fp-askpct" />
+            <col class="col-fp-monthend" />
+            <col class="col-fp-fwdbid" />
+            <col class="col-fp-fwdask" />
+          </colgroup>
           <thead>
             <tr>
               <th class="name" rowspan="2">Description</th>
@@ -243,6 +279,13 @@
       </header>
       <div class="quad__scroll">
         <table class="quotes quotes--sm news-grid">
+          <!-- Column widths are managed in ticker.scss → ".news-grid" (col-date/time/subject/source). -->
+          <colgroup>
+            <col class="col-date" />
+            <col class="col-time" />
+            <col class="col-subject" />
+            <col class="col-source" />
+          </colgroup>
           <thead>
             <tr>
               <th class="name col-date">Date</th>
@@ -274,6 +317,16 @@
       </header>
       <div class="quad__scroll">
         <table class="quotes quotes--sm">
+          <!-- Column widths are managed in ticker.scss → "Column widths" (col-brc-*). -->
+          <colgroup>
+            <col class="col-brc-valuedate" />
+            <col class="col-brc-spotbid" />
+            <col class="col-brc-spotask" />
+            <col class="col-brc-swapbid" />
+            <col class="col-brc-swapask" />
+            <col class="col-brc-fwdbid" />
+            <col class="col-brc-fwdask" />
+          </colgroup>
           <thead>
             <tr>
               <th class="name">Value Date</th>
@@ -286,26 +339,35 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td class="name">
-                <input
-                  type="date"
-                  class="rf-input brc__date"
-                  [value]="brokenDate()"
-                  (change)="onBrokenDate($any($event.target).value)"
-                />
-              </td>
-              <td class="num">{{ brokenResult().spotBid | number: '1.4-4' }}</td>
-              <td class="num">{{ brokenResult().spotAsk | number: '1.4-4' }}</td>
-              <td class="num">{{ brokenResult().swapBid | number: '1.4-4' }}</td>
-              <td class="num">{{ brokenResult().swapAsk | number: '1.4-4' }}</td>
-              <td class="num">{{ brokenResult().fwdBid | number: '1.4-4' }}</td>
-              <td class="num">{{ brokenResult().fwdAsk | number: '1.4-4' }}</td>
-            </tr>
+            @for (row of brokenRows(); track $index) {
+              <tr [class.brc-row--loading]="row.loading">
+                <td class="name">
+                  <input
+                    type="date"
+                    class="rf-input brc__date"
+                    [value]="row.valueDate"
+                    (change)="onBrokenRowDate($index, $any($event.target).value)"
+                  />
+                </td>
+                @if (row.loading) {
+                  <td class="num brc-loading" colspan="6">
+                    <span class="brc-spinner" aria-hidden="true"></span>
+                    <span class="brc-loading__text">Fetching rate…</span>
+                  </td>
+                } @else {
+                  <td class="num">{{ row.spotBid !== null ? (row.spotBid | number: '1.4-4') : '' }}</td>
+                  <td class="num">{{ row.spotAsk !== null ? (row.spotAsk | number: '1.4-4') : '' }}</td>
+                  <td class="num">{{ row.swapBid !== null ? (row.swapBid | number: '1.4-4') : '' }}</td>
+                  <td class="num">{{ row.swapAsk !== null ? (row.swapAsk | number: '1.4-4') : '' }}</td>
+                  <td class="num">{{ row.fwdBid !== null ? (row.fwdBid | number: '1.4-4') : '' }}</td>
+                  <td class="num">{{ row.fwdAsk !== null ? (row.fwdAsk | number: '1.4-4') : '' }}</td>
+                }
+              </tr>
+            }
           </tbody>
         </table>
         <p class="brc__note rf-muted">
-          {{ selectedFwdCurrency() }} · {{ brokenResult().days }} days forward from spot.
+          Pick a value date in any row — {{ selectedFwdCurrency() }} forward rate is fetched for that date.
         </p>
       </div>
     </section>
@@ -361,7 +423,7 @@
       <div class="support__card">
         <mat-icon>call</mat-icon>
         <span class="support__label">Dealing Desk</span>
-        <span class="support__value">+91 22 6789 0000</span>
+        <span class="support__value">+91 99537 18944</span>
       </div>
       <div class="support__card">
         <mat-icon>mail</mat-icon>
@@ -370,7 +432,7 @@
       </div>
       <div class="support__card">
         <mat-icon>schedule</mat-icon>
-        <span class="support__label">Market Hours</span>
+        <span class="support__label">Office Hours</span>
         <span class="support__value">Mon–Fri · 09:00–17:00 IST</span>
       </div>
     </div>

@@ -8,7 +8,8 @@ export interface OtherService {
   clientId: number;
   clientName?: string | null;
   amount?: number | null;
-  transactionDate?: string | null;
+  transactionDate?: string | null; // Advisory: "From Date"
+  toDate?: string | null; // Advisory: "To Date"
   createdDatetime?: string | null;
 }
 
@@ -18,5 +19,6 @@ export interface SaveOtherService {
   productId: number;
   clientId: number;
   amount: number | null;
-  transactionDate: string | null;
+  transactionDate: string | null; // Advisory: "From Date"
+  toDate: string | null; // Advisory: "To Date"
 }

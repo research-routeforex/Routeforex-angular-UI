@@ -258,9 +258,12 @@ export class DealerPadComponent implements OnInit {
    * the same controls on both screens.
    */
   private readonly vis = computed(() => {
+    // Transaction-type ids are 1..9; the form's default '' → 0 must count as
+    // "nothing selected" so date-driven fields (e.g. Booking Rate) stay hidden
+    // until a real type is picked.
     const id = Number(this.formValue().transactionType);
     return orderFieldVisibility(
-      Number.isFinite(id) ? id : null,
+      Number.isFinite(id) && id > 0 ? id : null,
       this.formValue().windowFix ?? null,
       this.formValue().transactionDetail ?? null,
     );

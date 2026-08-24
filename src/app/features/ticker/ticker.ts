@@ -15,8 +15,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { interval } from 'rxjs';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header';
 import {
-  computeBrokenRate,
+  BROKEN_ROW_COUNT,
+  BrokenRateRow,
   CurrencyFutureQuote,
+  emptyBrokenRow,
   ForexBoardRow,
   ForexNewsRow,
   FWD_CURRENCIES,
@@ -26,6 +28,7 @@ import {
   TickerAccess,
   TickerSection,
 } from './ticker.models';
+import { NotificationService } from '../../core/services/notification.service';
 import { TickerService } from './ticker.service';
 
 @Component({
@@ -37,9 +40,10 @@ import { TickerService } from './ticker.service';
 })
 export class TickerComponent implements OnDestroy {
   protected readonly svc = inject(TickerService);
+  private readonly notify = inject(NotificationService);
 
   protected readonly tabs = TICKER_TABS;
-  protected readonly active = signal<TickerSection>('Currency Future');
+  protected readonly active = signal<TickerSection>('Forex');
 
   // --- Metered access (paywall) ---------------------------------------------
   /** The caller's effective access; null until the first fetch resolves. */
@@ -93,16 +97,27 @@ export class TickerComponent implements OnDestroy {
   });
 
   // --- Forward Premium (quadrant 2) -----------------------------------------
-  protected readonly fwdCurrencies = FWD_CURRENCIES;
+  /** Currency options, bound from the backend (TPO_Mast_ForexPremium); falls back
+   *  to the built-in list until the API responds / if it returns nothing. */
+  protected readonly fwdCurrencies = computed<string[]>(() => {
+    const list = this.svc.premiumCurrencies();
+    return list.length ? list : FWD_CURRENCIES;
+  });
   protected readonly selectedFwdCurrency = signal<string>(FWD_CURRENCIES[0]);
   /** Live forward-premium rows for the selected currency (from the API). */
   protected readonly fwdRows = this.svc.premium;
 
   // --- Broken Rate Calculator (quadrant 4) ----------------------------------
-  protected readonly brokenDate = signal<string>(this.defaultBrokenDate());
-  protected readonly brokenResult = computed(() =>
-    computeBrokenRate(this.selectedFwdCurrency(), this.brokenDate()),
+  /** 5 independent rows; each fetches a forward rate when its date is picked. */
+  protected readonly brokenRows = signal<BrokenRateRow[]>(
+    Array.from({ length: BROKEN_ROW_COUNT }, () => emptyBrokenRow()),
   );
+
+  /** Spot bid/ask taken from the Forward Premium SPOT row (drives each row's Spot columns). */
+  protected readonly spot = computed<{ bid: number; ask: number } | null>(() => {
+    const row = this.fwdRows().find((r) => (r.description ?? '').toUpperCase() === 'SPOT');
+    return row ? { bid: row.bid, ask: row.ask } : null;
+  });
 
   constructor() {
     // Resolve the paywall state first; only Clients (free trial / expired) get
@@ -113,6 +128,15 @@ export class TickerComponent implements OnDestroy {
     this.svc.refresh();
     this.svc.loadPremium(this.selectedFwdCurrency());
     this.svc.loadNews();
+
+    // Bind the Forward Premium currency dropdown from the backend; default to the
+    // first option (and reload its grid) when the current pick isn't in the list.
+    this.svc.loadPremiumCurrencies().subscribe((list) => {
+      if (list.length && !list.includes(this.selectedFwdCurrency())) {
+        this.selectedFwdCurrency.set(list[0]);
+        this.svc.loadPremium(list[0]);
+      }
+    });
 
     // Live feed — poll the rate feeds on a 1s tick.
     interval(1000)
@@ -264,14 +288,65 @@ export class TickerComponent implements OnDestroy {
     this.selectedFwdCurrency.set(value);
     this.svc.loadPremium(value);
   }
-  protected onBrokenDate(value: string): void {
-    this.brokenDate.set(value);
+  /** A date was picked in a Broken Rate row → fetch that row's forward rate. */
+  protected onBrokenRowDate(index: number, value: string): void {
+    this.patchBrokenRow(index, { valueDate: value });
+
+    if (!value) {
+      this.clearBrokenRow(index);
+      return;
+    }
+
+    // Split the selected premium currency (e.g. "USDINR") into from/to halves.
+    const ccy = this.selectedFwdCurrency();
+    const currencyFrom = ccy.slice(0, 3);
+    const currencyTo = ccy.slice(3, 6);
+    if (!currencyFrom || !currencyTo) {
+      this.notify.error('Select a currency in the Forward Premium panel first.');
+      return;
+    }
+
+    this.patchBrokenRow(index, { loading: true });
+    // value is already yyyy-MM-dd from <input type="date">.
+    this.svc.forwardRate(value, currencyFrom, currencyTo).subscribe((data) => {
+      if (data.length === 0) {
+        this.notify.error('No forward rate found.');
+        this.clearBrokenRow(index);
+        return;
+      }
+      const d = data[0];
+      const spot = this.spot();
+      this.patchBrokenRow(index, {
+        loading: false,
+        spotBid: spot?.bid ?? null,
+        spotAsk: spot?.ask ?? null,
+        swapBid: d.bidInrSwap,
+        swapAsk: d.askInrSwap,
+        fwdBid: d.bidFinalRate,
+        fwdAsk: d.askFinalRate,
+      });
+    });
   }
 
-  private defaultBrokenDate(): string {
-    const d = new Date();
-    d.setDate(d.getDate() + 30);
-    return d.toISOString().slice(0, 10);
+  private patchBrokenRow(index: number, patch: Partial<BrokenRateRow>): void {
+    this.brokenRows.update((rows) => {
+      const next = [...rows];
+      next[index] = { ...next[index], ...patch };
+      return next;
+    });
+  }
+
+  /** Blank a row's result cells (keeps its picked date). */
+  private clearBrokenRow(index: number): void {
+    this.patchBrokenRow(index, {
+      loading: false,
+      spotBid: null,
+      spotAsk: null,
+      swapBid: null,
+      swapAsk: null,
+      fwdBid: null,
+      fwdAsk: null,
+    });
   }
 
   protected netChg(q: CurrencyFutureQuote): number {

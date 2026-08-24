@@ -1,0 +1,182 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Order Information"
+    subtitle="Money Exchange orders — booking, currency, amount and status."
+    [breadcrumbs]="[{ label: 'Money Exchange' }, { label: 'Order Information' }]"
+  >
+    <button mat-flat-button color="primary" type="button" (click)="toggleForm()">
+      <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+      {{ showForm() ? 'Cancel' : 'Add New Order' }}
+    </button>
+  </app-page-header>
+</div>
+
+<!-- Add / edit -->
+@if (showForm()) {
+  <div class="rf-card child__add">
+    <div class="child__addhead">
+      <h4 class="child__addtitle">
+        <mat-icon>{{ viewing() ? 'visibility' : 'receipt_long' }}</mat-icon>
+        {{ viewing() ? 'View Order' : editingId() ? 'Edit Order' : 'Add New Order' }}
+      </h4>
+    </div>
+
+    <form class="child__form" [formGroup]="form" (ngSubmit)="save()">
+      <div class="child__row child__row--6">
+        <app-field label="Client Contact Number" required [control]="form.controls.contactNumber" error="Enter a contact number.">
+          <input class="rf-input" type="text" formControlName="contactNumber" placeholder="Contact number" />
+        </app-field>
+        <app-field label="Booking Date">
+          <input class="rf-input" type="date" formControlName="bookingDate" />
+        </app-field>
+        <app-field label="Order Type" required [control]="form.controls.orderType" error="Select an order type.">
+          <app-select formControlName="orderType" [options]="orderTypeOptions" placeholder="Select" searchPlaceholder="Search…" />
+        </app-field>
+        <app-field label="Currency / Card" required [control]="form.controls.currencyCard" error="Select one.">
+          <app-select formControlName="currencyCard" [options]="currencyCardOptions" placeholder="Select" searchPlaceholder="Search…" />
+        </app-field>
+        <app-field label="Currency" required [control]="form.controls.currency" error="Select a currency.">
+          <app-select formControlName="currency" [options]="currencyOptions()" placeholder="Select" searchPlaceholder="Search currency…" />
+        </app-field>
+        <app-field label="Amount" required [control]="form.controls.amount" error="Enter an amount.">
+          <input class="rf-input" type="number" step="0.01" formControlName="amount" placeholder="0.00" />
+        </app-field>
+      </div>
+
+      <div class="child__row child__row--3">
+        <app-field label="Query">
+          <input class="rf-input" type="text" formControlName="query" placeholder="Query" />
+        </app-field>
+        <app-field label="Remarks">
+          <input class="rf-input" type="text" formControlName="remarks" placeholder="Remarks" />
+        </app-field>
+        <app-field label="Status">
+          <app-select formControlName="status" [options]="statusOptions" [nullable]="false" placeholder="Select status" searchPlaceholder="Search…" />
+        </app-field>
+      </div>
+
+      <div class="child__formactions">
+        <button mat-stroked-button type="button" (click)="closeForm()">
+          {{ viewing() ? 'Close' : 'Clear' }}
+        </button>
+        @if (!viewing()) {
+          <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+            <mat-icon>save</mat-icon>
+            {{ saving() ? 'Saving…' : editingId() ? 'Update' : 'Submit' }}
+          </button>
+        }
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Filters -->
+<div class="rf-card filter">
+  <div class="filter__fields">
+    <label class="filter__field filter__field--wide">
+      <span class="filter__lbl">Client Name / Contact Number</span>
+      <input
+        class="rf-input"
+        type="text"
+        [ngModel]="filterText()"
+        (ngModelChange)="onFilterText($event)"
+        placeholder="Search…"
+      />
+    </label>
+    <label class="filter__field">
+      <span class="filter__lbl">Status</span>
+      <app-select
+        [options]="statusOptions"
+        placeholder="All"
+        searchPlaceholder="Search…"
+        [ngModel]="filterStatus()"
+        (ngModelChange)="onFilterStatus($event)"
+      />
+    </label>
+    <div class="filter__actions">
+      <button mat-flat-button color="primary" type="button" (click)="search()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- List -->
+<div class="rf-card child__tablewrap">
+  <div class="child__listhead">
+    <h3 class="child__listtitle">Order List</h3>
+    <span class="child__count rf-muted">{{ total() }} record(s)</span>
+  </div>
+  <table class="child__table">
+    <colgroup>
+      <col class="col-sno" />
+      <col class="col-name" />
+      <col class="col-contact" />
+      <col class="col-card" />
+      <col class="col-currency" />
+      <col class="col-type" />
+      <col class="col-amount" />
+      <col class="col-query" />
+      <col class="col-status" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>S.No.</th>
+        <th>Client Name</th>
+        <th>Contact Number</th>
+        <th>Currency / Card</th>
+        <th>Currency</th>
+        <th>Order Type</th>
+        <th>Amount</th>
+        <th>Query</th>
+        <th>Status</th>
+        <th class="ta-r">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of rows(); track r.recordID; let i = $index) {
+        <tr>
+          <td>{{ i + 1 }}</td>
+          <td class="name">{{ r.clientName || '—' }}</td>
+          <td>{{ r.contactNumber || '—' }}</td>
+          <td>{{ r.currencyCard || '—' }}</td>
+          <td>{{ r.currency || '—' }}</td>
+          <td>{{ r.orderType || '—' }}</td>
+          <td>{{ r.amount != null ? (r.amount | number: '1.2-2') : '—' }}</td>
+          <td>{{ r.query || '—' }}</td>
+          <td>{{ r.status || '—' }}</td>
+          <td class="ta-r">
+            <div class="rowactions">
+              <button
+                type="button"
+                class="rf-iconbtn"
+                (click)="view(r)"
+                matTooltip="View"
+              >
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button
+                type="button"
+                class="rf-iconbtn rf-iconbtn--edit"
+                (click)="edit(r)"
+                matTooltip="Edit"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="10" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No orders found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
