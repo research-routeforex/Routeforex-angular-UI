@@ -60,7 +60,7 @@
       <tr>
         <th>
           <span class="th__name">Date</span>
-          <input class="colfilter" type="date" (change)="setSearchDate($any($event.target).value)" />
+          <app-date-field variant="filter" (valueChange)="setSearchDate($event)" />
         </th>
         <th>
           <span class="th__name">Currency</span>

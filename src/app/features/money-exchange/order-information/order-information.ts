@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { finalize } from 'rxjs';
 import { NotificationService } from '../../../core/services/notification.service';
+import { DateFieldComponent } from '../../../shared/components/date-field/date-field';
 import { FieldComponent } from '../../../shared/components/field/field';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header';
 import { SelectComponent, SelectOption } from '../../../shared/components/select/select';
@@ -52,11 +53,11 @@ const STATUS_OPTIONS: SelectOption[] = [
     ReactiveFormsModule,
     PageHeaderComponent,
     FieldComponent,
+    DateFieldComponent,
     SelectComponent,
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
-    DatePipe,
     DecimalPipe,
   ],
   templateUrl: './order-information.html',

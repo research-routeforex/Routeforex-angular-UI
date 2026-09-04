@@ -70,6 +70,24 @@ interface ForexNewsApi {
 const sign = (next: number, prev: number): number => (next > prev ? 1 : next < prev ? -1 : 0);
 
 /**
+ * News bodies are a mixed feed: emailed news is real HTML, while broadcast
+ * messages are plain text the user typed line-by-line. Rendered via [innerHTML],
+ * plain-text newlines collapse onto a single line — so for non-HTML bodies we
+ * escape the text and turn line breaks into <br> to keep the intended layout.
+ * Real HTML is passed through untouched (its own tags drive the layout).
+ */
+function formatNewsBody(raw: string): string {
+  const s = raw ?? '';
+  const looksLikeHtml = /<\/?[a-z][^>]*>/i.test(s);
+  if (looksLikeHtml) return s;
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\r\n?|\n/g, '<br>');
+}
+
+/**
  * Backs the Ticker Live Rate screen with live data from
  * `usp_RF_Mast_ForexLiveScreen` (@Action + @Description):
  *   - board   -> SEARCHLIVERATE       (spot-rate board)
@@ -203,7 +221,7 @@ export class TickerService {
                 time: parts.slice(1).join(' '),
                 subject: r.mailSubject,
                 source: r.sourceName,
-                body: r.mailBody ?? '',
+                body: formatNewsBody(r.mailBody ?? ''),
               };
             }),
           ),

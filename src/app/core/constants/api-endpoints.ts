@@ -64,6 +64,12 @@ export const API = {
     // POST { seconds } — accumulate free-trial seconds
     heartbeat: 'TickerLiveScreen/access/heartbeat',
   },
+  researchReportPermission: {
+    // GET ?clientId=&validityFrom=&validityTo= — search (admin); POST — insert/update (admin)
+    base: 'ResearchReportPermission',
+    // GET ?type=P — whether the signed-in user may view that research type
+    access: 'ResearchReportPermission/access',
+  },
   otherServices: {
     // GET ?clientId=&date= — list; POST — insert/update; DELETE {id}
     base: 'OtherServices',
@@ -139,11 +145,20 @@ export const API = {
   broadcastMessage: {
     // GET ?search= — sent broadcasts (newest first); POST — send a broadcast
     base: 'BroadcastMessage',
+    // GET ?path= — streams a stored header/footer image (authenticated blob)
+    file: 'BroadcastMessage/file',
   },
   template: {
     // GET — all templates; GET {id} — one template + HTML body; POST — insert/update
     base: 'Template',
     byId: (id: number) => `Template/${id}`,
+    researchTypes: 'Template/research-types',
+    images: 'Template/images',
+  },
+  research: {
+    // Public (anonymous) research gallery + report detail
+    base: 'Research',
+    byId: (id: number) => `Research/${id}`,
   },
   headOffice: {
     base: 'HeadOffice',

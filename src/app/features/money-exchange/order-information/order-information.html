@@ -29,7 +29,7 @@
           <input class="rf-input" type="text" formControlName="contactNumber" placeholder="Contact number" />
         </app-field>
         <app-field label="Booking Date">
-          <input class="rf-input" type="date" formControlName="bookingDate" />
+          <app-date-field formControlName="bookingDate" />
         </app-field>
         <app-field label="Order Type" required [control]="form.controls.orderType" error="Select an order type.">
           <app-select formControlName="orderType" [options]="orderTypeOptions" placeholder="Select" searchPlaceholder="Search…" />

@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { finalize } from 'rxjs';
 import { NotificationService } from '../../core/services/notification.service';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field';
 import { FieldComponent } from '../../shared/components/field/field';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header';
 import { SelectComponent, SelectOption } from '../../shared/components/select/select';
@@ -20,6 +21,7 @@ import { RbiRateMasterService } from './rbi-rate-master.service';
     ReactiveFormsModule,
     PageHeaderComponent,
     FieldComponent,
+    DateFieldComponent,
     SelectComponent,
     MatButtonModule,
     MatIconModule,
@@ -142,7 +144,7 @@ export class RbiRateMasterComponent implements OnInit {
   protected startEdit(row: RbiRate): void {
     this.form.reset({
       recordID: row.recordID,
-      // <input type="date"> needs a yyyy-MM-dd value.
+      // app-date-field expects a yyyy-MM-dd value.
       date: (row.date ?? '').slice(0, 10),
       currency: row.currency,
       rbiRate: row.rbiRate,

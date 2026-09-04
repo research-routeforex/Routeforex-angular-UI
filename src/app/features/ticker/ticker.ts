@@ -6,13 +6,14 @@ import {
   ElementRef,
   HostListener,
   inject,
-  OnDestroy,
   signal,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { interval } from 'rxjs';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header';
 import {
   BROKEN_ROW_COUNT,
@@ -34,11 +35,11 @@ import { TickerService } from './ticker.service';
 @Component({
   selector: 'app-ticker',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeaderComponent, MatIconModule, DecimalPipe, DatePipe],
+  imports: [FormsModule, DateFieldComponent, PageHeaderComponent, MatIconModule, DecimalPipe, DatePipe],
   templateUrl: './ticker.html',
   styleUrl: './ticker.scss',
 })
-export class TickerComponent implements OnDestroy {
+export class TickerComponent {
   protected readonly svc = inject(TickerService);
   private readonly notify = inject(NotificationService);
 
@@ -48,29 +49,14 @@ export class TickerComponent implements OnDestroy {
   // --- Metered access (paywall) ---------------------------------------------
   /** The caller's effective access; null until the first fetch resolves. */
   protected readonly access = signal<TickerAccess | null>(null);
-  /** True once access is spent/expired — the paywall overlay covers the screen. */
+  /** True when the caller has no access — the paywall overlay covers the screen. */
   protected readonly locked = signal(false);
-  /** Free-trial seconds remaining (null when unmetered). */
-  protected readonly remaining = signal<number | null>(null);
-  /** Seconds elapsed since the last heartbeat was flushed to the server. */
-  private freeElapsed = 0;
 
-  /** mm:ss label for the free-trial countdown chip. */
-  protected readonly remainingLabel = computed(() => {
-    const s = this.remaining();
-    if (s == null) return '';
-    const m = Math.floor(s / 60);
-    return `${m}:${(s % 60).toString().padStart(2, '0')}`;
-  });
+  protected readonly lockTitle = computed(() => 'Ticker access required');
 
-  protected readonly lockTitle = computed(() =>
-    this.access()?.mode === 'Expired' ? 'Subscription expired' : 'Free preview ended',
-  );
-
-  protected readonly lockMessage = computed(() =>
-    this.access()?.mode === 'Expired'
-      ? 'Your access to the Ticker Live Rate screen has expired. Please contact your administrator to renew your subscription.'
-      : 'Your 1-hour free preview of the Ticker Live Rate screen is over. Please subscribe to keep viewing live rates.',
+  protected readonly lockMessage = computed(
+    () =>
+      'You don’t have access to the Ticker Live Rate screen. Please contact your administrator to get access.',
   );
 
   /** Full-screen (kiosk) mode — hides the app chrome, shows only tabs + content. */
@@ -120,8 +106,8 @@ export class TickerComponent implements OnDestroy {
   });
 
   constructor() {
-    // Resolve the paywall state first; only Clients (free trial / expired) get
-    // locked — Admin and subscribers see the screen normally.
+    // Resolve access first: a Client without a live Ticker Live Screen Right entry is
+    // locked out immediately; Admin/other roles and subscribers see the screen normally.
     this.svc.getAccess().subscribe({ next: (a) => this.applyAccess(a) });
 
     // Initial load so the board isn't blank before the first poll.
@@ -144,18 +130,12 @@ export class TickerComponent implements OnDestroy {
       .subscribe(() => this.onTick());
   }
 
-  /** Persist any unsent free-trial seconds when leaving the screen. */
-  ngOnDestroy(): void {
-    this.flushHeartbeat();
-  }
-
   /** Poll cadence: refresh live data every other tick (~2s) to ease API load. */
   private tickCount = 0;
 
-  /** One-second tick: meter free-trial time, then refresh the feeds (unless locked). */
+  /** One-second tick: refresh the feeds (unless locked). */
   private onTick(): void {
-    this.meterTick();
-    // Once locked, stop pulling live data — the overlay covers the last frame.
+    // When locked (no access), stop pulling live data — the overlay covers the screen.
     if (this.locked()) return;
 
     if (this.tickCount % 2 === 0) {
@@ -172,51 +152,8 @@ export class TickerComponent implements OnDestroy {
   /** Maps the server access into the local paywall state. */
   private applyAccess(a: TickerAccess): void {
     this.access.set(a);
-    if (a.mode === 'FreeTrial') {
-      const left = Math.max(0, (a.allowedSeconds ?? 0) - a.usedSeconds);
-      this.remaining.set(left);
-      this.locked.set(left <= 0);
-    } else if (a.mode === 'Expired' || a.mode === 'FreeExpired') {
-      this.remaining.set(0);
-      this.locked.set(true);
-    } else {
-      // Unrestricted (Admin / other roles) or Subscribed — no metering.
-      this.remaining.set(null);
-      this.locked.set(false);
-    }
-  }
-
-  /** Counts down the free-trial budget and flushes usage to the server. */
-  private meterTick(): void {
-    if (this.access()?.mode !== 'FreeTrial' || this.locked()) return;
-
-    const left = (this.remaining() ?? 0) - 1;
-    this.remaining.set(Math.max(0, left));
-    this.freeElapsed++;
-
-    if (left <= 0) {
-      this.locked.set(true);
-      this.flushHeartbeat();
-    } else if (this.freeElapsed >= 15) {
-      this.flushHeartbeat();
-    }
-  }
-
-  /** Sends the accumulated free-trial seconds; the server is the source of truth. */
-  private flushHeartbeat(): void {
-    const seconds = this.freeElapsed;
-    if (seconds <= 0) return;
-    this.freeElapsed = 0;
-    this.svc.sendHeartbeat(seconds).subscribe({
-      next: (a) => {
-        // Reconcile with the server (e.g. the budget was also spent in another tab).
-        if (a.mode === 'FreeExpired' || a.mode === 'Expired') {
-          this.access.set(a);
-          this.remaining.set(0);
-          this.locked.set(true);
-        }
-      },
-    });
+    // A Client with no live entry → locked; Subscribed / Unrestricted → open.
+    this.locked.set(a.mode === 'FreeExpired' || a.mode === 'Expired');
   }
 
   protected select(section: TickerSection): void {
@@ -307,7 +244,7 @@ export class TickerComponent implements OnDestroy {
     }
 
     this.patchBrokenRow(index, { loading: true });
-    // value is already yyyy-MM-dd from <input type="date">.
+    // value is already yyyy-MM-dd from app-date-field.
     this.svc.forwardRate(value, currencyFrom, currencyTo).subscribe((data) => {
       if (data.length === 0) {
         this.notify.error('No forward rate found.');

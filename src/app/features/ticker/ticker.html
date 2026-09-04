@@ -32,13 +32,6 @@
 
     <span class="rf-spacer"></span>
 
-    @if (remaining() !== null && !locked()) {
-      <span class="trial-chip" [class.trial-chip--low]="(remaining() ?? 0) <= 60" title="Free preview time remaining">
-        <mat-icon>hourglass_bottom</mat-icon>
-        Free preview · {{ remainingLabel() }}
-      </span>
-    }
-
     @if (access()?.mode === 'Subscribed' && access()?.validityTo; as vt) {
       <span class="valid-chip" title="Your paid access validity">
         <mat-icon>verified</mat-icon>
@@ -342,11 +335,11 @@
             @for (row of brokenRows(); track $index) {
               <tr [class.brc-row--loading]="row.loading">
                 <td class="name">
-                  <input
-                    type="date"
-                    class="rf-input brc__date"
-                    [value]="row.valueDate"
-                    (change)="onBrokenRowDate($index, $any($event.target).value)"
+                  <app-date-field
+                    [compact]="true"
+                    [ngModel]="row.valueDate"
+                    [ngModelOptions]="{ standalone: true }"
+                    (valueChange)="onBrokenRowDate($index, $event)"
                   />
                 </td>
                 @if (row.loading) {
@@ -492,6 +485,30 @@
       @if (access()?.validityTo; as vt) {
         <p class="paywall__meta">Valid till {{ vt | date: 'dd-MMM-yyyy' }}</p>
       }
+
+      <!-- Online Support contacts so a locked-out client knows how to get access. -->
+      <div class="paywall__support">
+        <span class="paywall__support-head">
+          <mat-icon>support_agent</mat-icon> Online Support
+        </span>
+        <div class="paywall__support-grid">
+          <a class="paywall__support-card" href="tel:+919953718944">
+            <mat-icon>call</mat-icon>
+            <span class="paywall__support-label">Dealing Desk</span>
+            <span class="paywall__support-value">+91 99537 18944</span>
+          </a>
+          <a class="paywall__support-card" href="mailto:dealers&#64;routeforex.com">
+            <mat-icon>mail</mat-icon>
+            <span class="paywall__support-label">Email</span>
+            <span class="paywall__support-value">dealers&#64;routeforex.com</span>
+          </a>
+          <div class="paywall__support-card">
+            <mat-icon>schedule</mat-icon>
+            <span class="paywall__support-label">Office Hours</span>
+            <span class="paywall__support-value">Mon–Fri · 09:00–17:00 IST</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 }

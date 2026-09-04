@@ -1,0 +1,81 @@
+<div class="wrap">
+  <a class="back" routerLink="/publications/research">← Back to Research</a>
+
+  @if (report(); as r) {
+    <div class="sheet">
+    <!-- Article header -->
+    <header class="head" [class]="'cat-' + r.category">
+      @if (r.image) {
+        <div class="head__bg" [style.background-image]="'url(' + r.image + ')'"></div>
+      } @else {
+        <span class="watermark">{{ meta()?.icon }}</span>
+      }
+      <div class="overlay"></div>
+      <div class="head-inner">
+        <span class="tag">{{ meta()?.label }}</span>
+        <h1 class="title">{{ r.title }}</h1>
+        <p class="byline">
+          @if (r.month) {
+            <span class="date">{{ r.day }} {{ r.month }}</span>
+            <span class="dot">•</span>
+          }
+          Posted by {{ r.postedBy }}
+        </p>
+      </div>
+    </header>
+
+    <!-- Body + (for gated Premium) a blur veil and access popup -->
+    <div class="body-shell">
+      <article class="report-body" [class.is-locked]="locked()" [innerHTML]="body()"></article>
+
+      @if (locked()) {
+        <div class="gate">
+          <div class="gate__card">
+            @if (gate() === 'login') {
+              <span class="gate__icon">🔒</span>
+              <h2 class="gate__title">Premium Research</h2>
+              <p class="gate__text">
+                Please sign in to view this Premium report. Your access will be checked after login.
+              </p>
+              <button type="button" class="gate__btn" (click)="login()">Login to continue</button>
+            } @else {
+              <span class="gate__icon">✋</span>
+              <h2 class="gate__title">Access required</h2>
+              <p class="gate__text">
+                Your account doesn’t have permission to view Premium research yet. Please contact your
+                service provider to request access.
+              </p>
+              <div class="gate__cards">
+                <a class="gate__ccard" href="tel:+919953718944">
+                  <span class="gate__cicon">&#9742;</span>
+                  <span class="gate__clabel">Dealing Desk</span>
+                  <span class="gate__cvalue">+91 99537 18944</span>
+                </a>
+                <a class="gate__ccard" href="mailto:dealers&#64;routeforex.com">
+                  <span class="gate__cicon">&#9993;</span>
+                  <span class="gate__clabel">Email</span>
+                  <span class="gate__cvalue">dealers&#64;routeforex.com</span>
+                </a>
+                <div class="gate__ccard">
+                  <span class="gate__cicon">&#128336;</span>
+                  <span class="gate__clabel">Office Hours</span>
+                  <span class="gate__cvalue">Mon–Fri · 09:00–17:00 IST</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (!locked()) {
+      <p class="disclaimer">
+        This content is for information only and is not investment advice. RouteForex is not liable for
+        any action taken in reliance on it.
+      </p>
+    }
+    </div>
+  } @else {
+    <p class="state">{{ loading() ? 'Loading report…' : 'This report is not available.' }}</p>
+  }
+</div>

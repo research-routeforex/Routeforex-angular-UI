@@ -33,6 +33,12 @@ export const routes: Routes = [
       ),
   },
 
+  // ---- Standalone public Research page (no app shell / menu / auth) -------
+  {
+    path: 'publications/research',
+    loadChildren: () => import('./features/research/research.routes').then((m) => m.RESEARCH_ROUTES),
+  },
+
   // ---- Authenticated app shell -------------------------------------------
   {
     path: '',
@@ -319,6 +325,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/ticker-live-screen-right/ticker-live-screen-right.routes').then(
             (m) => m.TICKER_LIVE_SCREEN_RIGHT_ROUTES,
+          ),
+      },
+      {
+        path: 'research-report-permission',
+        loadChildren: () =>
+          import('./features/research-report-permission/research-report-permission.routes').then(
+            (m) => m.RESEARCH_REPORT_PERMISSION_ROUTES,
           ),
       },
       {

@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { finalize } from 'rxjs';
 import { NotificationService } from '../../core/services/notification.service';
+import { DateFieldComponent } from '../../shared/components/date-field/date-field';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header';
 import { HistoricalRate } from './historical-rate-master.model';
 import { HistoricalRateMasterService } from './historical-rate-master.service';
@@ -14,6 +15,7 @@ import { HistoricalRateMasterService } from './historical-rate-master.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PageHeaderComponent,
+    DateFieldComponent,
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
