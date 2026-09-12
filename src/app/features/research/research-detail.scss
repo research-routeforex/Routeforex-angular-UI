@@ -329,7 +329,13 @@ a.gate__ccard:hover {
   word-break: normal;
 }
 
-/* Rendered report HTML (authored in the Template Creator). */
+/* Rendered report HTML (authored in the Template Creator with CKEditor 5).
+   The container carries the `ck-content` class so CKEditor's own content styles
+   (from the global ckeditor5.css) render images, resized figures, tables, cell
+   colours, alignment, etc. exactly as they appear inside the editor. We only add
+   base typography here and MUST NOT override element sizing (img width/height,
+   table width, display) — doing so is what previously distorted images, graphs
+   and tables versus the Template Creator. Authored inline styles win over both. */
 .report-body {
   display: block;
   margin-top: 22px;
@@ -337,27 +343,30 @@ a.gate__ccard:hover {
   line-height: 1.7;
   color: #3a3f4c;
   word-break: break-word;
+  /* Wide content (e.g. a fixed-width table) scrolls within the article rather
+     than being stretched or reflowed — the authored layout is preserved. */
+  overflow-x: auto;
 
-  :where(h1, h2, h3, h4) { color: #16161f; font-weight: 800; line-height: 1.3; margin: 22px 0 10px; }
-  :where(h1) { font-size: 24px; }
-  :where(h2) { font-size: 20px; }
-  :where(h3) { font-size: 17px; }
-  p { margin: 0 0 12px; }
-  a { color: #4a30d0; text-decoration: underline; }
-  ul, ol { margin: 0 0 12px; padding-left: 22px; }
-  li { margin: 4px 0; }
-  img { max-width: 100%; height: auto; border-radius: 8px; }
-  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
-  th, td { border: 1px solid #e3e6ec; padding: 8px 10px; text-align: left; }
-  blockquote {
-    margin: 12px 0;
-    padding: 8px 16px;
-    border-left: 3px solid #4a30d0;
-    background: #f6f4ff;
-    color: #454b59;
+  /* The report HTML is injected via [innerHTML], so it does NOT carry this
+     component's view-encapsulation attribute — plain descendant selectors here
+     would NOT match it. We MUST use ::ng-deep to reach the injected content
+     (still scoped under `.report-body`, so nothing leaks to the rest of the app).
+     This is why an earlier non-deep `table-layout` rule had no effect. */
+  ::ng-deep a { color: #4a30d0; text-decoration: underline; }
+
+  /* Safety net so an oversized image can never overflow the sheet; aspect ratio
+     and any authored height are left untouched (no `height: auto`). */
+  ::ng-deep img { max-width: 100%; }
+
+  /* CKEditor only sets `table-layout: fixed` on column-resized tables
+     (`.ck-table-resized`, which also carry a <colgroup>). Legacy pasted tables
+     (e.g. "Global Markets at one Glance") have neither, so the browser's default
+     `auto` layout lets the first column hog the width and squeezes the last
+     column until CKEditor's cell `overflow-wrap: break-word` wraps its text
+     character-by-character ("+ 0. 1 8"). Forcing fixed layout makes each cell's
+     authored width be honoured, so columns render as they do in the editor. */
+  ::ng-deep .table table,
+  ::ng-deep table {
+    table-layout: fixed;
   }
-  figure { margin: 14px 0; }
-
-  /* Let the page scroll rather than the article on wide tables. */
-  :where(table) { display: block; overflow-x: auto; }
 }

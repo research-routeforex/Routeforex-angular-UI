@@ -168,15 +168,20 @@ export class TickerService {
       );
   }
 
-  /** Load the forward-premium grid for a currency (e.g. "USDINR"). */
-  loadPremium(currency: string): void {
-    this.api
+  /**
+   * Load the forward-premium grid for a currency (e.g. "USDINR"). Returns a
+   * cold Observable that emits once the grid (and thus the SPOT row) is updated,
+   * so callers can chain follow-up work — e.g. refreshing the Broken Rate rows
+   * for the newly selected currency. Subscribe to trigger the request.
+   */
+  loadPremium(currency: string): Observable<void> {
+    return this.api
       .get<ForexPremiumApi[]>(API.forex.tickerPremium, {
         params: { description: currency },
         context: silentContext(),
       })
-      .subscribe({
-        next: (rows) =>
+      .pipe(
+        tap((rows) =>
           this._premium.set(
             (rows ?? []).map((r) => ({
               description: r.description,
@@ -189,7 +194,9 @@ export class TickerService {
               fwdAsk: r.fwdOutrightAsk,
             })),
           ),
-      });
+        ),
+        map(() => void 0),
+      );
   }
 
   /**

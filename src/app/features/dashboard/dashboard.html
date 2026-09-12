@@ -3,101 +3,118 @@
   [subtitle]="'Welcome back, ' + (greetingName() || 'there') + ' — here is your trading overview.'"
   [breadcrumbs]="[{ label: 'Home' }, { label: 'Dashboard' }]"
 >
-  <button mat-stroked-button>
-    <mat-icon>file_download</mat-icon>
-    Export
+  <button mat-stroked-button type="button" [disabled]="loading()" (click)="load()">
+    <mat-icon>refresh</mat-icon>
+    Refresh
   </button>
-  <button mat-flat-button color="primary">
+  <button mat-flat-button color="primary" routerLink="/ftp-order-entry">
     <mat-icon>add</mat-icon>
     New Deal
   </button>
 </app-page-header>
 
-<section class="kpis">
-  @for (kpi of kpis(); track kpi.label) {
-    <app-stat-card
-      [icon]="kpi.icon"
-      [label]="kpi.label"
-      [value]="kpi.value"
-      [delta]="kpi.delta"
-      [trend]="kpi.trend"
-      [color]="kpi.color"
-    />
-  }
-</section>
-
-<section class="charts">
-  <div class="rf-card panel panel--wide">
-    <div class="panel__head">
-      <h3>Weekly Turnover (USD M)</h3>
-      <span class="rf-chip rf-chip--success">+6.1% WoW</span>
-    </div>
-    <div class="panel__chart">
-      <app-chart type="line" [data]="turnover()" />
-    </div>
+@if (error()) {
+  <div class="rf-card state">
+    <mat-icon>cloud_off</mat-icon>
+    <p>Couldn't load your dashboard data.</p>
+    <button mat-flat-button color="primary" type="button" (click)="load()">Try again</button>
   </div>
-
-  <div class="rf-card panel">
-    <div class="panel__head">
-      <h3>Volume by Pair</h3>
-    </div>
-    <div class="panel__chart">
-      <app-chart type="bar" [data]="volumeByPair()" color="var(--rf-info)" />
-    </div>
+} @else if (loading() && !data()) {
+  <div class="rf-card state">
+    <mat-icon class="state__spin">progress_activity</mat-icon>
+    <p>Loading your trading overview…</p>
   </div>
-</section>
+} @else {
+  <section class="kpis">
+    @for (kpi of kpis(); track kpi.label) {
+      <app-stat-card
+        [icon]="kpi.icon"
+        [label]="kpi.label"
+        [value]="kpi.value"
+        [delta]="kpi.delta"
+        [trend]="kpi.trend"
+        [color]="kpi.color"
+      />
+    }
+  </section>
 
-<section class="lower">
-  <div class="rf-card panel panel--wide">
-    <div class="panel__head">
-      <h3>Recent Deals</h3>
-      <a mat-button color="primary">View all</a>
+  <section class="charts">
+    <div class="rf-card panel panel--wide">
+      <div class="panel__head">
+        <h3>Deals — Last 7 Days</h3>
+        <span class="rf-muted">Booked per day</span>
+      </div>
+      <div class="panel__chart">
+        <app-chart type="line" [data]="weeklyActivity()" />
+      </div>
     </div>
-    <div class="table-wrap">
-      <table class="deals">
-        <thead>
-          <tr>
-            <th>Reference</th>
-            <th>Pair</th>
-            <th>Type</th>
-            <th class="ta-right">Amount</th>
-            <th class="ta-right">Rate</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (deal of recentDeals(); track deal.ref) {
+
+    <div class="rf-card panel">
+      <div class="panel__head">
+        <h3>Deals by Currency</h3>
+      </div>
+      <div class="panel__chart">
+        <app-chart type="bar" [data]="volumeByPair()" color="var(--rf-info)" />
+      </div>
+    </div>
+  </section>
+
+  <section class="lower">
+    <div class="rf-card panel panel--wide">
+      <div class="panel__head">
+        <h3>Recent Deals</h3>
+        <a mat-button color="primary" routerLink="/ftp-order-entry">View all</a>
+      </div>
+      <div class="table-wrap">
+        <table class="deals">
+          <thead>
             <tr>
-              <td class="mono">{{ deal.ref }}</td>
-              <td>{{ deal.pair }}</td>
-              <td>
-                <span class="rf-chip" [class.rf-chip--success]="deal.type === 'Buy'" [class.rf-chip--danger]="deal.type === 'Sell'">
-                  {{ deal.type }}
-                </span>
-              </td>
-              <td class="ta-right">{{ deal.amount }}</td>
-              <td class="ta-right mono">{{ deal.rate }}</td>
-              <td>
-                <span class="rf-chip rf-chip--{{ statusVariant(deal.status) }}">{{ deal.status }}</span>
-              </td>
+              <th>Reference</th>
+              <th>Currency</th>
+              <th>Type</th>
+              <th class="ta-right">Amount</th>
+              <th class="ta-right">Rate</th>
+              <th>Status</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (deal of recentDeals(); track deal.ref) {
+              <tr>
+                <td class="mono">{{ deal.ref }}</td>
+                <td>{{ deal.pair }}</td>
+                <td>
+                  <span class="rf-chip" [class.rf-chip--success]="deal.type === 'Export'" [class.rf-chip--info]="deal.type === 'Import'">
+                    {{ deal.type }}
+                  </span>
+                </td>
+                <td class="ta-right">{{ deal.amount }}</td>
+                <td class="ta-right mono">{{ deal.rate }}</td>
+                <td>
+                  <span class="rf-chip rf-chip--{{ statusVariant(deal.status) }}">{{ deal.status }}</span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="deals__empty">No deals to show yet.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
 
-  <div class="rf-card panel">
-    <div class="panel__head">
-      <h3>Alerts &amp; Notifications</h3>
+    <div class="rf-card panel">
+      <div class="panel__head">
+        <h3>Alerts &amp; Notifications</h3>
+      </div>
+      <ul class="alerts">
+        @for (alert of alerts(); track alert.text) {
+          <li class="alert alert--{{ alert.variant }}">
+            <mat-icon>{{ alert.icon }}</mat-icon>
+            <span>{{ alert.text }}</span>
+          </li>
+        }
+      </ul>
     </div>
-    <ul class="alerts">
-      @for (alert of alerts(); track alert.text) {
-        <li class="alert alert--{{ alert.variant }}">
-          <mat-icon>{{ alert.icon }}</mat-icon>
-          <span>{{ alert.text }}</span>
-        </li>
-      }
-    </ul>
-  </div>
-</section>
+  </section>
+}

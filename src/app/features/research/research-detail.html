@@ -26,7 +26,7 @@
 
     <!-- Body + (for gated Premium) a blur veil and access popup -->
     <div class="body-shell">
-      <article class="report-body" [class.is-locked]="locked()" [innerHTML]="body()"></article>
+      <article class="report-body ck-content" [class.is-locked]="locked()" [innerHTML]="body()"></article>
 
       @if (locked()) {
         <div class="gate">

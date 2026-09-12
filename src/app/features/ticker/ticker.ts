@@ -112,7 +112,7 @@ export class TickerComponent {
 
     // Initial load so the board isn't blank before the first poll.
     this.svc.refresh();
-    this.svc.loadPremium(this.selectedFwdCurrency());
+    this.svc.loadPremium(this.selectedFwdCurrency()).subscribe();
     this.svc.loadNews();
 
     // Bind the Forward Premium currency dropdown from the backend; default to the
@@ -120,7 +120,7 @@ export class TickerComponent {
     this.svc.loadPremiumCurrencies().subscribe((list) => {
       if (list.length && !list.includes(this.selectedFwdCurrency())) {
         this.selectedFwdCurrency.set(list[0]);
-        this.svc.loadPremium(list[0]);
+        this.svc.loadPremium(list[0]).subscribe();
       }
     });
 
@@ -140,7 +140,7 @@ export class TickerComponent {
 
     if (this.tickCount % 2 === 0) {
       this.svc.refresh();
-      this.svc.loadPremium(this.selectedFwdCurrency());
+      this.svc.loadPremium(this.selectedFwdCurrency()).subscribe();
     }
     // News changes rarely — refresh it about once a minute, not every poll.
     if (this.tickCount % 60 === 0) {
@@ -223,7 +223,17 @@ export class TickerComponent {
 
   protected onFwdCurrency(value: string): void {
     this.selectedFwdCurrency.set(value);
-    this.svc.loadPremium(value);
+    // Reload the premium grid (refreshes the SPOT row) and then re-fetch every
+    // Broken Rate row that already has a value date, so the calculator reflects
+    // the newly selected currency instead of keeping the previous currency's rates.
+    this.svc.loadPremium(value).subscribe(() => this.refreshBrokenRows());
+  }
+
+  /** Re-run the forward-rate fetch for each Broken Rate row that has a value date. */
+  private refreshBrokenRows(): void {
+    this.brokenRows().forEach((row, index) => {
+      if (row.valueDate) this.onBrokenRowDate(index, row.valueDate);
+    });
   }
   /** A date was picked in a Broken Rate row → fetch that row's forward rate. */
   protected onBrokenRowDate(index: number, value: string): void {
