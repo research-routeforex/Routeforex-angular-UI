@@ -33,6 +33,12 @@ export const routes: Routes = [
       ),
   },
 
+  // ---- Standalone public Research page (no app shell / menu / auth) -------
+  {
+    path: 'publications/research',
+    loadChildren: () => import('./features/research/research.routes').then((m) => m.RESEARCH_ROUTES),
+  },
+
   // ---- Authenticated app shell -------------------------------------------
   {
     path: '',
@@ -101,6 +107,58 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'lead-master',
+        loadChildren: () =>
+          import('./features/lead-master/lead-master.routes').then((m) => m.LEAD_MASTER_ROUTES),
+      },
+      {
+        path: 'forex-advisory',
+        loadChildren: () =>
+          import('./features/forex-advisory/forex-advisory.routes').then(
+            (m) => m.FOREX_ADVISORY_ROUTES,
+          ),
+      },
+      {
+        path: 'order-tracking',
+        loadChildren: () =>
+          import('./features/order-tracking/order-tracking.routes').then(
+            (m) => m.ORDER_TRACKING_ROUTES,
+          ),
+      },
+      {
+        path: 'promo-code',
+        loadChildren: () =>
+          import('./features/promo-code/promo-code.routes').then((m) => m.PROMO_CODE_ROUTES),
+      },
+      {
+        path: 'money-exchange/client-information',
+        loadChildren: () =>
+          import(
+            './features/money-exchange/client-information/client-information.routes'
+          ).then((m) => m.CLIENT_INFORMATION_ROUTES),
+      },
+      {
+        path: 'money-exchange/order-information',
+        loadChildren: () =>
+          import(
+            './features/money-exchange/order-information/order-information.routes'
+          ).then((m) => m.ORDER_INFORMATION_ROUTES),
+      },
+      {
+        path: 'lms/client-master',
+        loadChildren: () =>
+          import('./features/lms/client-master/client-master.routes').then(
+            (m) => m.LMS_CLIENT_MASTER_ROUTES,
+          ),
+      },
+      {
+        path: 'lms/lead-management',
+        loadChildren: () =>
+          import('./features/lms/lead-management/lead-management.routes').then(
+            (m) => m.LMS_LEAD_MANAGEMENT_ROUTES,
+          ),
+      },
+      {
         path: 'service-offered',
         loadChildren: () =>
           import('./features/service-offered/service-offered.routes').then(
@@ -136,6 +194,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/rbi-rate-master/rbi-rate-master.routes').then(
             (m) => m.RBI_RATE_MASTER_ROUTES,
+          ),
+      },
+      {
+        path: 'historical-rate-master',
+        loadChildren: () =>
+          import('./features/historical-rate-master/historical-rate-master.routes').then(
+            (m) => m.HISTORICAL_RATE_MASTER_ROUTES,
           ),
       },
       {
@@ -260,6 +325,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/ticker-live-screen-right/ticker-live-screen-right.routes').then(
             (m) => m.TICKER_LIVE_SCREEN_RIGHT_ROUTES,
+          ),
+      },
+      {
+        path: 'research-report-permission',
+        loadChildren: () =>
+          import('./features/research-report-permission/research-report-permission.routes').then(
+            (m) => m.RESEARCH_REPORT_PERMISSION_ROUTES,
           ),
       },
       {

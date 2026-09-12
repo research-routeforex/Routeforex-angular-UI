@@ -29,10 +29,10 @@
         <input class="rf-input" type="number" step="0.01" formControlName="amount" placeholder="e.g. 25000" />
       </app-field>
       <app-field label="Validity From" required [control]="form.controls.validityFrom" error="Validity From is required.">
-        <input class="rf-input" type="date" formControlName="validityFrom" />
+        <app-date-field formControlName="validityFrom" />
       </app-field>
       <app-field label="Validity To" required [control]="form.controls.validityTo" error="Validity To is required.">
-        <input class="rf-input" type="date" formControlName="validityTo" />
+        <app-date-field formControlName="validityTo" />
       </app-field>
     </div>
     <div class="editform__actions">
@@ -68,11 +68,11 @@
         <th class="ta-r"><span class="th__name">Amount</span></th>
         <th>
           <span class="th__name">Validity From</span>
-          <input class="colfilter" type="date" (change)="setSearchFrom($any($event.target).value)" />
+          <app-date-field variant="filter" (valueChange)="setSearchFrom($event)" />
         </th>
         <th>
           <span class="th__name">Validity To</span>
-          <input class="colfilter" type="date" (change)="setSearchTo($any($event.target).value)" />
+          <app-date-field variant="filter" (valueChange)="setSearchTo($event)" />
         </th>
         <th><span class="th__name">Created</span></th>
         <th class="ta-r"><span class="th__name">Actions</span></th>

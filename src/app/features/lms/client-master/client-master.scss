@@ -1,0 +1,323 @@
+:host {
+  display: block;
+}
+
+// ---- Gradient hero band (same treatment as the other screens) --------------
+.hero {
+  position: relative;
+  z-index: 30;
+  margin-bottom: var(--rf-gap);
+  padding: 7px 16px 4px;
+  border: 1px solid color-mix(in oklab, var(--mat-sys-primary) 22%, var(--rf-border));
+  border-radius: var(--rf-radius);
+  background: linear-gradient(
+    120deg,
+    color-mix(in oklab, var(--mat-sys-primary) 18%, var(--rf-surface-2)) 0%,
+    var(--rf-surface-2) 55%,
+    color-mix(in oklab, oklch(62% 0.24 290) 14%, var(--rf-surface-2)) 100%
+  );
+  box-shadow: var(--rf-shadow);
+}
+.hero app-page-header {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+.hero ::ng-deep .ph {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.hero ::ng-deep .ph__subtitle {
+  margin-top: 2px;
+}
+.hero__glow {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.5;
+  pointer-events: none;
+  &--a {
+    top: -120px;
+    right: 8%;
+    background: radial-gradient(circle, var(--mat-sys-primary), transparent 70%);
+  }
+  &--b {
+    bottom: -150px;
+    left: 12%;
+    background: radial-gradient(circle, oklch(62% 0.24 290), transparent 70%);
+  }
+}
+button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// ---- Filters ---------------------------------------------------------------
+.filter {
+  padding: 14px 16px;
+  margin-bottom: var(--rf-gap);
+
+  &__fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px 18px;
+  }
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 220px;
+  }
+  &__field--wide {
+    flex: 1 1 360px;
+  }
+  &__lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rf-muted-fg);
+  }
+  &__actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+}
+
+// ---- Add / edit form -------------------------------------------------------
+.child__add {
+  padding: 14px 16px;
+  margin-bottom: var(--rf-gap);
+}
+.child__addhead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.child__addtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+.child__form {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rf-border);
+}
+.child__row {
+  display: grid;
+  gap: 12px 18px;
+
+  > * {
+    min-width: 0;
+  }
+
+  & + .child__row {
+    margin-top: 12px;
+  }
+
+  // Row 1: Client Name (fills) + Region / Country / City / PIN at 15% each.
+  &--main {
+    grid-template-columns: 1fr 15% 15% 15% 15%;
+    align-items: end;
+  }
+  // Row 2: two address lines.
+  &--addr {
+    grid-template-columns: 1fr 1fr;
+  }
+  // Row 3: Export / Import / Total / Status at 15% each (rest empty on the right).
+  &--fig {
+    grid-template-columns: 15% 15% 15% 15%;
+    justify-content: start;
+  }
+}
+.child__formactions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+@media (max-width: 1100px) {
+  .child__row--main {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .child__row--fig {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .child__row--main,
+  .child__row--addr,
+  .child__row--fig {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---- Contact Details (add / remove rows) — same design as Client Master ----
+.sec--contacts {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rf-border);
+}
+.sec__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+
+  mat-icon {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    font-size: 18px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--mat-sys-primary), oklch(62% 0.24 290));
+  }
+}
+.contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.contacts__head,
+.contacts__row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr 1fr 44px;
+  gap: 10px;
+  align-items: center;
+}
+.contacts__head {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--rf-muted-fg);
+  padding: 0 2px;
+}
+.contacts__empty {
+  padding: 12px 2px;
+  font-size: 13px;
+}
+@media (max-width: 900px) {
+  .contacts__head {
+    display: none;
+  }
+  .contacts__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .contacts__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ---- List table ------------------------------------------------------------
+.child__tablewrap {
+  padding: 14px 16px;
+  overflow-x: auto;
+
+  --ra-cell-pad-y: 4px;
+  --ra-cell-pad-x: 12px;
+  --ra-head-pad-y: 8px;
+}
+.child__listhead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.child__listtitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.child__count {
+  font-size: 12px;
+}
+.child__table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 13px;
+  min-width: 1200px;
+
+  thead th {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--mat-sys-primary) 96%, white) 0%,
+      color-mix(in oklab, var(--mat-sys-primary) 82%, black) 100%
+    );
+    color: var(--mat-sys-on-primary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: var(--ra-head-pad-y) var(--ra-cell-pad-x);
+    text-align: left;
+    white-space: nowrap;
+  }
+  thead th:first-child {
+    border-top-left-radius: var(--rf-radius);
+  }
+  thead th:last-child {
+    border-top-right-radius: var(--rf-radius);
+  }
+  td {
+    padding: var(--ra-cell-pad-y) var(--ra-cell-pad-x);
+    border-bottom: 1px solid var(--rf-border);
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+  }
+
+  .col-sno { width: 60px; }
+  .col-name { width: 160px; }
+  .col-export { width: 120px; }
+  .col-import { width: 120px; }
+  .col-total { width: 120px; }
+  .col-address { width: auto; }
+  .col-city { width: 120px; }
+  .col-pin { width: 90px; }
+  .col-status { width: 90px; }
+  .col-actions { width: 92px; }
+
+  tbody tr:nth-child(even) td {
+    background: color-mix(in oklab, var(--mat-sys-primary) 3%, transparent);
+  }
+  tbody tr:hover td {
+    background: color-mix(in oklab, var(--mat-sys-primary) 8%, transparent);
+  }
+  .name {
+    font-weight: 600;
+    color: var(--mat-sys-primary);
+  }
+}
+.ta-r {
+  text-align: right;
+}
+.rowactions {
+  display: inline-flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.empty {
+  text-align: center;
+  padding: 22px;
+}

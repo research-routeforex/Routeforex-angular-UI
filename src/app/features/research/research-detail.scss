@@ -1,0 +1,372 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #f6f7fb;
+  padding: 24px clamp(16px, 4vw, 44px) 56px;
+}
+
+.wrap {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.back {
+  display: inline-block;
+  color: #5b3df5;
+  font-weight: 700;
+  font-size: 13.5px;
+  text-decoration: none;
+  margin-bottom: 16px;
+  &:hover { text-decoration: underline; }
+}
+
+/* ---- White glossy sheet wrapping the whole report ---- */
+.sheet {
+  position: relative;
+  border-radius: 24px;
+  padding: 22px clamp(16px, 3vw, 30px) 30px;
+  /* Layered background: a soft diagonal sheen over a near-white base — the sheen
+     lives in the background so it never washes over the content above it. */
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 34%) no-repeat,
+    linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+  border: 1px solid rgba(233, 233, 246, 0.9);
+  box-shadow:
+    0 24px 60px rgba(20, 24, 60, 0.13),
+    0 3px 10px rgba(20, 24, 60, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* ---- Article hero ---- */
+.head {
+  position: relative;
+  /* 20% taller than the previous content-driven height (~264px) to give the
+     report illustration more room. */
+  min-height: 317px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 22px;
+  overflow: hidden;
+  padding: 34px 28px;
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(20, 20, 45, 0.18);
+}
+.cat-daily { background: linear-gradient(135deg, #4f9dfb, #2563eb); }
+.cat-commodity { background: linear-gradient(135deg, #f9a94b, #e8890c); }
+.cat-premium { background: linear-gradient(135deg, #8a6bff, #5b3df5); }
+.cat-weekly { background: linear-gradient(135deg, #2dd4bf, #0d9488); }
+.cat-calls { background: linear-gradient(135deg, #43d17f, #16a34a); }
+
+/* Report illustration covering the hero; transparent if it 404s → gradient shows. */
+.head__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.head .overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* Stronger, fuller scrim so the centered title + byline stay readable over a
+     bright photographic background (falls back cleanly over the gradient too). */
+  background: linear-gradient(
+    to top,
+    rgba(8, 10, 24, 0.78) 0%,
+    rgba(8, 10, 24, 0.52) 55%,
+    rgba(8, 10, 24, 0.4) 100%
+  );
+}
+.watermark {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 120px;
+  opacity: 0.14;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+.head-inner { position: relative; z-index: 2; }
+.tag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.24);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.title {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.25;
+  margin: 12px 0 10px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.byline {
+  font-size: 13px;
+  margin: 0;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+.date { font-weight: 700; color: #fff; }
+.dot { margin: 0 7px; opacity: 0.85; }
+
+.lead {
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: #3a3f4c;
+  margin: 22px 0 8px;
+}
+
+.section {
+  font-size: 18px;
+  font-weight: 800;
+  color: #16161f;
+  margin: 28px 0 12px;
+}
+p { color: #454b59; line-height: 1.7; font-size: 14.5px; }
+.bullets { color: #454b59; line-height: 1.9; font-size: 14.5px; padding-left: 20px; margin: 0; }
+
+/* ---- Stat tiles ---- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+.stat {
+  background: #fff;
+  border: 1px solid #ecedf3;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 6px 16px rgba(20, 20, 45, 0.05);
+}
+.stat-label { display: block; font-size: 12px; color: #6a7184; font-weight: 600; }
+.stat-value { display: block; font-size: 20px; font-weight: 900; color: #16161f; margin-top: 4px; }
+.stat-chg { display: inline-block; font-size: 12px; font-weight: 700; margin-top: 4px; }
+.stat-chg.up { color: #16a34a; }
+.stat-chg.down { color: #dc2626; }
+
+/* ---- Charts ---- */
+.charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+@media (max-width: 720px) { .charts { grid-template-columns: 1fr; } }
+
+.card {
+  background: #fff;
+  border: 1px solid #ecedf3;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 8px 20px rgba(20, 20, 45, 0.05);
+}
+.card-title { font-size: 13.5px; font-weight: 800; color: #16161f; margin: 0 0 12px; }
+.chart { width: 100%; height: 200px; display: block; }
+.grid { stroke: #eef0f5; stroke-width: 1; }
+.line { fill: none; stroke: #5b3df5; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.dot { fill: #fff; stroke: #5b3df5; stroke-width: 2; }
+.bar { fill: #5b3df5; }
+.bar-label { font-size: 11px; fill: #8a90a2; font-weight: 600; }
+.bar-value { font-size: 10.5px; fill: #6a7184; font-weight: 700; }
+.axis { display: flex; justify-content: space-between; font-size: 11px; color: #9aa0ad; margin-top: 6px; }
+
+/* ---- Key levels ---- */
+.levels {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #ecedf3;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.levels td { padding: 12px 16px; border-bottom: 1px solid #eef0f5; font-size: 14px; }
+.levels tr:last-child td { border-bottom: 0; }
+.lvl-name { color: #454b59; font-weight: 600; }
+.lvl-val { text-align: right; font-weight: 800; color: #16161f; }
+.lvl-r .lvl-name { color: #dc2626; }
+.lvl-s .lvl-name { color: #16a34a; }
+.lvl-p { background: #f7f6ff; }
+.lvl-p .lvl-name, .lvl-p .lvl-val { color: #5b3df5; }
+
+/* ---- Outlook ---- */
+.outlook {
+  display: flex;
+  gap: 14px;
+  background: linear-gradient(135deg, #efecfe, #f6f7fb);
+  border: 1px solid #e2ddf8;
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 26px;
+}
+.outlook-icon { font-size: 28px; line-height: 1; }
+.outlook-title { font-size: 15px; font-weight: 800; color: #4a30d0; margin: 0 0 6px; }
+.outlook p { margin: 0; color: #454b59; }
+
+.disclaimer { font-size: 12px; color: #9aa0ad; margin-top: 26px; text-align: center; }
+
+.state {
+  margin: 48px 0;
+  text-align: center;
+  font-size: 15px;
+  color: #6b7280;
+}
+
+/* ---- Premium gate (blur veil + access popup) ---- */
+.body-shell {
+  position: relative;
+}
+.report-body.is-locked {
+  filter: blur(7px);
+  pointer-events: none;
+  user-select: none;
+  /* Keep a tall-enough backdrop so the popup always has content behind it. */
+  min-height: 420px;
+}
+.gate {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 60px 16px;
+  background: rgba(255, 255, 255, 0.35);
+}
+.gate__card {
+  position: sticky;
+  top: 90px;
+  width: min(640px, 96%);
+  background: #fff;
+  border: 1px solid #e3e6ec;
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(20, 24, 40, 0.22);
+  padding: 30px 26px;
+  text-align: center;
+}
+.gate__icon { font-size: 40px; line-height: 1; }
+.gate__title { margin: 12px 0 6px; font-size: 20px; font-weight: 800; color: #16161f; }
+.gate__text { margin: 0 0 18px; font-size: 14.5px; line-height: 1.6; color: #454b59; }
+.gate__btn {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  padding: 11px 22px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: #4a30d0;
+  transition: background 0.15s ease;
+}
+.gate__btn:hover { background: #3a25ad; }
+.gate__contact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+.gate__contact a { color: #4a30d0; text-decoration: none; }
+.gate__contact a:hover { text-decoration: underline; }
+
+/* Contact detail cards (Dealing Desk / Email / Office Hours) */
+.gate__cards {
+  display: grid;
+  /* Give the Email card extra width so the address stays on one line. */
+  grid-template-columns: 1fr 1.5fr 1fr;
+  gap: 12px;
+  margin-top: 6px;
+}
+@media (max-width: 480px) {
+  .gate__cards { grid-template-columns: 1fr; }
+}
+.gate__ccard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 10px;
+  border-radius: 12px;
+  background: #f4f3fb;
+  border: 1px solid #e7e5f5;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+a.gate__ccard:hover {
+  background: #eceafa;
+  transform: translateY(-2px);
+}
+.gate__cicon {
+  font-size: 20px;
+  line-height: 1;
+  color: #6a4df5;
+  margin-bottom: 2px;
+}
+.gate__clabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a8f9c;
+}
+.gate__cvalue {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1f2333;
+  word-break: break-word;
+}
+/* Email card: keep the address on a single line. */
+.gate__ccard:nth-child(2) .gate__cvalue {
+  white-space: nowrap;
+  word-break: normal;
+}
+
+/* Rendered report HTML (authored in the Template Creator with CKEditor 5).
+   The container carries the `ck-content` class so CKEditor's own content styles
+   (from the global ckeditor5.css) render images, resized figures, tables, cell
+   colours, alignment, etc. exactly as they appear inside the editor. We only add
+   base typography here and MUST NOT override element sizing (img width/height,
+   table width, display) — doing so is what previously distorted images, graphs
+   and tables versus the Template Creator. Authored inline styles win over both. */
+.report-body {
+  display: block;
+  margin-top: 22px;
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: #3a3f4c;
+  word-break: break-word;
+  /* Wide content (e.g. a fixed-width table) scrolls within the article rather
+     than being stretched or reflowed — the authored layout is preserved. */
+  overflow-x: auto;
+
+  /* The report HTML is injected via [innerHTML], so it does NOT carry this
+     component's view-encapsulation attribute — plain descendant selectors here
+     would NOT match it. We MUST use ::ng-deep to reach the injected content
+     (still scoped under `.report-body`, so nothing leaks to the rest of the app).
+     This is why an earlier non-deep `table-layout` rule had no effect. */
+  ::ng-deep a { color: #4a30d0; text-decoration: underline; }
+
+  /* Safety net so an oversized image can never overflow the sheet; aspect ratio
+     and any authored height are left untouched (no `height: auto`). */
+  ::ng-deep img { max-width: 100%; }
+
+  /* CKEditor only sets `table-layout: fixed` on column-resized tables
+     (`.ck-table-resized`, which also carry a <colgroup>). Legacy pasted tables
+     (e.g. "Global Markets at one Glance") have neither, so the browser's default
+     `auto` layout lets the first column hog the width and squeezes the last
+     column until CKEditor's cell `overflow-wrap: break-word` wraps its text
+     character-by-character ("+ 0. 1 8"). Forcing fixed layout makes each cell's
+     authored width be honoured, so columns render as they do in the editor. */
+  ::ng-deep .table table,
+  ::ng-deep table {
+    table-layout: fixed;
+  }
+}

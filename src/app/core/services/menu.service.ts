@@ -17,7 +17,8 @@ export class MenuService {
 
   getMenu(): Observable<MenuModule[]> {
     if (!this.menu$) {
-      this.menu$ = this.api.get<MenuModule[]>('Menu').pipe(
+      // Web menu = screens with RF_ModuleScreen.Source IN ('Web','Both').
+      this.menu$ = this.api.get<MenuModule[]>('Menu', { params: { source: 'Web' } }).pipe(
         tap((m) => this._menu.set(m ?? [])),
         shareReplay(1),
       );

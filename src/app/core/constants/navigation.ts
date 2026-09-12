@@ -39,6 +39,10 @@ export const NAVIGATION: NavSection[] = [
         usernames: ['9599733946'],
       },
       { label: 'Client Contract', icon: 'description', route: '/client-contract', badge: 'New' },
+      { label: 'Lead Master', icon: 'contact_mail', route: '/lead-master', badge: 'New' },
+      { label: 'Forex Advisory', icon: 'trending_up', route: '/forex-advisory', badge: 'New' },
+      { label: 'Order Tracking', icon: 'local_shipping', route: '/order-tracking', badge: 'New' },
+      { label: 'Promo Code', icon: 'sell', route: '/promo-code', badge: 'New' },
       { label: 'Other Services', icon: 'add_business', route: '/other-services', badge: 'New' },
       { label: 'Service Offered', icon: 'design_services', route: '/service-offered', badge: 'New' },
       { label: 'User Company Mapping', icon: 'group_add', route: '/user-company-mapping', badge: 'New' },
@@ -46,12 +50,37 @@ export const NAVIGATION: NavSection[] = [
       { label: 'Currency Master', icon: 'payments', route: '/currency-master', badge: 'New' },
       { label: 'Bank Master', icon: 'account_balance', route: '/bank-master', badge: 'New' },
       { label: 'RBI Rate Master', icon: 'currency_rupee', route: '/rbi-rate-master', badge: 'New' },
+      { label: 'Historical Rate Master', icon: 'history', route: '/historical-rate-master', badge: 'New' },
       { label: 'Broadcast Group Master', icon: 'campaign', route: '/broadcast-group-master', badge: 'New' },
       { label: 'Broadcast Message', icon: 'send', route: '/broadcast-message', badge: 'New' },
       { label: 'Template Creator', icon: 'article', route: '/template-creator', badge: 'New' },
       { label: 'Company Master', icon: 'domain', route: '/company-master', badge: 'New' },
       { label: 'Cities', icon: 'location_city', route: '/cities' },
       { label: 'Tenors', icon: 'schedule', route: '/tenors' },
+    ],
+  },
+  {
+    title: 'Money Exchange',
+    items: [
+      {
+        label: 'Client Information',
+        icon: 'contact_page',
+        route: '/money-exchange/client-information',
+        badge: 'New',
+      },
+      {
+        label: 'Order Information',
+        icon: 'receipt_long',
+        route: '/money-exchange/order-information',
+        badge: 'New',
+      },
+    ],
+  },
+  {
+    title: 'LMS',
+    items: [
+      { label: 'Client Master', icon: 'badge', route: '/lms/client-master', badge: 'New' },
+      { label: 'Lead Management', icon: 'leaderboard', route: '/lms/lead-management', badge: 'New' },
     ],
   },
   {

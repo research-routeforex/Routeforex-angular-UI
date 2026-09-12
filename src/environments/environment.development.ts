@@ -10,8 +10,8 @@
 export const environment = {
   production: false,
   appName: 'RouteForex',
-  //apiBaseUrl: 'https://routeforexapi.azurewebsites.net',
-  apiBaseUrl: 'https://localhost:7080',
+  apiBaseUrl: 'https://routeforexapi.azurewebsites.net',
+  //apiBaseUrl: 'https://localhost:7080',
   apiPrefix: '/api/v1',
   tokenRefreshSkewSeconds: 60,
   defaultPageSize: 20,

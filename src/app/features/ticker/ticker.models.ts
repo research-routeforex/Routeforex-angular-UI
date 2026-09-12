@@ -103,15 +103,48 @@ export interface ForexNewsRow {
   body: string;
 }
 
-/** Result of the Broken Rate Calculator (quadrant 4). */
-export interface BrokenRateResult {
-  days: number;
-  spotBid: number;
-  spotAsk: number;
-  swapBid: number;
-  swapAsk: number;
-  fwdBid: number;
-  fwdAsk: number;
+/**
+ * Forward rate for one Broken Rate Calculator row, from
+ * <c>Proc_TFTPO_Mast_Forward_Rate</c> (@Action='SEARCH'). The API returns the raw
+ * components; the screen derives swap points (USD + INR) and shows the outrights.
+ */
+export interface ForwardRate {
+  /** Swap point Bid (BID_INR_SWAP). */
+  bidInrSwap: number;
+  /** Swap point Ask (ASK_INR_SWAP). */
+  askInrSwap: number;
+  bidFinalRate: number;
+  askFinalRate: number;
+}
+
+/** One editable row of the Broken Rate Calculator grid (5 rows). */
+export interface BrokenRateRow {
+  /** yyyy-MM-dd from the <input type="date">, or '' when empty. */
+  valueDate: string;
+  spotBid: number | null;
+  spotAsk: number | null;
+  swapBid: number | null;
+  swapAsk: number | null;
+  fwdBid: number | null;
+  fwdAsk: number | null;
+  loading: boolean;
+}
+
+/** Number of rows shown in the Broken Rate Calculator. */
+export const BROKEN_ROW_COUNT = 5;
+
+/** A blank Broken Rate Calculator row. */
+export function emptyBrokenRow(): BrokenRateRow {
+  return {
+    valueDate: '',
+    spotBid: null,
+    spotAsk: null,
+    swapBid: null,
+    swapAsk: null,
+    fwdBid: null,
+    fwdAsk: null,
+    loading: false,
+  };
 }
 
 export function netChange(q: CurrencyFutureQuote): number {
@@ -301,27 +334,6 @@ export function buildForwardPremium(currency: string): ForwardPremiumRow[] {
     });
   }
   return rows;
-}
-
-// ---- Broken Rate Calculator (quadrant 4) ----------------------------------
-/** Interpolate spot + swap to an arbitrary value date for the given currency. */
-export function computeBrokenRate(currency: string, valueDateIso: string): BrokenRateResult {
-  const spot = FWD_SPOT[currency] ?? FWD_SPOT['USDINR'];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const value = valueDateIso ? new Date(valueDateIso) : today;
-  const days = Math.max(0, Math.round((value.getTime() - today.getTime()) / 86_400_000));
-  const swapBid = +(spot.bid * ANNUAL_BID * (days / 365)).toFixed(4);
-  const swapAsk = +(spot.ask * ANNUAL_ASK * (days / 365)).toFixed(4);
-  return {
-    days,
-    spotBid: spot.bid,
-    spotAsk: spot.ask,
-    swapBid,
-    swapAsk,
-    fwdBid: +(spot.bid + swapBid).toFixed(4),
-    fwdAsk: +(spot.ask + swapAsk).toFixed(4),
-  };
 }
 
 // ---- Forex News -----------------------------------------------------------

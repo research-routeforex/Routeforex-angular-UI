@@ -56,7 +56,8 @@
 
   &__grid {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    // Display Name | Status (narrow) | Research Type | Image Name (narrow) | Report Date
+    grid-template-columns: 2fr 0.85fr 1.3fr 1fr 1.15fr;
     gap: 14px;
     margin-bottom: 14px;
   }
@@ -67,9 +68,44 @@
     margin-top: 14px;
   }
 }
+@media (max-width: 1100px) {
+  .editform__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 @media (max-width: 760px) {
   .editform__grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Material datepicker wrapper (same pattern as FTP Order Entry) */
+.rf-datewrap {
+  position: relative;
+  display: block;
+
+  .rf-input {
+    width: 100%;
+    padding-right: 38px;
+    cursor: pointer;
+  }
+
+  .rf-date-toggle {
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    transform: translateY(-50%);
+    color: var(--rf-muted-fg);
+
+    :is(button, .mat-mdc-icon-button) {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+    }
+    .mat-mdc-button-touch-target {
+      width: 34px;
+      height: 34px;
+    }
   }
 }
 
@@ -136,7 +172,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    padding: 12px 14px;
+    padding: 12px 5px;
     text-align: left;
     white-space: nowrap;
     vertical-align: top;
@@ -171,7 +207,7 @@
     white-space: nowrap;
   }
   .col-file {
-    width: 260px;
+    width: 220px;
   }
   .col-status {
     width: 110px;

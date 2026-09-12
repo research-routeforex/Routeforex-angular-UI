@@ -262,6 +262,9 @@
             }
           </td>
           <td class="ta-r actions">
+            <button type="button" class="rf-iconbtn" (click)="openDetails(r)" matTooltip="View details">
+              <mat-icon>visibility</mat-icon>
+            </button>
             @if (r.sourceName === 'TradingCalls' && r.status !== 'Inactive') {
               <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="startEdit(r)" matTooltip="Edit / close call">
                 <mat-icon>edit</mat-icon>
@@ -307,3 +310,71 @@
     </button>
   </div>
 </div>
+
+<!-- Broadcast details (view header/footer images) -->
+@if (detailsRow(); as row) {
+  <div class="modal" (click)="closeDetails()">
+    <div class="modal__card rf-card" (click)="$event.stopPropagation()">
+      <div class="modal__head">
+        <h3 class="modal__title">Broadcast Details</h3>
+        <button type="button" class="rf-iconbtn" (click)="closeDetails()" matTooltip="Close">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <dl class="details">
+        <div class="details__row">
+          <dt>Type</dt>
+          <dd>{{ typeLabel(row.sourceName) }}</dd>
+        </div>
+        <div class="details__row">
+          <dt>Recipients</dt>
+          <dd>{{ recipientNames(row) || '—' }}</dd>
+        </div>
+        <div class="details__row">
+          <dt>{{ row.sourceName === 'TradingCalls' ? 'Call' : 'Header' }}</dt>
+          <dd>{{ row.subject || '—' }}</dd>
+        </div>
+        @if (row.siteName) {
+          <div class="details__row">
+            <dt>Description</dt>
+            <dd class="details__desc">{{ row.siteName }}</dd>
+          </div>
+        }
+        <div class="details__row">
+          <dt>Send Date</dt>
+          <dd>{{ row.requestedDate ? (row.requestedDate | date: 'dd-MMM-yyyy HH:mm') : '—' }}</dd>
+        </div>
+      </dl>
+
+      @if (row.fileHeader || row.fileFooter) {
+        <div class="filesview">
+          @if (row.fileHeader) {
+            <figure class="filesview__item">
+              <figcaption>File Header</figcaption>
+              @if (detailsHeaderUrl(); as url) {
+                <img [src]="url" alt="File Header" />
+              } @else {
+                <p class="rf-muted filesview__hint">Loading…</p>
+              }
+            </figure>
+          }
+          @if (row.fileFooter) {
+            <figure class="filesview__item">
+              <figcaption>File Footer</figcaption>
+              @if (detailsFooterUrl(); as url) {
+                <img [src]="url" alt="File Footer" />
+              } @else {
+                <p class="rf-muted filesview__hint">Loading…</p>
+              }
+            </figure>
+          }
+        </div>
+      } @else {
+        <p class="rf-muted filesview__none">
+          <mat-icon>image_not_supported</mat-icon> No header or footer image attached.
+        </p>
+      }
+    </div>
+  </div>
+}

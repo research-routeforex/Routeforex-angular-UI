@@ -65,6 +65,39 @@
   }
 }
 
+// ---- Top filter bar --------------------------------------------------------
+.filter {
+  padding: 14px 16px;
+  margin-bottom: var(--rf-gap);
+
+  &__fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px 18px;
+  }
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 220px;
+  }
+  &__field--wide {
+    flex: 1 1 320px;
+    max-width: 420px;
+  }
+  &__lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rf-muted-fg);
+  }
+  &__actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+}
+
 .tablewrap {
   // Show ~10 rows; the rest scrolls under the sticky header.
   max-height: 478px;

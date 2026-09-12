@@ -50,6 +50,12 @@ export const API = {
     // GET ?date=&rate= — search; POST — insert/update a rate
     base: 'RbiRate',
   },
+  historicalRate: {
+    // GET ?date=&currency= — search the list
+    base: 'HistoricalRate',
+    // POST { fileName, fileBase64 } — bulk-upload rows from an Excel (.xlsx)
+    upload: 'HistoricalRate/upload',
+  },
   tickerLiveScreenRight: {
     // GET ?clientId=&validityFrom=&validityTo= — search (admin); POST — insert/update (admin)
     base: 'TickerLiveScreen',
@@ -57,6 +63,12 @@ export const API = {
     access: 'TickerLiveScreen/access',
     // POST { seconds } — accumulate free-trial seconds
     heartbeat: 'TickerLiveScreen/access/heartbeat',
+  },
+  researchReportPermission: {
+    // GET ?clientId=&validityFrom=&validityTo= — search (admin); POST — insert/update (admin)
+    base: 'ResearchReportPermission',
+    // GET ?type=P — whether the signed-in user may view that research type
+    access: 'ResearchReportPermission/access',
   },
   otherServices: {
     // GET ?clientId=&date= — list; POST — insert/update; DELETE {id}
@@ -82,6 +94,50 @@ export const API = {
     currencies: 'RateAlert/currencies',
     validities: 'RateAlert/validities',
   },
+  lead: {
+    // GET ?type=&status= — list; POST — update Status + Remarks (edit-only)
+    base: 'Lead',
+    types: 'Lead/types',
+  },
+  forexAdvisory: {
+    // GET ?currency=&status= — list; POST — insert/update (optional base64 image)
+    base: 'ForexAdvisory',
+    currencies: 'ForexAdvisory/currencies',
+  },
+  orderTracking: {
+    // GET ?search= — tracked orders; POST — replace one order's timeline
+    base: 'OrderTracking',
+    orders: 'OrderTracking/orders',
+    deliveryBoys: 'OrderTracking/delivery-boys',
+    byOrder: (orderId: number) => `OrderTracking/${orderId}`,
+  },
+  promoCode: {
+    // GET ?promoCode= — list; POST — insert/update
+    base: 'PromoCode',
+  },
+  moneyExchangeClient: {
+    // GET ?search=&status= — list; POST — insert/update; cascading lookups
+    base: 'MoneyExchangeClient',
+    regions: 'MoneyExchangeClient/regions',
+    countries: 'MoneyExchangeClient/countries',
+    cities: 'MoneyExchangeClient/cities',
+  },
+  moneyExchangeOrder: {
+    // GET ?search=&status= — list; POST — insert/update (client resolved from contact no.)
+    base: 'MoneyExchangeOrder',
+  },
+  lmsClient: {
+    // GET ?search=&status= — list; POST — insert/update; cascading lookups
+    base: 'LmsClient',
+    regions: 'LmsClient/regions',
+    countries: 'LmsClient/countries',
+    cities: 'LmsClient/cities',
+  },
+  lmsLead: {
+    // GET ?search= — list; POST — insert/update
+    base: 'LmsLead',
+    clients: 'LmsLead/clients',
+  },
   broadcastGroup: {
     // GET — all groups; POST — insert/update a group (clientIDs = CSV)
     base: 'BroadcastGroup',
@@ -89,11 +145,20 @@ export const API = {
   broadcastMessage: {
     // GET ?search= — sent broadcasts (newest first); POST — send a broadcast
     base: 'BroadcastMessage',
+    // GET ?path= — streams a stored header/footer image (authenticated blob)
+    file: 'BroadcastMessage/file',
   },
   template: {
     // GET — all templates; GET {id} — one template + HTML body; POST — insert/update
     base: 'Template',
     byId: (id: number) => `Template/${id}`,
+    researchTypes: 'Template/research-types',
+    images: 'Template/images',
+  },
+  research: {
+    // Public (anonymous) research gallery + report detail
+    base: 'Research',
+    byId: (id: number) => `Research/${id}`,
   },
   headOffice: {
     base: 'HeadOffice',
@@ -117,6 +182,10 @@ export const API = {
     // GET ?description= — spot-rate board / forward premium / currency futures.
     tickerForex: 'LiveRates/forex',
     tickerPremium: 'LiveRates/premium',
+    // GET — distinct currencies for the Forward Premium dropdown (TPO_Mast_ForexPremium)
+    tickerPremiumCurrencies: 'LiveRates/premium-currencies',
+    // GET ?monthEndDate=&currencyFrom=&currencyTo= — forward rate for a Broken Rate row
+    tickerForwardRate: 'LiveRates/forward-rate',
     tickerCurrencyFuture: 'LiveRates/currency-future',
     // Forex News for the signed-in user (@Action='selectNEWS', @CreatedBy=login name).
     tickerNews: 'LiveRates/news',

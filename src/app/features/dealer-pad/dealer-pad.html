@@ -159,9 +159,9 @@
         <h3 class="dealform__title"><mat-icon>insights</mat-icon> Deal Details</h3>
         <div class="fieldgrid">
           <!-- Row 1 -->
-          <app-field label="Order No">
+          <!-- <app-field label="Order No">
             <input class="rf-input" formControlName="orderNo" placeholder="New" />
-          </app-field>
+          </app-field> -->
           <app-field label="Transaction Type" required [control]="form.controls.transactionType" error="Required.">
             <app-select formControlName="transactionType" [options]="txnOptions()" searchPlaceholder="Search type…" />
           </app-field>

@@ -1,0 +1,109 @@
+<!-- ===== Top bar ===== -->
+<div class="topbar">
+  <div class="container tb">
+    <div class="tb-left">
+      <a href="tel:9958476001">&#9742; 9958476001</a>
+      <a href="mailto:marketing&#64;routeforex.com">&#9993; marketing&#64;routeforex.com</a>
+    </div>
+    <div class="tb-right">
+      <a href="#" target="_blank" rel="noopener">&#8615; Download App</a>
+      @if (isAuthenticated()) {
+        <span class="tb-user">&#9919; {{ displayName() }}</span>
+        <a routerLink="/dashboard">&#9873; Dashboard</a>
+        <a class="tb-link" href="#" (click)="logout($event)">&#8617; Logout</a>
+      } @else {
+        <a [href]="RF + '/login/'" target="_blank" rel="noopener">&#9919; Login</a>
+        <a [href]="RF + '/register/'" target="_blank" rel="noopener">&#9786; Register</a>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ===== Main nav (full dropdown menu, ported from BindHeader) ===== -->
+<header class="nav">
+  <div class="container nav-in">
+    <a class="brand" [href]="RF + '/'" target="_blank" rel="noopener"><img src="/images/logo.png" alt="RouteForex" /></a>
+
+    <!-- Recursive menu renderer -->
+    <ng-template #menuTpl let-items>
+      @for (it of items; track it.label) {
+        <li [class.active]="it.active">
+          <a [href]="it.href" target="_blank" rel="noopener">
+            {{ it.label }}@if (it.children?.length) { <i class="caret">&#9662;</i> }
+          </a>
+          @if (it.children?.length) {
+            <ul class="submenu">
+              <ng-container *ngTemplateOutlet="menuTpl; context: { $implicit: it.children }" />
+            </ul>
+          }
+        </li>
+      }
+    </ng-template>
+
+    <nav class="menu">
+      <ul class="nav-menu">
+        <ng-container *ngTemplateOutlet="menuTpl; context: { $implicit: menu }" />
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<!-- ===== Hero banner (legacy candlestick image) ===== -->
+<section class="hero">
+  <div class="hero-ov"></div>
+  <div class="container hero-in">
+    <div>
+      <h1>Research</h1>
+      <p class="crumb"><a href="#">Home</a> / <span>Research</span></p>
+    </div>
+    <a class="contact" [href]="RF + '/contact-us/'" target="_blank" rel="noopener">&#9742;&nbsp; CONTACT US</a>
+  </div>
+</section>
+
+<!-- ===== Content ===== -->
+<main class="container content">
+  <!-- Category filters -->
+  <div class="filters">
+    @for (c of categories; track c.key) {
+      <button
+        type="button"
+        class="filter"
+        [class.active]="selected() === c.key"
+        (click)="select(c.key)"
+      >
+        <span class="filter__icon">{{ c.icon }}</span>
+        <span class="filter__label">{{ c.label }}</span>
+      </button>
+    }
+  </div>
+
+  <!-- Report gallery -->
+  <div class="grid">
+    @for (r of filtered(); track r.id) {
+      <a class="card" [class]="'cat-' + r.category" [routerLink]="['/publications/research', r.id]">
+        @if (r.image) {
+          <!-- Report illustration as the card background; if it fails to load the
+               element is transparent and the category gradient behind shows through. -->
+          <div class="card__bg" [style.background-image]="'url(' + r.image + ')'"></div>
+        } @else {
+          <span class="watermark">{{ icon(r.category) }}</span>
+        }
+        <div class="overlay"></div>
+
+        <span class="date"><b>{{ r.day }}</b> {{ r.month }}</span>
+        <span class="tag">{{ tag(r.category) }}</span>
+        @if (r.category === 'premium') {
+          <span class="lock" title="Premium — sign-in &amp; access required">🔒</span>
+        }
+
+        <div class="card-content">
+          <h3 class="title">{{ r.title }}</h3>
+          <p class="meta">Posted by {{ r.postedBy }}</p>
+          <span class="read">Read report <span class="arrow">→</span></span>
+        </div>
+      </a>
+    } @empty {
+      <p class="empty">{{ loading() ? 'Loading reports…' : 'No reports in this category yet.' }}</p>
+    }
+  </div>
+</main>
