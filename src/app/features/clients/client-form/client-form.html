@@ -131,7 +131,7 @@
     <h3 class="sec__title"><mat-icon>event_available</mat-icon> Onboarding</h3>
     <div class="grid">
       <app-field label="On-Board Date">
-        <input class="rf-input" type="date" formControlName="onBoardDate" />
+        <app-date-field formControlName="onBoardDate" />
       </app-field>
       <app-field label="Status">
         <app-select formControlName="status" [options]="statusOptions()" placeholder="Select status" searchPlaceholder="Search status…" />

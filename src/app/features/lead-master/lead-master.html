@@ -1,0 +1,157 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Lead Master"
+    subtitle="Website leads (Subscribe / Request a Call Back / Contact Us). Filter, review, and update status &amp; remarks."
+    [breadcrumbs]="[{ label: 'Masters' }, { label: 'Lead Master' }]"
+  >
+  </app-page-header>
+</div>
+
+<!-- Edit -->
+@if (showForm()) {
+  <div class="rf-card child__add">
+    <div class="child__addhead">
+      <h4 class="child__addtitle">
+        <mat-icon>edit_note</mat-icon>
+        Edit Lead
+      </h4>
+    </div>
+
+    <form class="child__form" [formGroup]="form" (ngSubmit)="save()">
+      <div class="child__row child__row--2">
+        <app-field label="Remarks">
+          <textarea
+            class="rf-input"
+            rows="3"
+            formControlName="remarks"
+            placeholder="Enter remarks…"
+          ></textarea>
+        </app-field>
+        <app-field label="Status" required [control]="form.controls.status" error="Select a status.">
+          <app-select
+            formControlName="status"
+            [options]="statusOptions"
+            [nullable]="false"
+            placeholder="Select status"
+            searchPlaceholder="Search…"
+          />
+        </app-field>
+      </div>
+
+      <div class="child__formactions">
+        <button mat-stroked-button type="button" (click)="closeForm()">Clear</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+          <mat-icon>save</mat-icon>
+          {{ saving() ? 'Saving…' : 'Update' }}
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Filters -->
+<div class="rf-card filter">
+  <div class="filter__fields">
+    <label class="filter__field">
+      <span class="filter__lbl">Type</span>
+      <app-select
+        [options]="typeOptions()"
+        placeholder="All"
+        searchPlaceholder="Search…"
+        [ngModel]="filterType()"
+        (ngModelChange)="onFilterType($event)"
+      />
+    </label>
+    <label class="filter__field">
+      <span class="filter__lbl">Status</span>
+      <app-select
+        [options]="statusOptions"
+        placeholder="All"
+        searchPlaceholder="Search…"
+        [ngModel]="filterStatus()"
+        (ngModelChange)="onFilterStatus($event)"
+      />
+    </label>
+    <div class="filter__actions">
+      <button mat-flat-button color="primary" type="button" (click)="search()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- List -->
+<div class="rf-card child__tablewrap">
+  <div class="child__listhead">
+    <h3 class="child__listtitle">Lead List</h3>
+    <span class="child__count rf-muted">{{ total() }} record(s)</span>
+  </div>
+  <table class="child__table">
+    <colgroup>
+      <col class="col-sno" />
+      <col class="col-name" />
+      <col class="col-email" />
+      <col class="col-contact" />
+      <col class="col-company" />
+      <col class="col-message" />
+      <col class="col-from" />
+      <col class="col-type" />
+      <col class="col-on" />
+      <col class="col-status" />
+      <col class="col-remarks" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>S.No.</th>
+        <th>Name</th>
+        <th>Email ID</th>
+        <th>Contact</th>
+        <th>Company Name</th>
+        <th>Message</th>
+        <th>Request From</th>
+        <th>Type</th>
+        <th>Request On</th>
+        <th>Status</th>
+        <th>Remarks</th>
+        <th class="ta-r">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of rows(); track r.recordID; let i = $index) {
+        <tr>
+          <td>{{ i + 1 }}</td>
+          <td class="name">{{ r.name || '—' }}</td>
+          <td>{{ r.emailId || '—' }}</td>
+          <td>{{ r.phoneNo || '—' }}</td>
+          <td>{{ r.companyName || '—' }}</td>
+          <td>{{ r.message || '—' }}</td>
+          <td>{{ r.pageName || '—' }}</td>
+          <td>{{ r.type || '—' }}</td>
+          <td>{{ r.createdDate ? (r.createdDate | date: 'dd/MM/yyyy') : '—' }}</td>
+          <td>{{ r.status || '—' }}</td>
+          <td>{{ r.remarks || '—' }}</td>
+          <td class="ta-r">
+            <button
+              type="button"
+              class="rf-iconbtn rf-iconbtn--edit"
+              (click)="edit(r)"
+              matTooltip="Edit"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="12" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No leads found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { finalize } from 'rxjs';
 import { NotificationService } from '../../../core/services/notification.service';
+import { DateFieldComponent } from '../../../shared/components/date-field/date-field';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header';
 import { PnlReportRow, PnlSection, PnlZoneReport } from '../pnl-mis.model';
 import { ReportsService } from '../reports.service';
@@ -21,7 +22,7 @@ interface PnlSectionMeta {
 @Component({
   selector: 'app-pnl-mis',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, PageHeaderComponent, MatButtonModule, MatIconModule, DecimalPipe],
+  imports: [ReactiveFormsModule, DateFieldComponent, PageHeaderComponent, MatButtonModule, MatIconModule, DecimalPipe],
   templateUrl: './pnl-mis.html',
   styleUrl: './pnl-mis.scss',
 })

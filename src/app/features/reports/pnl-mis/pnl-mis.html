@@ -10,7 +10,7 @@
   >
     <label class="pnl__field">
       <span class="pnl__lbl">To Date</span>
-      <input class="rf-input" type="date" [formControl]="toDate" />
+      <app-date-field [formControl]="toDate" />
     </label>
     <button mat-flat-button color="primary" type="button" [disabled]="loading()" (click)="generate()">
       <mat-icon>search</mat-icon> Search

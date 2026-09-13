@@ -44,8 +44,16 @@ export interface SaveBroadcastMessage {
   entryPrice: number | null;
   targetPrice: number | null;
   stopClose: number | null;
+  /** Stored server-side relative path of the File Header image (empty when none). */
   fileHeader: string | null;
+  /** Stored server-side relative path of the File Footer image (empty when none). */
   fileFooter: string | null;
+  /** File Header image as base64 / data-URL to upload (write-only, not returned). */
+  fileHeaderBase64?: string | null;
+  fileHeaderName?: string | null;
+  /** File Footer image as base64 / data-URL to upload (write-only, not returned). */
+  fileFooterBase64?: string | null;
+  fileFooterName?: string | null;
 }
 
 /** Close / update a trading call (recordId = the broadcast row id). */

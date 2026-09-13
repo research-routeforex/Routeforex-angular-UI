@@ -664,6 +664,27 @@ textarea.rf-textarea:disabled {
   }
 }
 
+/* ---- Sidebar menu tooltip (rf-nav-tip matTooltipClass) -------------------- */
+/* Tooltips render in a CDK overlay at the document root, so they must be styled
+   globally. Shows the full screen name on hover with a branded, rounded chip. */
+.rf-nav-tip.mat-mdc-tooltip .mdc-tooltip__surface {
+  background: linear-gradient(
+    135deg,
+    var(--mat-sys-primary),
+    color-mix(in oklab, var(--mat-sys-primary) 78%, oklch(62% 0.24 290))
+  );
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 7px 12px;
+  border-radius: 9px;
+  max-width: 320px;
+  box-shadow:
+    0 10px 26px oklch(20% 0.02 285 / 0.28),
+    0 2px 6px oklch(20% 0.02 285 / 0.16);
+}
+
 /* ---- Maturity-date calendar popup (rf-datepicker panelClass) -------------- */
 /* The datepicker renders in a CDK overlay outside any component, so these live
    in global styles. Gives the popup a rounded, branded look. */

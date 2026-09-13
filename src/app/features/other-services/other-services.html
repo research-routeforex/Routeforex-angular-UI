@@ -34,7 +34,7 @@
         <app-field label="Amount">
           <input class="rf-input" type="number" step="0.01" formControlName="amount" placeholder="0.00" />
         </app-field>
-        <app-field label="Date">
+        <app-field [label]="isAdvisory() ? 'From Date' : 'Date'">
           <div class="rf-datewrap" (click)="fdp.open()">
             <input
               class="rf-input"
@@ -48,6 +48,22 @@
           </div>
           <mat-datepicker #fdp panelClass="rf-datepicker" />
         </app-field>
+        @if (isAdvisory()) {
+          <app-field label="To Date">
+            <div class="rf-datewrap" (click)="tdp.open()">
+              <input
+                class="rf-input"
+                [matDatepicker]="tdp"
+                [appOpenOnFocus]="tdp"
+                formControlName="toDate"
+                placeholder="dd-MMM-yyyy"
+                readonly
+              />
+              <mat-datepicker-toggle class="rf-date-toggle" [for]="tdp" />
+            </div>
+            <mat-datepicker #tdp panelClass="rf-datepicker" />
+          </app-field>
+        }
       </div>
 
       <div class="child__formactions">
@@ -130,7 +146,14 @@
           <td>{{ i + 1 }}</td>
           <td class="name">{{ r.productName || '—' }}</td>
           <td>{{ r.clientName || '—' }}</td>
-          <td>{{ r.transactionDate ? (r.transactionDate | date: 'dd MMM yyyy') : '—' }}</td>
+          <td>
+            @if (isAdvisoryRow(r)) {
+              {{ r.transactionDate ? (r.transactionDate | date: 'dd MMM yyyy') : '—' }} To
+              {{ r.toDate | date: 'dd MMM yyyy' }}
+            } @else {
+              {{ r.transactionDate ? (r.transactionDate | date: 'dd MMM yyyy') : '—' }}
+            }
+          </td>
           <td>{{ r.amount != null ? (r.amount | number: '1.2-2') : '—' }}</td>
           <td class="ta-r">
             <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(r)" matTooltip="Edit">

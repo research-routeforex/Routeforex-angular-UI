@@ -99,6 +99,16 @@ export class BroadcastMessageComponent implements OnInit {
   /** The currently-selected message type (null = "Select", drives which fields show). */
   protected readonly type = signal<BroadcastType | null>(null);
 
+  /** Picked File Header / Footer images as data-URLs (uploaded on send). */
+  private readonly fileHeaderData = signal<string | null>(null);
+  private readonly fileFooterData = signal<string | null>(null);
+
+  // ---- Details (view an existing broadcast + its header/footer images) -------
+  protected readonly detailsRow = signal<BroadcastMessage | null>(null);
+  /** Object URLs of the detailed row's header/footer images (null = none/loading). */
+  protected readonly detailsHeaderUrl = signal<string | null>(null);
+  protected readonly detailsFooterUrl = signal<string | null>(null);
+
   // ---- Trading-call edit (close) --------------------------------------------
   /** The trading-call row being edited, or null. */
   protected readonly editRow = signal<BroadcastMessage | null>(null);
@@ -244,10 +254,34 @@ export class BroadcastMessageComponent implements OnInit {
     this.recipientFilter.set('');
   }
 
-  /** Records the selected file's name (binary is not uploaded — legacy stores a name). */
+  /** Reads the picked image into a data-URL (uploaded on send) + keeps its name for display. */
   protected onFile(control: 'fileHeader' | 'fileFooter', event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.form.controls[control].setValue(input.files?.[0]?.name ?? '');
+    const file = input.files?.[0];
+    const data = control === 'fileHeader' ? this.fileHeaderData : this.fileFooterData;
+
+    if (!file) {
+      this.form.controls[control].setValue('');
+      data.set(null);
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      this.notify.error('Please choose an image file.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.notify.error('The image must be 5 MB or smaller.');
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      data.set(typeof reader.result === 'string' ? reader.result : null);
+      this.form.controls[control].setValue(file.name);
+    };
+    reader.readAsDataURL(file);
   }
 
   /** Clears an attached file without opening the picker (stops the label activating it). */
@@ -256,6 +290,7 @@ export class BroadcastMessageComponent implements OnInit {
     event.stopPropagation();
     input.value = '';
     this.form.controls[control].setValue('');
+    (control === 'fileHeader' ? this.fileHeaderData : this.fileFooterData).set(null);
   }
 
   // ---- Form show/hide -------------------------------------------------------
@@ -274,6 +309,8 @@ export class BroadcastMessageComponent implements OnInit {
       fileFooter: '',
     });
     this.type.set(null);
+    this.fileHeaderData.set(null);
+    this.fileFooterData.set(null);
     this.recipientMode.set('group');
     this.selected.set(new Set());
     this.recipientFilter.set('');
@@ -319,6 +356,39 @@ export class BroadcastMessageComponent implements OnInit {
         this.editRow.set(null);
         this.load();
       });
+  }
+
+  // ---- Details (view a broadcast + its header/footer images) ----------------
+  protected openDetails(row: BroadcastMessage): void {
+    this.detailsRow.set(row);
+    this.setDetailsUrl('header', null);
+    this.setDetailsUrl('footer', null);
+    this.loadDetailsImage('header', row.fileHeader);
+    this.loadDetailsImage('footer', row.fileFooter);
+  }
+
+  protected closeDetails(): void {
+    this.setDetailsUrl('header', null);
+    this.setDetailsUrl('footer', null);
+    this.detailsRow.set(null);
+  }
+
+  /** Fetches a stored header/footer image (blob) into an object URL for the details view. */
+  private loadDetailsImage(which: 'header' | 'footer', path: string | null): void {
+    if (!path) return;
+    this.service.fileBlob(path).subscribe({
+      next: (blob) =>
+        this.setDetailsUrl(which, blob && blob.size > 0 ? URL.createObjectURL(blob) : null),
+      error: () => this.setDetailsUrl(which, null),
+    });
+  }
+
+  /** Swaps a details image object URL, revoking the previous one to avoid leaks. */
+  private setDetailsUrl(which: 'header' | 'footer', url: string | null): void {
+    const sig = which === 'header' ? this.detailsHeaderUrl : this.detailsFooterUrl;
+    const prev = sig();
+    if (prev) URL.revokeObjectURL(prev);
+    sig.set(url);
   }
 
   // ---- Send -----------------------------------------------------------------
@@ -373,8 +443,14 @@ export class BroadcastMessageComponent implements OnInit {
       entryPrice: type === 'TradingCalls' ? this.num(v.entryPrice) : null,
       targetPrice: type === 'TradingCalls' ? this.num(v.targetPrice) : null,
       stopClose: type === 'TradingCalls' ? this.num(v.stopClose) : null,
-      fileHeader: type === 'Normal' ? (v.fileHeader || null) : null,
-      fileFooter: type === 'Normal' ? (v.fileFooter || null) : null,
+      // Header/Footer images are only offered for Normal broadcasts; the server writes
+      // the bytes to disk and stores the resulting path in fileHeader/fileFooter.
+      fileHeader: null,
+      fileFooter: null,
+      fileHeaderBase64: type === 'Normal' ? this.fileHeaderData() : null,
+      fileHeaderName: type === 'Normal' ? (v.fileHeader || null) : null,
+      fileFooterBase64: type === 'Normal' ? this.fileFooterData() : null,
+      fileFooterName: type === 'Normal' ? (v.fileFooter || null) : null,
     };
 
     this.sending.set(true);

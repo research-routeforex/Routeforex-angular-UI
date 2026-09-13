@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { finalize } from 'rxjs';
 import { NotificationService } from '../../../core/services/notification.service';
+import { DateFieldComponent } from '../../../shared/components/date-field/date-field';
 import { FieldComponent } from '../../../shared/components/field/field';
 import { SelectComponent, SelectOption } from '../../../shared/components/select/select';
 import { ConfirmService } from '../../../shared/services/confirm.service';
@@ -18,6 +19,7 @@ import { ClientsService } from '../clients.service';
   imports: [
     ReactiveFormsModule,
     FieldComponent,
+    DateFieldComponent,
     SelectComponent,
     MatButtonModule,
     MatIconModule,

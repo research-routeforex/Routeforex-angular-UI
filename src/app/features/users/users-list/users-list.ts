@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -26,19 +26,11 @@ import { DropdownService } from '../../../shared/services/dropdown.service';
 import { CustomValidators } from '../../../shared/validators/custom-validators';
 import { UsersService } from '../users.service';
 
-interface ColumnFilters {
-  userName: string;
-  fullName: string;
-  email: string;
-  roles: string;
-  status: string;
-  lastLogin: string;
-}
-
 @Component({
   selector: 'app-users-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    FormsModule,
     ReactiveFormsModule,
     PageHeaderComponent,
     FieldComponent,
@@ -87,17 +79,14 @@ export class UsersListComponent implements OnInit {
   /** Client id to restore once the role is applied (edit) — see applyPendingRole. */
   private pendingClientId: number | null = null;
 
-  /** Full user set (admin users are few); filtered + paged on the client. */
-  private readonly allRows = signal<User[]>([]);
+  /** Current page of users (server-paged). */
+  protected readonly rows = signal<User[]>([]);
+  /** Total matching rows reported by the server (drives the pager). */
+  protected readonly totalCount = signal(0);
 
-  protected readonly filters = signal<ColumnFilters>({
-    userName: '',
-    fullName: '',
-    email: '',
-    roles: '',
-    status: '',
-    lastLogin: '',
-  });
+  /** Top filter bar: free-text (UserName / Email / Full Name) + Role. */
+  protected readonly searchText = signal('');
+  protected readonly filterRoleId = signal<number | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
     userName: ['', [Validators.required, CustomValidators.notBlank, Validators.maxLength(50)]],
@@ -166,30 +155,11 @@ export class UsersListComponent implements OnInit {
     this.load();
   }
 
-  // --- Rows / filtering / paging --------------------------------------------
-  protected readonly filtered = computed<User[]>(() => {
-    const f = this.filters();
-    return this.allRows().filter((u) => {
-      const lastLogin = u.lastLoginDate ? new Date(u.lastLoginDate).toLocaleString() : '';
-      return (
-        has(u.userName, f.userName) &&
-        has(u.fullName, f.fullName) &&
-        has(u.email, f.email) &&
-        has(u.roles.join(', '), f.roles) &&
-        has(this.statusLabel(u), f.status) &&
-        has(lastLogin, f.lastLogin)
-      );
-    });
-  });
-
-  protected readonly total = computed(() => this.filtered().length);
+  // --- Server paging --------------------------------------------------------
+  protected readonly total = computed(() => this.totalCount());
   protected readonly totalPages = computed(() =>
     Math.max(1, Math.ceil(this.total() / this.pageSize())),
   );
-  protected readonly pagedRows = computed<User[]>(() => {
-    const start = (this.pageNumber() - 1) * this.pageSize();
-    return this.filtered().slice(start, start + this.pageSize());
-  });
   protected readonly fromRow = computed(() =>
     this.total() === 0 ? 0 : (this.pageNumber() - 1) * this.pageSize() + 1,
   );
@@ -197,36 +167,72 @@ export class UsersListComponent implements OnInit {
     Math.min(this.pageNumber() * this.pageSize(), this.total()),
   );
 
+  /** Fetch the current page from the server (with the active search + role). */
   private load(): void {
     this.loading.set(true);
     this.service
-      .getPaged({ pageNumber: 1, pageSize: 1000, search: null })
+      .getPagedUsers({
+        pageNumber: this.pageNumber(),
+        pageSize: this.pageSize(),
+        search: this.searchText().trim() || null,
+        roleId: this.filterRoleId(),
+      })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe((page) => {
-        this.allRows.set(page.items);
-        if (this.pageNumber() > this.totalPages()) this.pageNumber.set(this.totalPages());
+        this.rows.set(page.items);
+        this.totalCount.set(page.totalCount);
+        // If the current page went past the end (e.g. after filtering), clamp + reload.
+        const last = Math.max(1, page.totalPages);
+        if (this.pageNumber() > last) {
+          this.pageNumber.set(last);
+          this.load();
+        }
       });
   }
 
-  protected setFilter(key: keyof ColumnFilters, value: string): void {
-    this.filters.update((f) => ({ ...f, [key]: value }));
-    this.pageNumber.set(1);
+  // --- Top filter bar -------------------------------------------------------
+  protected onSearchText(value: string): void {
+    this.searchText.set(value);
   }
+  protected onFilterRole(value: number | null): void {
+    this.filterRoleId.set(value);
+  }
+  /** Run the search from page 1. */
+  protected search(): void {
+    this.pageNumber.set(1);
+    this.load();
+  }
+  protected clearFilters(): void {
+    this.searchText.set('');
+    this.filterRoleId.set(null);
+    this.pageNumber.set(1);
+    this.load();
+  }
+
   protected onPageSize(value: string | number): void {
     this.pageSize.set(Number(value));
     this.pageNumber.set(1);
+    this.load();
   }
   protected first(): void {
+    if (this.pageNumber() === 1) return;
     this.pageNumber.set(1);
+    this.load();
   }
   protected prev(): void {
-    this.pageNumber.update((n) => Math.max(1, n - 1));
+    if (this.pageNumber() <= 1) return;
+    this.pageNumber.update((n) => n - 1);
+    this.load();
   }
   protected next(): void {
-    this.pageNumber.update((n) => Math.min(this.totalPages(), n + 1));
+    if (this.pageNumber() >= this.totalPages()) return;
+    this.pageNumber.update((n) => n + 1);
+    this.load();
   }
   protected last(): void {
+    if (this.pageNumber() >= this.totalPages()) return;
     this.pageNumber.set(this.totalPages());
+    this.load();
   }
 
   protected statusLabel(u: User): string {
@@ -363,10 +369,4 @@ export class UsersListComponent implements OnInit {
         });
       });
   }
-}
-
-/** Case-insensitive "contains" for a column filter (empty term matches all). */
-function has(value: string | null | undefined, term: string): boolean {
-  if (!term) return true;
-  return (value ?? '').toLowerCase().includes(term.toLowerCase());
 }

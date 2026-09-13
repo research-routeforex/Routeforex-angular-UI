@@ -1,0 +1,191 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Research Report Permission"
+    subtitle="Grant a client access to Premium research reports for a validity window."
+    [breadcrumbs]="[{ label: 'Administration' }, { label: 'Research Report Permission' }]"
+  >
+    @if (editingId() === null) {
+      <button mat-flat-button color="primary" type="button" (click)="startAdd()">
+        <mat-icon>add</mat-icon> Add Permission
+      </button>
+    }
+  </app-page-header>
+</div>
+
+<!-- Inline add/edit form -->
+@if (editingId() !== null) {
+  <form [formGroup]="form" class="rf-card editform" (ngSubmit)="save()">
+    <div class="editform__grid">
+      <app-field label="Client" required [control]="form.controls.clientID" error="Client is required.">
+        <app-select
+          formControlName="clientID"
+          [options]="clientOptions()"
+          placeholder="Select client…"
+        />
+      </app-field>
+      <app-field label="Research Type" required [control]="form.controls.researchType" error="Research type is required.">
+        <app-select
+          formControlName="researchType"
+          [options]="researchTypeOptions"
+          [nullable]="false"
+          [searchable]="false"
+        />
+      </app-field>
+      <app-field label="Validity From" required [control]="form.controls.validityFrom" error="Validity From is required.">
+        <div class="rf-datewrap" (click)="vf.open()">
+          <input
+            class="rf-input"
+            [matDatepicker]="vf"
+            [appOpenOnFocus]="vf"
+            formControlName="validityFrom"
+            placeholder="dd-MMM-yyyy"
+            readonly
+          />
+          <mat-datepicker-toggle class="rf-date-toggle" [for]="vf" />
+        </div>
+        <mat-datepicker #vf panelClass="rf-datepicker" />
+      </app-field>
+      <app-field label="Validity Till" required [control]="form.controls.validityTo" error="Validity Till is required.">
+        <div class="rf-datewrap" (click)="vt.open()">
+          <input
+            class="rf-input"
+            [matDatepicker]="vt"
+            [appOpenOnFocus]="vt"
+            formControlName="validityTo"
+            placeholder="dd-MMM-yyyy"
+            readonly
+          />
+          <mat-datepicker-toggle class="rf-date-toggle" [for]="vt" />
+        </div>
+        <mat-datepicker #vt panelClass="rf-datepicker" />
+      </app-field>
+    </div>
+    <div class="editform__actions">
+      <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : editingId() ? 'Update' : 'Add' }}
+      </button>
+    </div>
+  </form>
+}
+
+<!-- Separate search section -->
+<form class="rf-card filter" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+  <div class="filter__fields">
+    <label class="filter__field filter__field--wide">
+      <span class="filter__lbl">Client</span>
+      <app-select formControlName="clientID" [options]="clientOptions()" placeholder="All clients" />
+    </label>
+    <label class="filter__field">
+      <span class="filter__lbl">Validity From</span>
+      <div class="rf-datewrap" (click)="ff.open()">
+        <input
+          class="rf-input"
+          [matDatepicker]="ff"
+          [appOpenOnFocus]="ff"
+          formControlName="from"
+          placeholder="dd-MMM-yyyy"
+          readonly
+        />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="ff" />
+      </div>
+      <mat-datepicker #ff panelClass="rf-datepicker" />
+    </label>
+    <label class="filter__field">
+      <span class="filter__lbl">Validity Till</span>
+      <div class="rf-datewrap" (click)="ft.open()">
+        <input
+          class="rf-input"
+          [matDatepicker]="ft"
+          [appOpenOnFocus]="ft"
+          formControlName="to"
+          placeholder="dd-MMM-yyyy"
+          readonly
+        />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="ft" />
+      </div>
+      <mat-datepicker #ft panelClass="rf-datepicker" />
+    </label>
+    <div class="filter__actions">
+      <button mat-flat-button color="primary" type="submit">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+</form>
+
+<div class="rf-card tablewrap">
+  <table class="grid">
+    <colgroup>
+      <col class="col-client" />
+      <col class="col-type" />
+      <col class="col-date" />
+      <col class="col-date" />
+      <col class="col-created" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th><span class="th__name">Client Name</span></th>
+        <th><span class="th__name">Research Type</span></th>
+        <th><span class="th__name">Validity From</span></th>
+        <th><span class="th__name">Validity Till</span></th>
+        <th><span class="th__name">Created</span></th>
+        <th class="ta-r"><span class="th__name">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of pagedRows(); track r.id) {
+        <tr>
+          <td class="name">{{ r.clientName || '—' }}</td>
+          <td>{{ r.researchTypeText || r.researchType || '—' }}</td>
+          <td>{{ r.validityFrom ? (r.validityFrom | date: 'dd-MMM-yyyy') : '—' }}</td>
+          <td>{{ r.validityTo ? (r.validityTo | date: 'dd-MMM-yyyy') : '—' }}</td>
+          <td>{{ r.createdBy || '—' }}</td>
+          <td class="ta-r actions">
+            <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="startEdit(r)" matTooltip="Edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No permissions found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="pager">
+  <div class="pager__size">
+    <span class="rf-muted">Rows per page</span>
+    <select class="rf-select pager__select" (change)="onPageSize($any($event.target).value)">
+      @for (n of pageSizeOptions; track n) {
+        <option [value]="n" [selected]="n === pageSize()">{{ n }}</option>
+      }
+    </select>
+  </div>
+  <span class="rf-spacer"></span>
+  <span class="pager__info rf-muted">{{ fromRow() }}–{{ toRow() }} of {{ total() }}</span>
+  <div class="pager__nav">
+    <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="first()" matTooltip="First page">
+      <mat-icon>first_page</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="pageNumber() <= 1" (click)="prev()" matTooltip="Previous page">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span class="pager__page">{{ pageNumber() }} / {{ totalPages() }}</span>
+    <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="next()" matTooltip="Next page">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    <button mat-icon-button [disabled]="pageNumber() >= totalPages()" (click)="last()" matTooltip="Last page">
+      <mat-icon>last_page</mat-icon>
+    </button>
+  </div>
+</div>

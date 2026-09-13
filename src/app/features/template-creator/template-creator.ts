@@ -1,9 +1,14 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { DateAdapter, provideNativeDateAdapter } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CKEditorModule } from '@ckeditor/ckeditor5-angular';
+import { DMY_DATE_FORMATS, DmyDateAdapter } from '../../shared/date/dmy-date-adapter';
+import { OpenDatepickerOnFocusDirective } from '../../shared/directives/open-datepicker-on-focus.directive';
 import {
   Alignment,
   AutoLink,
@@ -78,6 +83,14 @@ import { TemplateCreatorService } from './template-creator.service';
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    MatDatepickerModule,
+    OpenDatepickerOnFocusDirective,
+    DatePipe,
+  ],
+  // dd-MMM-yyyy datepicker (same as FTP Order Entry), scoped to this screen.
+  providers: [
+    provideNativeDateAdapter(DMY_DATE_FORMATS),
+    { provide: DateAdapter, useClass: DmyDateAdapter },
   ],
   templateUrl: './template-creator.html',
   styleUrl: './template-creator.scss',
@@ -136,18 +149,29 @@ export class TemplateCreatorComponent implements OnInit {
     { value: 1, label: 'Active' },
     { value: 0, label: 'Inactive' },
   ];
-  protected readonly researchTypeOptions: SelectOption[] = [
-    { value: 'Daily', label: 'Daily' },
-    { value: 'Premium', label: 'Premium' },
-  ];
+  /** Populated from the API (usp_RF_Template_ResearchTypes / _Images). */
+  protected readonly researchTypeOptions = signal<SelectOption[]>([]);
+  protected readonly imageOptions = signal<SelectOption[]>([]);
 
   protected readonly form = this.fb.nonNullable.group({
     templateId: [0],
-    displayName: ['', [Validators.required, Validators.maxLength(500)]],
+    displayName: ['', [Validators.required, Validators.maxLength(1000)]],
     activeStatus: [1],
-    researchType: ['Daily'],
+    researchType: ['D', [Validators.required]],
+    imageName: [null as string | null],
+    // "Report Date" — Material datepicker (dd-MMM-yyyy); persisted to CreatedDatetime.
+    reportDate: this.fb.control<Date | null>(new Date(), { validators: [Validators.required] }),
     content: ['', [Validators.required]],
   });
+
+  /** Date → yyyy-MM-dd (ISO date the backend's DateTime binder accepts). */
+  private toIsoDate(date: Date | null): string | null {
+    if (!date) return null;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
 
   // ---- List (search + pagination) -------------------------------------------
   protected readonly nameFilter = signal('');
@@ -187,6 +211,14 @@ export class TemplateCreatorComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.service
+      .getResearchTypes()
+      .subscribe((opts) =>
+        this.researchTypeOptions.set(opts.map((o) => ({ value: o.value, label: o.text }))),
+      );
+    this.service
+      .getImages()
+      .subscribe((opts) => this.imageOptions.set(opts.map((o) => ({ value: o.value, label: o.text }))));
   }
 
   private load(): void {
@@ -206,7 +238,15 @@ export class TemplateCreatorComponent implements OnInit {
 
   /** Open a blank add form. */
   protected newTemplate(): void {
-    this.form.reset({ templateId: 0, displayName: '', activeStatus: 1, researchType: 'Daily', content: '' });
+    this.form.reset({
+      templateId: 0,
+      displayName: '',
+      activeStatus: 1,
+      researchType: 'D',
+      imageName: null,
+      reportDate: new Date(),
+      content: '',
+    });
     this.editingId.set(0);
   }
 
@@ -221,7 +261,9 @@ export class TemplateCreatorComponent implements OnInit {
         templateId: detail.templateId,
         displayName: detail.displayName ?? '',
         activeStatus: detail.activeStatus,
-        researchType: detail.researchType ?? 'Daily',
+        researchType: detail.researchType ?? 'D',
+        imageName: detail.imageName ?? null,
+        reportDate: detail.createdDatetime ? new Date(detail.createdDatetime) : new Date(),
         content: detail.content ?? '',
       });
       this.editingId.set(detail.templateId);
@@ -244,6 +286,8 @@ export class TemplateCreatorComponent implements OnInit {
         content: v.content,
         activeStatus: Number(v.activeStatus),
         researchType: v.researchType,
+        imageName: v.imageName,
+        reportDate: this.toIsoDate(v.reportDate),
       })
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe(() => {

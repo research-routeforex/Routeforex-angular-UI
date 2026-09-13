@@ -46,10 +46,10 @@
 
       <div class="child__row child__row--4">
         <app-field label="Effective From">
-          <input class="rf-input" type="date" formControlName="effectiveFrom" />
+          <app-date-field formControlName="effectiveFrom" />
         </app-field>
         <app-field label="Effective To">
-          <input class="rf-input" type="date" formControlName="effectiveTo" />
+          <app-date-field formControlName="effectiveTo" />
         </app-field>
         <app-field label="Status">
           <app-select formControlName="status" [options]="statusOptions()" placeholder="Select status" searchPlaceholder="Search…" />

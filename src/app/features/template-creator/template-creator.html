@@ -28,8 +28,30 @@
     <app-field label="Status">
       <app-select formControlName="activeStatus" [options]="statusOptions" [searchable]="false" />
     </app-field>
-    <app-field label="Research Type">
-      <app-select formControlName="researchType" [options]="researchTypeOptions" [searchable]="false" />
+    <app-field label="Research Type" required [control]="form.controls.researchType" error="Select a research type.">
+      <app-select
+        formControlName="researchType"
+        [options]="researchTypeOptions()"
+        [nullable]="false"
+        [searchable]="false"
+      />
+    </app-field>
+    <app-field label="Image Name">
+      <app-select formControlName="imageName" [options]="imageOptions()" placeholder="Select image" />
+    </app-field>
+    <app-field label="Report Date" required [control]="form.controls.reportDate" error="Report date is required.">
+      <div class="rf-datewrap" (click)="rd.open()">
+        <input
+          class="rf-input"
+          [matDatepicker]="rd"
+          [appOpenOnFocus]="rd"
+          formControlName="reportDate"
+          placeholder="dd-MMM-yyyy"
+          readonly
+        />
+        <mat-datepicker-toggle class="rf-date-toggle" [for]="rd" />
+      </div>
+      <mat-datepicker #rd panelClass="rf-datepicker" />
     </app-field>
   </div>
 
@@ -60,6 +82,8 @@
       <col />
       <col class="col-status" />
       <col class="col-type" />
+      <col class="col-type" />
+      <col class="col-type" />
       <col class="col-actions" />
     </colgroup>
     <thead>
@@ -77,6 +101,8 @@
           <span class="th__name">Research Type</span>
           <input class="colfilter" placeholder="Search…" (input)="setResearchTypeFilter($any($event.target).value)" />
         </th>
+        <th><span class="th__name">Image</span></th>
+        <th><span class="th__name">Report Date</span></th>
         <th class="ta-r"><span class="th__name">Action</span></th>
       </tr>
     </thead>
@@ -91,6 +117,8 @@
             </span>
           </td>
           <td>{{ r.researchType || '—' }}</td>
+          <td>{{ r.imageName || '—' }}</td>
+          <td>{{ r.createdDatetime ? (r.createdDatetime | date: 'dd-MMM-yyyy') : '—' }}</td>
           <td class="ta-r actions">
             <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(r)" matTooltip="Edit">
               <mat-icon>edit</mat-icon>
@@ -99,7 +127,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="5" class="empty rf-muted">
+          <td colspan="7" class="empty rf-muted">
             {{ loading() ? 'Loading…' : 'No templates found.' }}
           </td>
         </tr>

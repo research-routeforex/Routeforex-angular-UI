@@ -60,11 +60,13 @@
              <!-- add a height in a tag if is isFavouritesSection(section.title) is true,  -->
        
             <a [style.height.px]="isFavouritesSection(section.title) ? 30 : null"
-              class="nav__item" 
+              class="nav__item"
               [routerLink]="item.route"
               routerLinkActive="nav__item--active"
-              [matTooltip]="railCollapsed() ? item.label : ''"
+              [matTooltip]="item.label"
               matTooltipPosition="right"
+              matTooltipClass="rf-nav-tip"
+              [matTooltipShowDelay]="250"
               (click)="onNavigated()"
             >
               <mat-icon>{{ item.icon }}</mat-icon>

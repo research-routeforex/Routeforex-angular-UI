@@ -7,6 +7,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { finalize } from 'rxjs';
+import { AppRole } from '../../core/enums/role.enum';
+import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { FieldComponent } from '../../shared/components/field/field';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header';
@@ -62,13 +64,24 @@ export class GenerateInvoiceComponent {
   private readonly companies = inject(CompanyMasterService);
   private readonly notify = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
+  private readonly auth = inject(AuthService);
 
-  protected readonly tabs: { key: InvoiceTab; label: string; icon: string }[] = [
+  /** Only Admins may generate invoices; everyone else sees the Generated list only. */
+  protected readonly isAdmin = this.auth.hasRole(AppRole.Admin);
+
+  private readonly allTabs: { key: InvoiceTab; label: string; icon: string }[] = [
     { key: 'generate', label: 'Generate Invoice', icon: 'receipt_long' },
     { key: 'history', label: 'Generated Invoices', icon: 'history' },
   ];
-  protected readonly active = signal<InvoiceTab>('generate');
+  // Non-admins get the "Generated Invoices" tab only.
+  protected readonly tabs = this.isAdmin
+    ? this.allTabs
+    : this.allTabs.filter((t) => t.key === 'history');
+
+  protected readonly active = signal<InvoiceTab>(this.isAdmin ? 'generate' : 'history');
   protected select(key: InvoiceTab): void {
+    // Guard: never let a non-admin land on the Generate tab.
+    if (key === 'generate' && !this.isAdmin) return;
     this.active.set(key);
   }
 
@@ -210,6 +223,7 @@ export class GenerateInvoiceComponent {
 
   /** Generate the invoice: validate header inputs, persist header + details, show the document. */
   protected generateInvoice(): void {
+    if (!this.isAdmin) return; // Admin-only action.
     if (!this.lines().length || this.generating()) return;
 
     // Invoice number, invoice date and GST number cannot be blank/null.

@@ -19,7 +19,7 @@
   <form [formGroup]="form" class="rf-card editform" (ngSubmit)="save()">
     <div class="editform__grid">
       <app-field label="Date" required [control]="form.controls.date" error="Date is required.">
-        <input class="rf-input" type="date" formControlName="date" />
+        <app-date-field formControlName="date" />
       </app-field>
       <app-field label="Currency" required [control]="form.controls.currency" error="Currency is required.">
         <app-select
@@ -58,7 +58,7 @@
       <tr>
         <th>
           <span class="th__name">Date</span>
-          <input class="colfilter" type="date" (change)="setSearchDate($any($event.target).value)" />
+          <app-date-field variant="filter" (valueChange)="setSearchDate($event)" />
         </th>
         <th>
           <span class="th__name">Currency</span>

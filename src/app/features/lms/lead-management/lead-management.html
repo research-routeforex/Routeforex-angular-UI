@@ -1,0 +1,193 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Lead Management"
+    subtitle="LMS lead touch-points — meetings, agenda, audit, category and next steps."
+    [breadcrumbs]="[{ label: 'LMS' }, { label: 'Lead Management' }]"
+  >
+    <button mat-flat-button color="primary" type="button" (click)="toggleForm()">
+      <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+      {{ showForm() ? 'Cancel' : 'Add Lead' }}
+    </button>
+  </app-page-header>
+</div>
+
+<!-- Add / edit / view -->
+@if (showForm()) {
+  <div class="rf-card child__add">
+    <div class="child__addhead">
+      <h4 class="child__addtitle">
+        <mat-icon>{{ viewing() ? 'visibility' : 'leaderboard' }}</mat-icon>
+        {{ viewing() ? 'View Lead' : editingId() ? 'Edit Lead' : 'Add Lead' }}
+      </h4>
+    </div>
+
+    <form class="child__form" [formGroup]="form" (ngSubmit)="save()">
+      <div class="child__row child__row--4">
+        <app-field label="Client" required [control]="form.controls.clientID" error="Select a client.">
+          <app-select formControlName="clientID" [options]="clientOptions()" placeholder="Select client" searchPlaceholder="Search client…" />
+        </app-field>
+        <app-field label="Level of Meeting">
+          <app-select formControlName="levelofMeeting" [options]="levelOptions" placeholder="Select" searchPlaceholder="Search…" />
+        </app-field>
+        <app-field label="Agenda">
+          <textarea class="rf-input" rows="2" formControlName="agenda" placeholder="Agenda"></textarea>
+        </app-field>
+        <app-field label="Attended By" required [control]="form.controls.attendedBy" error="Select an option.">
+          <app-select formControlName="attendedBy" [options]="attendedByOptions" placeholder="Select" searchPlaceholder="Search…" />
+        </app-field>
+      </div>
+
+      @if (showAttendedWith()) {
+        <div class="child__row child__row--4">
+          <app-field label="Attended With">
+            <input class="rf-input" type="text" formControlName="attendedWith" placeholder="Attended with" />
+          </app-field>
+        </div>
+      }
+
+      <div class="child__row child__row--4">
+        <app-field label="Audit Done">
+          <app-select formControlName="auditDone" [options]="auditOptions" placeholder="Select" searchPlaceholder="Search…" />
+        </app-field>
+        <app-field label="Audit Outcome">
+          <textarea class="rf-input" rows="2" formControlName="auditOutcome" placeholder="Audit outcome"></textarea>
+        </app-field>
+        <app-field label="Category">
+          <app-select formControlName="category" [options]="categoryOptions" placeholder="Select" searchPlaceholder="Search…" />
+        </app-field>
+        <app-field label="Lead Source">
+          <app-select formControlName="leadSource" [options]="leadSourceOptions" placeholder="Select" searchPlaceholder="Search…" />
+        </app-field>
+      </div>
+
+      <div class="child__row child__row--report">
+        <app-field label="Call Report">
+          <textarea class="rf-input" rows="2" formControlName="callReport" placeholder="Call report"></textarea>
+        </app-field>
+        <app-field label="Next Level of Meeting">
+          <app-select formControlName="nextLevelofMeeting" [options]="nextLevelOptions" placeholder="Select" searchPlaceholder="Search…" />
+        </app-field>
+        <app-field label="Date">
+          <div class="rf-datewrap" (click)="nd.open()">
+            <input
+              class="rf-input"
+              [matDatepicker]="nd"
+              [appOpenOnFocus]="nd"
+              formControlName="nlmDate"
+              placeholder="dd-MMM-yyyy"
+              readonly
+            />
+            <mat-datepicker-toggle class="rf-date-toggle" [for]="nd" />
+          </div>
+          <mat-datepicker #nd panelClass="rf-datepicker" />
+        </app-field>
+      </div>
+
+      <div class="child__formactions">
+        <button mat-stroked-button type="button" (click)="closeForm()">
+          {{ viewing() ? 'Close' : 'Clear' }}
+        </button>
+        @if (!viewing()) {
+          <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+            <mat-icon>save</mat-icon>
+            {{ saving() ? 'Saving…' : editingId() ? 'Update' : 'Submit' }}
+          </button>
+        }
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Filters -->
+<div class="rf-card filter">
+  <div class="filter__fields">
+    <label class="filter__field filter__field--wide">
+      <span class="filter__lbl">Client Name</span>
+      <input
+        class="rf-input"
+        type="text"
+        [ngModel]="filterText()"
+        (ngModelChange)="onFilterText($event)"
+        placeholder="Search…"
+      />
+    </label>
+    <div class="filter__actions">
+      <button mat-stroked-button type="button" (click)="exportExcel()">
+        <mat-icon>download</mat-icon> Export Excel
+      </button>
+      <button mat-flat-button color="primary" type="button" (click)="search()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- List -->
+<div class="rf-card child__tablewrap">
+  <div class="child__listhead">
+    <h3 class="child__listtitle">Client List</h3>
+    <span class="child__count rf-muted">{{ total() }} record(s)</span>
+  </div>
+  <table class="child__table">
+    <colgroup>
+      <col class="col-sno" />
+      <col class="col-name" />
+      <col class="col-level" />
+      <col class="col-agenda" />
+      <col class="col-by" />
+      <col class="col-with" />
+      <col class="col-cat" />
+      <col class="col-next" />
+      <col class="col-date" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>S.No.</th>
+        <th>Client Name</th>
+        <th>Level of Meeting</th>
+        <th>Agenda</th>
+        <th>Attended By</th>
+        <th>Attended With</th>
+        <th>Category</th>
+        <th>Next Level</th>
+        <th>Date</th>
+        <th class="ta-r">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of rows(); track r.id; let i = $index) {
+        <tr>
+          <td>{{ i + 1 }}</td>
+          <td class="name">{{ r.clientName || '—' }}</td>
+          <td>{{ r.levelofMeeting || '—' }}</td>
+          <td>{{ r.agenda || '—' }}</td>
+          <td>{{ r.attendedBy || '—' }}</td>
+          <td>{{ r.attendedWith || '—' }}</td>
+          <td>{{ r.category || '—' }}</td>
+          <td>{{ r.nextLevelofMeeting || '—' }}</td>
+          <td>{{ r.nlmDate ? (r.nlmDate | date: 'dd/MM/yyyy') : '—' }}</td>
+          <td class="ta-r">
+            <div class="rowactions">
+              <button type="button" class="rf-iconbtn" (click)="view(r)" matTooltip="View">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button type="button" class="rf-iconbtn rf-iconbtn--edit" (click)="edit(r)" matTooltip="Edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="10" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No leads found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -117,7 +117,7 @@ $soft: #f5f7fb;
     color: $brand;
   }
   &__party-name { font-size: 15px; font-weight: 700; }
-  &__party-sub { font-size: 12px; color: $muted; font-weight: 700; }
+  &__party-sub { font-size: 12px; color: $ink; font-weight: 500; }
 
   // ---- Line items ----------------------------------------------------------
   &__table-wrap {

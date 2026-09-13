@@ -1,0 +1,179 @@
+<div class="hero">
+  <span class="hero__glow hero__glow--a"></span>
+  <span class="hero__glow hero__glow--b"></span>
+  <app-page-header
+    title="Forex Advisory"
+    subtitle="Per-currency advisory band (range, trend, note) with an optional chart image."
+    [breadcrumbs]="[{ label: 'Masters' }, { label: 'Forex Advisory' }]"
+  >
+    <button mat-flat-button color="primary" type="button" (click)="toggleForm()">
+      <mat-icon>{{ showForm() ? 'close' : 'add' }}</mat-icon>
+      {{ showForm() ? 'Cancel' : 'Add New Currency' }}
+    </button>
+  </app-page-header>
+</div>
+
+<!-- Add / edit -->
+@if (showForm()) {
+  <div class="rf-card child__add">
+    <div class="child__addhead">
+      <h4 class="child__addtitle">
+        <mat-icon>trending_up</mat-icon>
+        {{ editingId() ? 'Edit Currency Advisory' : 'Add New Currency' }}
+      </h4>
+    </div>
+
+    <form class="child__form" [formGroup]="form" (ngSubmit)="save()">
+      <div class="child__row child__row--5">
+        <app-field label="Currency" required [control]="form.controls.currency" error="Select a currency.">
+          <app-select
+            formControlName="currency"
+            [options]="currencyOptions()"
+            placeholder="Select currency"
+            searchPlaceholder="Search currency…"
+          />
+        </app-field>
+        <app-field label="Range From" required [control]="form.controls.rangeFrom" error="Enter a value.">
+          <input class="rf-input" type="number" step="0.0001" formControlName="rangeFrom" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Range To" required [control]="form.controls.rangeTo" error="Enter a value.">
+          <input class="rf-input" type="number" step="0.0001" formControlName="rangeTo" placeholder="0.0000" />
+        </app-field>
+        <app-field label="Trend" required [control]="form.controls.trend" error="Select a trend.">
+          <app-select
+            formControlName="trend"
+            [options]="trendOptions"
+            placeholder="Select trend"
+            searchPlaceholder="Search…"
+          />
+        </app-field>
+        <div class="rf-field">
+          <span class="rf-label">File Header</span>
+          <div class="upload">
+            <label class="upload__btn">
+              <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+              <mat-icon>upload_file</mat-icon> Choose File
+            </label>
+            <span class="upload__name rf-muted">{{ pickedName() || 'No file chosen' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="child__row child__row--status-note">
+        <app-field label="Status">
+          <app-select
+            formControlName="status"
+            [options]="statusOptions"
+            [nullable]="false"
+            placeholder="Select status"
+            searchPlaceholder="Search…"
+          />
+        </app-field>
+        <app-field label="Note">
+          <textarea class="rf-input" rows="3" formControlName="message" placeholder="Enter note…"></textarea>
+        </app-field>
+      </div>
+
+      <div class="child__formactions">
+        <button mat-stroked-button type="button" (click)="closeForm()">Clear</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+          <mat-icon>save</mat-icon>
+          {{ saving() ? 'Saving…' : editingId() ? 'Update' : 'Submit' }}
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+<!-- Filters -->
+<div class="rf-card filter">
+  <div class="filter__fields">
+    <label class="filter__field">
+      <span class="filter__lbl">Currency</span>
+      <app-select
+        [options]="currencyOptions()"
+        placeholder="All"
+        searchPlaceholder="Search…"
+        [ngModel]="filterCurrency()"
+        (ngModelChange)="onFilterCurrency($event)"
+      />
+    </label>
+    <label class="filter__field">
+      <span class="filter__lbl">Status</span>
+      <app-select
+        [options]="statusOptions"
+        placeholder="All"
+        searchPlaceholder="Search…"
+        [ngModel]="filterStatus()"
+        (ngModelChange)="onFilterStatus($event)"
+      />
+    </label>
+    <div class="filter__actions">
+      <button mat-flat-button color="primary" type="button" (click)="search()">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- List -->
+<div class="rf-card child__tablewrap">
+  <div class="child__listhead">
+    <h3 class="child__listtitle">Currency List</h3>
+    <span class="child__count rf-muted">{{ total() }} record(s)</span>
+  </div>
+  <table class="child__table">
+    <colgroup>
+      <col class="col-sno" />
+      <col class="col-currency" />
+      <col class="col-from" />
+      <col class="col-to" />
+      <col class="col-status" />
+      <col class="col-message" />
+      <col class="col-trend" />
+      <col class="col-actions" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>S.No.</th>
+        <th>Currency Name</th>
+        <th>Range From</th>
+        <th>Range To</th>
+        <th>Status</th>
+        <th>Message</th>
+        <th>Trend</th>
+        <th class="ta-r">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of rows(); track r.recordID; let i = $index) {
+        <tr>
+          <td>{{ i + 1 }}</td>
+          <td class="name">{{ r.currency || '—' }}</td>
+          <td>{{ r.rangeFrom != null ? (r.rangeFrom | number: '1.2-4') : '—' }}</td>
+          <td>{{ r.rangeTo != null ? (r.rangeTo | number: '1.2-4') : '—' }}</td>
+          <td>{{ r.status || '—' }}</td>
+          <td>{{ r.message || '—' }}</td>
+          <td>{{ r.trend || '—' }}</td>
+          <td class="ta-r">
+            <button
+              type="button"
+              class="rf-iconbtn rf-iconbtn--edit"
+              (click)="edit(r)"
+              matTooltip="Edit"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="8" class="empty rf-muted">
+            {{ loading() ? 'Loading…' : 'No advisories found.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
